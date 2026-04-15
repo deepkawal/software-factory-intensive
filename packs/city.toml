@@ -12,7 +12,7 @@
 # life once you have at least one rig registered.
 
 [workspace]
-name = "actual-factory"
+name = "20260415-gc-factory-v1"
 provider = "claude"
 start_command = "<user_home>/.nvm/versions/node/v22.19.0/bin/claude"
 includes = ["packs/actual/all"]
@@ -23,7 +23,6 @@ max_restarts = 5
 restart_window = "1h"
 shutdown_timeout = "5s"
 
-# Register a rig to activate the 8 factory agents on a repo:
 #
 # [[rigs]]
 # name = "myproject"
