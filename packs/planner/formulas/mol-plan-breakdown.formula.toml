@@ -250,6 +250,8 @@ bd close $ROOT_ID --reason "plan complete: docs/plans/{{slug}}.md"
 #   needs-tests    → validator-intake
 #   ready-to-build → builder-intake
 # Do NOT gc mail send — it creates duplicate sessions.
+# Wake any downstream agents whose beads just unblocked.
+sh packs/actual/all/scripts/wake-downstream.sh &
 ```
 
 **Exit criteria:** Root bead closed; plan file committed (if

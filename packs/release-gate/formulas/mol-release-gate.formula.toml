@@ -232,7 +232,8 @@ bd dep add $IMP_ID --blocked-by $ROOT_ID
 **4. Close the root bead:**
 ```bash
 bd close $ROOT_ID --reason "shipped as v$NEXT"
-gc mail send improver "Release v$NEXT is live — watch bead $IMP_ID"
+# Wake downstream agents.
+sh packs/actual/all/scripts/wake-downstream.sh &
 ```
 
 **Exit criteria:** Rollback plan recorded; improver bead created;

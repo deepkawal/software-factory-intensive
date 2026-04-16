@@ -299,6 +299,8 @@ bd close $ROOT_ID --reason "architecture complete, see docs/architecture/{{topic
 ```bash
 # The needs-plan label triggers planner-intake order automatically.
 # Do NOT gc mail send — it creates duplicate sessions.
+# Wake any downstream agents whose beads just unblocked.
+sh packs/actual/all/scripts/wake-downstream.sh &
 ```
 
 **Exit criteria:** Root bead closed, at least one child bead created

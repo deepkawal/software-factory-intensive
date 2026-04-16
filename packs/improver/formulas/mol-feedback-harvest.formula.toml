@@ -166,6 +166,8 @@ bd ready --label=needs-improve --json 2>/dev/null \\
 #   ready-to-build     → builder-intake
 #   needs-review       → reviewer-intake
 # Do NOT gc mail send — it creates duplicate sessions.
+# Wake downstream agents.
+sh packs/actual/all/scripts/wake-downstream.sh &
 ```
 
 **Exit criteria:** Drafted beads exist; needs-improve beads closed;

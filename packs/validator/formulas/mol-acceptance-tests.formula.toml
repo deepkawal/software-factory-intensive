@@ -114,6 +114,8 @@ test_files: <list of committed paths>"
 
 # The ready-to-build label triggers builder-intake order automatically.
 # Do NOT gc mail send — it creates duplicate sessions.
+# Wake downstream agents.
+sh packs/actual/all/scripts/wake-downstream.sh &
 ```
 
 **Exit criteria:** Bead relabelled; builder picks up work via intake order.

@@ -240,5 +240,10 @@ bd close $ROOT_ID --comment "Build complete. Handed off to reviewer."
 The `needs-review` label triggers the reviewer-intake order automatically.
 Mail creates duplicate sessions and bypasses max_active_sessions limits.
 
+**7. Wake downstream agents** whose beads may have just unblocked:
+```bash
+sh packs/actual/all/scripts/wake-downstream.sh &
+```
+
 **Exit criteria:** Commit landed, bead closed, bead labelled `needs-review`.
 """

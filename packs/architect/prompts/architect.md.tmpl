@@ -64,7 +64,15 @@ and decision records. Implementation is the builder's job.
 4. If step 2 found ready beads, pick the highest-priority one,
    self-assign it (`bd assign <id> {{ basename .AgentName }}`),
    and run the work loop.
-5. Otherwise idle.
+5. After completing work (or if no work found), **you MUST poll
+   in a loop**. Run this exact sequence repeatedly until you find
+   work or the session is killed:
+   ```bash
+   sleep 60 && bd ready --label=needs-architecture
+   ```
+   If the command returns beads, claim the highest-priority one and
+   run the work loop again. If it returns nothing, run the same
+   command again. **Never stop polling. Never just say "idle".**
 
 ## The actual-skill
 
