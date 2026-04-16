@@ -35,7 +35,7 @@ git log --grep "$ROOT_ID" -p | head -500
 
 **3. Read applicable rules:**
 ```bash
-ls .actual/rules/*.md 2>/dev/null | xargs cat 2>/dev/null || true
+ls docs/rules/*.md 2>/dev/null | xargs cat 2>/dev/null || true
 ```
 
 **Exit criteria:** You have the diff, the rules, and the acceptance

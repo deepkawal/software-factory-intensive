@@ -1,9 +1,9 @@
 description = """
-Architect review — 5 steps from intake through handoff.
+Architect review — 6 steps from intake through handoff.
 
-Turn a `needs-architecture` bead into ADRs + rules + downstream work
-beads. Uses the bundled `actual` skill to keep ADRs in sync with
-generated CLAUDE.md/AGENTS.md files.
+Turn a `needs-architecture` bead into a system design document,
+ADRs, rules, and downstream work beads. Uses the bundled `actual`
+skill to keep ADRs in sync with generated CLAUDE.md/AGENTS.md files.
 
 ## Contract
 
@@ -15,7 +15,7 @@ generated CLAUDE.md/AGENTS.md files.
 
 | Variable | Source | Description |
 |----------|--------|-------------|
-| topic | caller | Short topic slug for the rules file (e.g., "auth-boundaries") |
+| topic | caller | Short topic slug for design doc and rules file (e.g., "auth-boundaries") |
 | skip_adr_sync | caller | "true" to skip the actual-adr-sync step (default: "false") |
 
 ## Failure modes
@@ -31,7 +31,7 @@ version = 1
 
 [vars]
 [vars.topic]
-description = "Short topic slug used to name the rules file under .actual/rules/"
+description = "Short topic slug used to name the design doc and rules file under docs/"
 required = true
 
 [vars.skip_adr_sync]
@@ -66,15 +66,15 @@ topic: {{topic}}"
 """
 
 [[steps]]
-id = "assess"
-title = "Survey existing code, ADRs, and rules"
+id = "research"
+title = "Survey existing code, tech stack, ADRs, and constraints"
 needs = ["intake"]
 description = """
 Understand the current state before proposing anything.
 
-**1. List existing ADRs:**
+**1. List existing ADRs and rules:**
 ```bash
-find docs/adr architecture/decisions .actual/rules -type f \\
+find docs/adr docs/rules docs/architecture architecture/decisions -type f \\
     -name '*.md' 2>/dev/null || true
 ```
 
@@ -83,11 +83,15 @@ find docs/adr architecture/decisions .actual/rules -type f \\
 ls CLAUDE.md AGENTS.md 2>/dev/null
 ```
 
-**3. Grep the codebase for relevant patterns.** For an access-control
+**3. Survey the existing tech stack.** Check package.json, go.mod,
+Cargo.toml, requirements.txt, etc. Identify frameworks, libraries,
+and database choices already in use.
+
+**4. Grep the codebase for relevant patterns.** For an access-control
 topic, look for auth middleware; for a data-flow topic, look for the
 primary persistence layer; and so on.
 
-**4. Write a 1-paragraph findings summary to the bead notes:**
+**5. Write a 1-paragraph findings summary to the bead notes:**
 ```bash
 bd update $ROOT_ID --notes "<existing notes>
 assessment: <1-paragraph summary>"
@@ -97,9 +101,67 @@ assessment: <1-paragraph summary>"
 """
 
 [[steps]]
+id = "design"
+title = "Write the system design document"
+needs = ["research"]
+description = """
+Produce the comprehensive system design covering technology choices,
+schema, APIs, and component architecture.
+
+**1. Write `docs/architecture/{{topic}}.md`:**
+
+Structure:
+```markdown
+# System Design: {{topic}}
+
+Root: $ROOT_ID
+Generated: <YYYY-MM-DD>
+
+## Overview
+
+<1-2 paragraph summary of the system being designed>
+
+## Technology Stack
+
+| Layer | Choice | Rationale |
+|-------|--------|-----------|
+| Language/Runtime | ... | ... |
+| Framework | ... | ... |
+| Database | ... | ... |
+| Auth | ... | ... |
+| Deployment | ... | ... |
+
+## Database Schema
+
+<Tables, relationships, indexes. ERD in ASCII or Mermaid.>
+
+## API Design
+
+<Key endpoints/routes, request/response shapes.>
+
+## Component Architecture
+
+<Directory layout, module boundaries, data flow.>
+
+## Trade-offs & Alternatives Considered
+
+<What was rejected and why.>
+```
+
+**2. Stage and commit (if git tree was clean):**
+```bash
+mkdir -p docs/architecture
+git add docs/architecture/{{topic}}.md
+git commit -m "actual-architect: system design for {{topic}} (refs $ROOT_ID)"
+```
+
+**Exit criteria:** Design document written to `docs/architecture/{{topic}}.md`.
+"""
+
+[[steps]]
 id = "actual-adr-sync"
 title = "Sync ADRs to CLAUDE.md/AGENTS.md via the actual skill"
-needs = ["assess"]
+needs = ["design"]
 description = """
 Run `actual adr-bot` to sync the rig's CLAUDE.md/AGENTS.md with its
 ADRs. The `--force --no-tui` flags make it work in non-interactive
@@ -143,7 +205,7 @@ unrelated ADR drift?
 ```bash
 actual adr-bot --force --no-tui
 actual status
-git add CLAUDE.md AGENTS.md docs/adr .actual/rules
+git add CLAUDE.md AGENTS.md docs/adr docs/rules
 git commit -m "actual-architect: sync ADRs for {{topic}}"
 ```
 
@@ -170,7 +232,7 @@ needs = ["actual-adr-sync"]
 description = """
 Codify the architectural decision as a one-page rule file.
 
-**1. Write `.actual/rules/{{topic}}.md`:**
+**1. Write `docs/rules/{{topic}}.md`:**
 
 Structure:
 ```markdown
@@ -201,11 +263,12 @@ on how to enforce or verify the rule.>
 
 **2. Stage and commit (if git tree was clean at assessment time):**
 ```bash
-git add .actual/rules/{{topic}}.md
+mkdir -p docs/rules
+git add docs/rules/{{topic}}.md
 git commit -m "actual-architect: add rule for {{topic}} (refs $ROOT_ID)"
 ```
 
-**Exit criteria:** Rule file written to `.actual/rules/{{topic}}.md`.
+**Exit criteria:** Rule file written to `docs/rules/{{topic}}.md`.
 """
 
 [[steps]]
@@ -222,14 +285,14 @@ CHILD_ID=$(bd create \\
     --title "<concrete implication>" \\
     --label needs-plan \\
     --label source:actual-architect \\
-    --notes "Derived from {{topic}} rule. See .actual/rules/{{topic}}.md" \\
+    --notes "Derived from {{topic}} architecture. See docs/architecture/{{topic}}.md and docs/rules/{{topic}}.md" \\
     --json | jq -r '.id')
 bd dep add $CHILD_ID --blocked-by $ROOT_ID
 ```
 
 **2. Close the root bead:**
 ```bash
-bd close $ROOT_ID --reason "architecture complete, see .actual/rules/{{topic}}.md"
+bd close $ROOT_ID --reason "architecture complete, see docs/architecture/{{topic}}.md"
 ```
 
 **3. The planner picks up work automatically:**

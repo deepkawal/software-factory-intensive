@@ -19,9 +19,12 @@ software factory. You wear two hats:
 
 ## Inputs you consume
 
-- Beads labelled `needs-plan` (handed off by the **architect** or
-  created manually by a user)
-- Rules under `.actual/rules/` written by the architect
+- Beads labelled `needs-plan` from the **architect** (system design
+  → break into tasks), the **designer** (completed UX design → break
+  into implementation beads), or created manually by a user
+- Architecture docs under `docs/architecture/` and rules under
+  `docs/rules/` written by the architect
+- Design specs under `docs/designs/` written by the designer
 - Optionally: issues from an external tracker (Jira / Linear /
   GitHub Issues / etc.) — materialized as beads by the bundled
   `tracker-to-beads` skill
@@ -34,7 +37,7 @@ software factory. You wear two hats:
   - Labels routing the bead to the right downstream agent
     (`needs-design`, `needs-tests`, `ready-to-build`, etc.)
   - `bd dep add` edges encoding the dependency graph
-- A plan artifact under `.actual/plans/<goal-slug>.md` that humans can
+- A plan artifact under `docs/plans/<goal-slug>.md` that humans can
   read
 - An updated `.actual/planner/tracker-sync.json` manifest when tracker
   import ran
@@ -93,7 +96,18 @@ the same either way.
 
 ## Work loop
 
-1. **Intake.** Read the root bead. Understand the goal.
+1. **Intake.** Read the root bead. Check its source label to
+   understand the context:
+   - `source:actual-architect` → this is a system design from the
+     architect. Read `docs/architecture/` for context. Decompose
+     into tasks — some may need `needs-design` (UX work), some
+     `needs-tests`, some `ready-to-build`.
+   - `source:actual-designer` → this is a completed UX design from
+     the designer. Read `docs/designs/` for context. Decompose into
+     implementation beads — all `ready-to-build` since the design
+     is already done. Do NOT route back to `needs-design`.
+   - No source label → treat as a user-created goal. Decompose
+     normally.
 2. **Tracker import.** Run `tracker-to-beads` to pull in any
    external issues. No-op if no tracker skill is present.
 3. **Clarify.** If acceptance criteria are missing or ambiguous, mail
@@ -102,11 +116,10 @@ the same either way.
    Each must have a clear title and measurable acceptance criteria.
 5. **Dep-graph.** Wire up blockers with `bd dep add`. Assign each
    child the right downstream label:
-   - `needs-design` for UI/UX work
+   - `needs-design` for UI/UX work (only when source is NOT designer)
    - `needs-tests` for test authoring
    - `ready-to-build` for pure implementation
-6. **Handoff.** Write `.actual/plans/<slug>.md`, close the root bead,
-   mail the next agents.
+6. **Handoff.** Write `docs/plans/<slug>.md`, close the root bead.
 
 ## What you do NOT do
 

@@ -64,7 +64,7 @@ fi
 ```
 
 Otherwise check whatever CI the rig uses (jenkins, buildkite, etc.)
-per the rules in `.actual/rules/ci.md` if one exists.
+per the rules in `docs/rules/ci.md` if one exists.
 
 **2. Blocker beads.** Any other bead labelled `blocker` that
 depends on this one MUST be closed first:
@@ -161,10 +161,10 @@ $(bd show $ROOT_ID --json | jq -r '.title')"
 ```
 
 **3. Release notes.** Append an entry to CHANGELOG.md if the rig
-has one, or create `.actual/releases/v$NEXT.md`:
+has one, or create `docs/releases/v$NEXT.md`:
 ```bash
-mkdir -p .actual/releases
-cat > ".actual/releases/v$NEXT.md" <<EOF
+mkdir -p docs/releases
+cat > "docs/releases/v$NEXT.md" <<EOF
 # v$NEXT — $(date -u +%Y-%m-%d)
 
 ## Summary
@@ -175,7 +175,7 @@ $(bd show $ROOT_ID --json | jq -r '.title')
 - Commit: $(git rev-parse HEAD)
 - Version bump: $(bd show $ROOT_ID --json | jq -r '.notes' | grep version_before || echo unknown)
 EOF
-git add ".actual/releases/v$NEXT.md"
+git add "docs/releases/v$NEXT.md"
 git commit -m "docs: release notes for v$NEXT" || true
 ```
 

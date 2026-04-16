@@ -27,7 +27,7 @@ script = "commands/status.sh"
 
 [[commands]]
 name = "rules"
-description = "List architectural rules discovered under .actual/rules/"
+description = "List architectural rules discovered under docs/rules/"
 script = "commands/rules.sh"
 
 [formulas]

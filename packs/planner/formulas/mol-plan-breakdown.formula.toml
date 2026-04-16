@@ -201,8 +201,8 @@ bd dep graph $ROOT_ID --format=ascii
 
 **3. Record the edges in the plan artifact:**
 ```bash
-mkdir -p .actual/plans
-cat > .actual/plans/{{slug}}.md <<EOF
+mkdir -p docs/plans
+cat > docs/plans/{{slug}}.md <<EOF
 # Plan: {{slug}}
 
 Root: $ROOT_ID
@@ -230,17 +230,17 @@ needs = ["dep-graph"]
 description = """
 **1. Commit the plan artifact if the worktree was clean:**
 ```bash
-if [ -z "$(git status --porcelain .actual/plans)" ]; then
+if [ -z "$(git status --porcelain docs/plans)" ]; then
     : # already clean — nothing to do
 else
-    git add .actual/plans/{{slug}}.md .actual/planner/tracker-sync.json 2>/dev/null || true
+    git add docs/plans/{{slug}}.md .actual/planner/tracker-sync.json 2>/dev/null || true
     git commit -m "actual-planner: plan for {{slug}} (refs $ROOT_ID)"
 fi
 ```
 
 **2. Close the root bead:**
 ```bash
-bd close $ROOT_ID --reason "plan complete: .actual/plans/{{slug}}.md"
+bd close $ROOT_ID --reason "plan complete: docs/plans/{{slug}}.md"
 ```
 
 **3. Downstream agents pick up work automatically via labels:**

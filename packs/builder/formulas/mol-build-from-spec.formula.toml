@@ -41,14 +41,14 @@ bd show $ROOT_ID
 **2. Pull the plan artifact** if the bead carries a `plan:*` label:
 ```bash
 PLAN_SLUG=$(bd show $ROOT_ID --json | jq -r '.labels[] | select(startswith("plan:")) | sub("plan:";"")')
-if [ -n "$PLAN_SLUG" ] && [ -f ".actual/plans/$PLAN_SLUG.md" ]; then
-    cat ".actual/plans/$PLAN_SLUG.md"
+if [ -n "$PLAN_SLUG" ] && [ -f "docs/plans/$PLAN_SLUG.md" ]; then
+    cat "docs/plans/$PLAN_SLUG.md"
 fi
 ```
 
 **3. Read all rules that apply:**
 ```bash
-ls .actual/rules/*.md 2>/dev/null | xargs -I {} sh -c 'echo "--- {} ---"; cat {}'
+ls docs/rules/*.md 2>/dev/null | xargs -I {} sh -c 'echo "--- {} ---"; cat {}'
 ```
 
 **4. Extract acceptance criteria** from the bead notes. Write them

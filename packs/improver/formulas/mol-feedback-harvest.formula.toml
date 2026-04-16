@@ -7,7 +7,7 @@ upstream beads. Runs on a cooldown schedule (daily by default).
 | Variable | Source | Description |
 |----------|--------|-------------|
 | since | caller | Time window for signal collection (default: "24h") |
-| feedback_dir | caller | Where to write the daily summary (default: .actual/feedback) |
+| feedback_dir | caller | Where to write the daily summary (default: docs/feedback) |
 """
 formula = "mol-feedback-harvest"
 version = 1
@@ -19,7 +19,7 @@ default = "24h"
 
 [vars.feedback_dir]
 description = "Directory for daily feedback summaries"
-default = ".actual/feedback"
+default = "docs/feedback"
 
 [[steps]]
 id = "collect"

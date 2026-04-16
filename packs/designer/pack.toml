@@ -23,7 +23,7 @@ script = "commands/status.sh"
 
 [[commands]]
 name = "designs"
-description = "List design artifacts under .actual/designs/"
+description = "List design artifacts under docs/designs/"
 script = "commands/designs.sh"
 
 [formulas]

@@ -100,6 +100,11 @@ This skill runs inside coding agents (Claude Code, Codex, Cursor) where the Bash
 - `--no-tui` disables TUI rendering that requires a terminal
 - `--force` skips interactive confirmation prompts that cannot receive input
 
+**Note:** These flags apply ONLY to `actual adr-bot`. Other commands
+like `actual status` do NOT support `--force` or `--no-tui` — call
+them without these flags (e.g., just `actual status` or
+`actual status --verbose`).
+
 Use the agent's built-in question/confirmation tools (e.g., `AskUserQuestion`) for user confirmation instead of relying on CLI prompts.
 
 ## Sync Quick Reference

@@ -6,8 +6,9 @@ handed off to the builder.
 
 1. Caller slings with a root bead labelled `needs-design`.
 2. Designer produces a wireframe + a11y audit in
-   `.actual/designs/<slug>.md`.
-3. Bead gets relabelled `ready-to-build` and mailed to the builder.
+   `docs/designs/<slug>.md`.
+3. Bead gets relabelled `needs-plan` with `source:actual-designer` and
+   the planner decomposes it into implementation tasks.
 
 ## Variables
 
@@ -20,7 +21,7 @@ version = 1
 
 [vars]
 [vars.slug]
-description = "Short slug for the design artifact under .actual/designs/"
+description = "Short slug for the design artifact under docs/designs/"
 required = true
 
 [[steps]]
@@ -32,7 +33,7 @@ description = """
 ROOT_ID=$(bd mol current --json | jq -r '.molecule_id')
 bd show $ROOT_ID
 PLAN_SLUG=$(bd show $ROOT_ID --json | jq -r '.labels[] | select(startswith("plan:")) | sub("plan:";"")')
-[ -n "$PLAN_SLUG" ] && [ -f ".actual/plans/$PLAN_SLUG.md" ] && cat ".actual/plans/$PLAN_SLUG.md"
+[ -n "$PLAN_SLUG" ] && [ -f "docs/plans/$PLAN_SLUG.md" ] && cat "docs/plans/$PLAN_SLUG.md"
 ```
 
 **2. Survey existing components** — grep for existing storybook
@@ -47,7 +48,7 @@ id = "wireframe"
 title = "Write the wireframe and interaction spec"
 needs = ["intake"]
 description = """
-Draft `.actual/designs/{{slug}}.md` with:
+Draft `docs/designs/{{slug}}.md` with:
 
 ```markdown
 # Design: {{slug}}
@@ -113,19 +114,22 @@ Never ship a design without this section.
 
 [[steps]]
 id = "handoff"
-title = "Relabel bead and mail the builder"
+title = "Relabel bead and hand off to planner"
 needs = ["a11y-check"]
 description = """
 ```bash
 bd update $ROOT_ID \\
-    --add-label ready-to-build \\
+    --add-label needs-plan \\
+    --add-label source:actual-designer \\
     --remove-label needs-design \\
     --notes "<existing notes>
-design_artifact: .actual/designs/{{slug}}.md"
+design_artifact: docs/designs/{{slug}}.md"
 
-# The ready-to-build label triggers builder-intake order automatically.
+# The needs-plan label triggers planner-intake order automatically.
+# The planner will decompose the completed UX design into
+# implementation beads labelled ready-to-build.
 # Do NOT gc mail send — it creates duplicate sessions.
 ```
 
-**Exit criteria:** Bead relabelled; builder picks up work via intake order.
+**Exit criteria:** Bead relabelled `needs-plan`; planner picks up work via intake order.
 """
