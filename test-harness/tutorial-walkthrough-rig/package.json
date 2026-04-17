@@ -1,0 +1,12 @@
+{
+  "name": "sfi-walkthrough-calculator",
+  "version": "0.1.0",
+  "description": "Minimal rig for tutorial-walkthrough.sh L2 live-agent test",
+  "main": "src/calculator.js",
+  "scripts": {
+    "test": "jest"
+  },
+  "devDependencies": {
+    "jest": "^29.0.0"
+  }
+}

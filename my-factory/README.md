@@ -25,6 +25,16 @@ See [`../installation.md`](../installation.md) for the full dependency list. Min
 
 ## Quickstart
 
+### Pre-class machine check (optional but recommended)
+
+Before you start the curriculum, run the end-to-end walkthrough harness to confirm your machine is set up correctly:
+
+```bash
+bash test-harness/tutorial-walkthrough.sh
+```
+
+This exercises a real Planner + Architect handoff against a bundled hello-world rig using your authenticated `claude` CLI. It takes ~8 minutes and asserts that both agents produced their expected artifacts. For a faster non-agent check (setup only, ~1 minute), use `TUTORIAL_WALKTHROUGH_DRY_RUN=1 bash test-harness/tutorial-walkthrough.sh`. If either fails, fix your environment before moving on.
+
 ### 1. Verify Gas City
 
 ```bash

@@ -27,84 +27,21 @@
 set -uo pipefail   # not -e; we handle errors per-lesson
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-scratch_root="/tmp/sfi-tutorial-check"
-DIVERGENCES_LOG="$scratch_root/divergences.log"
-declare -a FAILED_LESSONS=()
-declare -a REGISTERED_CITY_PATHS=()
+TUTORIAL_SCRATCH_ROOT="/tmp/sfi-tutorial-check"
+# Alias kept so local references in lesson bodies still work.
+scratch_root="$TUTORIAL_SCRATCH_ROOT"
 
-# Unique suffix so parallel runs (and cohort users) don't collide.
-run_id="$(date +%s)-$$"
+# Shared helpers (run_id, cleanup, divergence/step_pass/step_fail,
+# assert_* helpers). Caller must set $repo_root and $TUTORIAL_SCRATCH_ROOT
+# before sourcing.
+# shellcheck source=lib/tutorial-common.sh
+source "$repo_root/test-harness/lib/tutorial-common.sh"
 
-cleanup() {
-  local rc=$?
-  # Stop any still-running standalone controllers so unregister can tear down
-  # state cleanly. Then unregister by absolute path (gc unregister takes a
-  # path, not a --name — I learned this the hard way).
-  for city_path in "${REGISTERED_CITY_PATHS[@]-}"; do
-    [ -n "$city_path" ] || continue
-    (cd "$city_path" 2>/dev/null && gc stop >/dev/null 2>&1) || true
-    gc unregister "$city_path" >/dev/null 2>&1 || true
-  done
-  echo
-  if [ -s "$DIVERGENCES_LOG" ]; then
-    echo "Divergences logged ($(wc -l <"$DIVERGENCES_LOG" | tr -d ' ') entries): $DIVERGENCES_LOG"
-  fi
-  exit "$rc"
-}
 trap cleanup EXIT INT TERM
 
 rm -rf "$scratch_root"
 mkdir -p "$scratch_root"
 : > "$DIVERGENCES_LOG"
-
-divergence() {
-  local lesson="$1" detail="$2"
-  echo "[$lesson] $detail" >> "$DIVERGENCES_LOG"
-  echo "    ⚠ $detail"
-}
-step_pass() { echo "    ✓ $1"; }
-step_fail() { echo "    ✗ $1" >&2; lesson_rc=1; }
-
-# --- Shared assertion helpers -------------------------------------------
-
-assert_gc_version_ge_015() {
-  local v
-  v="$(gc version 2>&1 | tail -1 | tr -d ' \r\n')"
-  case "$v" in
-    0.1[5-9]*|0.[2-9]*|[1-9].*|[1-9][0-9]*.*) step_pass "gc version $v (≥ 0.15.0)" ;;
-    *) step_fail "gc version $v — expected ≥ 0.15.0" ;;
-  esac
-}
-
-assert_gc_doctor_healthy() {
-  local city_dir="$1" doctor_out
-  doctor_out="$(cd "$city_dir" && gc doctor 2>&1)"
-  # Expected documented warnings (workshop:#781, #600).
-  if echo "$doctor_out" | grep -q 'v2-default-rig-import-format'; then
-    step_pass "gc doctor emits documented v2-default-rig-import-format warning"
-  else
-    step_fail "gc doctor missing documented v2-default-rig-import-format warning"
-  fi
-  if echo "$doctor_out" | grep -q 'v2-workspace-name'; then
-    step_pass "gc doctor emits documented v2-workspace-name warning"
-  else
-    step_fail "gc doctor missing documented v2-workspace-name warning"
-  fi
-  echo "$doctor_out"
-}
-
-assert_agent_doctor_checks_present() {
-  local doctor_out="$1"
-  shift
-  local agent
-  for agent in "$@"; do
-    if echo "$doctor_out" | grep -q ":check-${agent}"; then
-      step_pass "$agent doctor check present"
-    else
-      step_fail "$agent doctor check missing from gc doctor output"
-    fi
-  done
-}
 
 # --- Lesson 1: my-factory/README.md main quickstart ---------------------
 

@@ -145,7 +145,7 @@ rg -n 'gc service restart' -g '*.md' -g '!plans/**' -g '!WORKSHOP_AUTHOR_NOTES.m
 Plus the full harness:
 
 ```bash
-bash scripts/migration-check.sh
-bash scripts/behavioral-smoke.sh
-bash scripts/tutorial-check.sh
+bash test-harness/migration-check.sh
+bash test-harness/behavioral-smoke.sh
+bash test-harness/tutorial-check.sh
 ```
