@@ -45,14 +45,14 @@ gc status  # Should show 4 agents now: planner, architect, designer, builder
 1. Sling the bead to the designer: `gc sling <rig>/designer <bead-id>`
 2. Watch: `gc session peek <rig>/designer`
 3. Verify: `design/<slug>-spec.md` has props, state, interactions, edge cases, and a Location path
-4. If the spec doesn't match your project's patterns, update `packs/designer/prompts/designer.md.tmpl`
+4. If the spec doesn't match your project's patterns, update `packs/designer/agents/designer/prompt.template.md`
 
 ### Builder (Coder) Run
 1. Sling to the builder: `gc sling <rig>/builder <bead-id>`
 2. Watch: `gc session peek <rig>/builder`
 3. The builder should implement code at the Location from the spec
 4. Run tests: `npm test` (or equivalent)
-5. If tests fail, update `packs/builder/prompts/builder.md.tmpl` with more specific instructions — don't re-prompt
+5. If tests fail, update `packs/builder/agents/builder/prompt.template.md` with more specific instructions — don't re-prompt
 6. Goal: at least 2 test cases from the work package passing
 
 ## Suggestions Based on Project Type
@@ -64,7 +64,7 @@ gc status  # Should show 4 agents now: planner, architect, designer, builder
 
 ## Config Discipline Check
 
-The key question: when the builder produced wrong output, did you fix it by updating `packs/builder/prompts/builder.md.tmpl` or by typing instructions into the chat? The former is correct. Track your runs-to-passing count — getting to passing in ≤3 slings is the target.
+The key question: when the builder produced wrong output, did you fix it by updating `packs/builder/agents/builder/prompt.template.md` or by typing instructions into the chat? The former is correct. Track your runs-to-passing count — getting to passing in ≤3 slings is the target.
 
 ## Exit Criteria
 

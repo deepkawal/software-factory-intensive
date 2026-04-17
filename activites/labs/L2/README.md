@@ -1,95 +1,73 @@
-# Software Factory Intensive - Workshop - L2
+# Software Factory Intensive — Lab — L2
 
 https://github.com/actual-software/software-factory-intensive
 
+The L2 checkpoint is a self-contained v2 factory snapshot with just the
+architect and planner packs (the two agents L2 teaches). It lives at
+`activites/labs/L2/gascity/step_0/packs/`. Use it to:
+
+- Reset to a known-good state if you've broken your main `my-factory/` factory.
+- Run the L2 lab in isolation without touching your main factory's rigs/sessions.
+
+The checkpoint has its own `pack.toml.template` + `city.toml.template` — the
+runtime copies (`pack.toml`, `city.toml`) are gitignored so `gc register --name`
+and `gc rig add` can mutate them without dirtying the checkpoint snapshot.
+
 ## Setup
 
-#### Clone Software Factory Intensive
+### 1. Clone the repo (if you haven't already)
 
 ```bash
-mkdir -p ~/Projects/actual-software/
-pushd -p ~/Projects/actual-software
+mkdir -p ~/Projects/actual-software
+pushd ~/Projects/actual-software
 git clone git@github.com:actual-software/software-factory-intensive.git
 ```
 
-#### Setup Factory - Workshop - L2
-
-##### Init Factory and Project
+### 2. Prepare a test rig
 
 ```bash
-mkdir -p ~/Projects/factory/workshop_l2/l2-project
-pushd ~/Projects/factory/workshop_l2/l2-project
+mkdir -p ~/Projects/factory/lab_l2/l2-project
+pushd ~/Projects/factory/lab_l2/l2-project
 git init
-
-gc init ~/Projects/factory/workshop_l2/l2-gc-factory
+touch README.md && git add -A && git commit -m "initial"
 ```
 
-Select `3. custom`
+### 3. Copy the L2 checkpoint's templates to runtime files
 
 ```bash
-Welcome to Gas City SDK!
-
-Choose a config template:
-  1. tutorial  — default coding agent (default)
-  2. gastown   — multi-agent orchestration pack
-  3. custom    — empty workspace, configure it yourself
-Template [1]: 3
+cd ~/Projects/actual-software/software-factory-intensive/activites/labs/L2/gascity/step_0/packs
+cp pack.toml.template pack.toml
+cp city.toml.template city.toml
 ```
 
-##### Configure Factory
+### 4. Register the L2 checkpoint factory and add the rig
 
 ```bash
-pushd ~/Projects/factory/workshop_l2/l2-gc-factory
-cp ~/Projects/actual-software/software-factory-intensive/activites/workshops/L2/gascity/step_0/packs/city.toml ~/Projects/factory/workshop_l2/l2-gc-factory
-rsync -av ~/Projects/actual-software/software-factory-intensive/activites/workshops/L2/gascity/step_0/packs/ ~/Projects/factory/workshop_l2/l2-gc-factory/packs/actual/
-
-gc service restart
-gc status
-gc doctor
+gc register --name l2-step-0 .
+gc rig add ~/Projects/factory/lab_l2/l2-project
+bd config set types.custom "convoy"
+(cd ~/Projects/factory/lab_l2/l2-project && bd config set types.custom "convoy")
 ```
 
-##### Add "Rig" ie Project Source Repo to Factory
+### 5. Start the factory
 
 ```bash
-pushd ~/Projects/factory/workshop_l2/l2-gc-factory
-gc rig add ~/Projects/factory/workshop_l2/l2-project
-```
-
-##### Register City
-
-```bash
-gc register ~/Projects/factory/workshop_l2/l2-gc-factory
-```
-
-##### Patch "convoy" in Factory and Project
-
-```bash
-pushd ~/Projects/factory/workshop_l2/l2-project && bd config set types.custom "convoy"
-pushd ~/Projects/factory/workshop_l2/l2-gc-factory && bd config set types.custom "convoy"
-```
-
-##### Restart Factory
-
-```bash
-pushd ~/Projects/factory/workshop_l2/l2-gc-factory
-gc stop
-gc start
 gc restart
+gc status
+gc dashboard serve     # http://localhost:8080
 ```
 
-##### Startup Gascity Dashboard
+Expected `gc doctor` output includes the two documented deprecation warnings
+(`v2-default-rig-import-format`, `v2-workspace-name`) — these are tracked
+upstream and can be ignored. See `my-factory/README.md` for details.
+
+### 6. Kick off a task
 
 ```bash
-pushd ~/Projects/factory/workshop_l2/l2-gc-factory
-gc dashboard serve
+cd ~/Projects/factory/lab_l2/l2-project
+bd create --title "Plan user profile feature" --label needs-architecture
+gc poke
 ```
 
-Open Gascity Dashboard in Browser
-
-* http://localhost:8080
-
-##### Generate Task to Verify Factory
-
-```bash
-gc sling l2-gc-factory "Create a script that prints hello world"
-```
+Architect wakes, produces a plan, hands off via `gc all wake-downstream` to the
+planner. Watch the dashboard.

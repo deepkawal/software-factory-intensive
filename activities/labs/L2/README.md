@@ -42,7 +42,7 @@ gc doctor         # both check-planner and check-architect should pass
 mkdir -p packs
 cp -r ../../../packs/planner packs/planner
 cp -r ../../../packs/architect packs/architect
-# edit packs/planner/prompts/planner.md.tmpl and packs/architect/prompts/architect.md.tmpl
+# edit packs/planner/agents/planner/prompt.template.md and packs/architect/agents/architect/prompt.template.md
 ```
 
 Then include **your copies** in `../../../my-factory/city.toml`:

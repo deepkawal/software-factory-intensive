@@ -51,26 +51,26 @@ gc sling <rig>/architect --on mol-architect-review \
 | File | Purpose |
 |------|---------|
 | `pack.toml` | Agent + formulas + orders + doctor + commands declaration |
-| `prompts/architect.md.tmpl` | The Principal-Engineer persona prompt |
-| `formulas/mol-architect-review.formula.toml` | 5-step review workflow |
-| `formulas/orders/architect-guardrail-check/order.toml` | Condition-gated auto-dispatch |
-| `doctor/check-architect.sh` | Verifies `bd`, `gc`, `git`, `jq`, and (optional) `actual` |
-| `commands/status.sh` | Shows architect work queue |
-| `commands/rules.sh` | Lists rules under `.actual/rules/` |
-| `scripts/sync-actual-skill.sh` | Author tool: re-vendor upstream actual-skill |
-| `overlays/default/.claude/skills/actual/` | Vendored upstream actual-skill |
+| `agents/architect/prompt.template.md` | The Principal-Engineer persona prompt |
+| `formulas/mol-architect-review.toml` | 5-step review workflow |
+| `orders/architect-guardrail-check.toml` | Condition-gated auto-dispatch |
+| `doctor/check-architect/run.sh` | Verifies `bd`, `gc`, `git`, `jq`, and (optional) `actual` |
+| `commands/status/run.sh` | Shows architect work queue |
+| `commands/rules/run.sh` | Lists rules under `.actual/rules/` |
+| `assets/sync-actual-skill.sh` | Author tool: re-vendor upstream actual-skill |
+| `agents/architect/overlay/.claude/skills/actual/` | Vendored upstream actual-skill |
 
 ## Updating the vendored actual-skill
 
-The `overlays/default/.claude/skills/actual/` tree is a verbatim copy
+The `agents/architect/overlay/.claude/skills/actual/` tree is a verbatim copy
 of `skills/actual/` from
 [actual-software/actual-skill](https://github.com/actual-software/actual-skill).
 When upstream publishes a new version:
 
 ```bash
-./scripts/sync-actual-skill.sh            # pulls main
-./scripts/sync-actual-skill.sh v1.2.3     # pins to a tag
-git diff -- overlays/default/.claude/skills/actual
+./assets/sync-actual-skill.sh            # pulls main
+./assets/sync-actual-skill.sh v1.2.3     # pins to a tag
+git diff -- agents/architect/overlay/.claude/skills/actual
 ```
 
 Review and commit the diff.

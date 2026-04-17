@@ -135,7 +135,7 @@ packs/workshop/
 To add a new integration:
 
 1. Add env vars to `env.example`
-2. Add a doctor check in `doctor/check-<name>.sh`
-3. If it has bd support, add an order in `orders/sync-<name>/order.toml`
-4. If it has an MCP server, add it to `overlays/default/.claude/settings.json`
-5. Update `commands/setup.sh` and `commands/status.sh`
+2. Add a doctor check in `doctor/check-<name>/run.sh` + `doctor/check-<name>/doctor.toml`
+3. If it has bd support, add an order in `orders/sync-<name>.toml`
+4. If it has an MCP server, add it to `overlay/.claude/settings.json`
+5. Update `commands/setup/run.sh` and `commands/status/run.sh`

@@ -40,12 +40,12 @@ As of 2026-04-15 the counter reached 5/5 — triggered.
 
 Two files:
 
-1. `packs/planner/prompts/planner.md` — Quality Gate section.
+1. `packs/planner/agents/planner/prompt.template.md` — Quality Gate section.
 2. `docs/PROJECT_MANIFEST.md` — Success Criteria section.
 
 ## Action
 
-**1. Tighten the Planner Quality Gate.** Append to `packs/planner/prompts/planner.md`:
+**1. Tighten the Planner Quality Gate.** Append to `packs/planner/agents/planner/prompt.template.md`:
 
 ```markdown
 ## Quality Gate: Measurable Acceptance Criteria

@@ -133,7 +133,7 @@ Before you can design your factory, you need to see the shape each pack provides
 
 Open this file and scan the six headings. It's 65 lines — skim, don't memorize.
 
-[`packs/planner/prompts/planner.md.tmpl`](../../../packs/planner/prompts/planner.md.tmpl)
+[`packs/planner/agents/planner/prompt.template.md`](../../../packs/planner/agents/planner/prompt.template.md)
 
 ```markdown
 # Planner Agent
@@ -165,22 +165,23 @@ Open this file and scan the six headings. It's 65 lines — skim, don't memorize
 
 ```toml
 [pack]
-name = "planner"
-schema = 1
-description = "Planner agent — breaks feature requests into structured work packages"
+name = "actual-planner"
+schema = 2
+```
 
-[[agent]]
-name = "planner"
+Plus `packs/planner/agents/planner/agent.toml`:
+
+```toml
 scope = "rig"
-provider = "claude"        # Other providers (OpenAI, Gemini, local) are supported
-prompt_template = "prompts/planner.md"
-overlay_dir = "overlays/default"
-nudge = "Check your hook for new feature requests to plan."
-idle_timeout = "1h"
+wake_mode = "fresh"
+work_dir = ".gc/agents/{{.Rig}}/planner"
+nudge = "Run 'gc prime', then check bd ready --label=needs-plan for work."
+idle_timeout = "2h"
+min_active_sessions = 0
 max_active_sessions = 1
 ```
 
-**What's happening here:** The `[[agent]]` block is what Gas City merges into your city's effective configuration when you run `gc rig add --include`. The `provider = "claude"` line is the runner selection — other providers (OpenAI, Gemini, local Ollama models) are supported, but this curriculum defaults to Claude.
+**What's happening here:** In Pack v2, pack identity (`pack.toml`) is separate from agent config (`agents/<name>/agent.toml`). The agent is discovered by convention — Gas City finds every subdirectory under `agents/` and treats it as an agent. The provider is set at the city (workspace) level via `provider = "claude"` in `my-factory/city.toml` — other providers (OpenAI, Gemini, local Ollama models) are supported, but this curriculum defaults to Claude.
 
 ### Step 3: Repeat for Each of the Remaining Five Packs
 
@@ -188,12 +189,12 @@ Open each prompt in the same way. You're looking for the **Inputs** and **Output
 
 | Agent | Prompt file | Output Location |
 |-------|-------------|-----------------|
-| Planner | [`packs/planner/prompts/planner.md.tmpl`](../../../packs/planner/prompts/planner.md.tmpl) | `work-packages/<slug>.md` |
-| Architect | [`packs/architect/prompts/architect.md.tmpl`](../../../packs/architect/prompts/architect.md.tmpl) | `docs/adr/NNNN-<slug>.md` |
-| Designer | [`packs/designer/prompts/designer.md.tmpl`](../../../packs/designer/prompts/designer.md.tmpl) | `design/<slug>-spec.md` |
-| Coder | [`packs/builder/prompts/builder.md.tmpl`](../../../packs/builder/prompts/builder.md.tmpl) | `src/**` |
-| Reviewer | [`packs/reviewer/prompts/reviewer.md.tmpl`](../../../packs/reviewer/prompts/reviewer.md.tmpl) | `review-reports/<slug>-review.md` |
-| Deployer | [`packs/release-gate/prompts/release-gate.md.tmpl`](../../../packs/release-gate/prompts/release-gate.md.tmpl) | `release-gates/<slug>-gate.md` |
+| Planner | [`packs/planner/agents/planner/prompt.template.md`](../../../packs/planner/agents/planner/prompt.template.md) | `work-packages/<slug>.md` |
+| Architect | [`packs/architect/agents/architect/prompt.template.md`](../../../packs/architect/agents/architect/prompt.template.md) | `docs/adr/NNNN-<slug>.md` |
+| Designer | [`packs/designer/agents/designer/prompt.template.md`](../../../packs/designer/agents/designer/prompt.template.md) | `design/<slug>-spec.md` |
+| Coder | [`packs/builder/agents/builder/prompt.template.md`](../../../packs/builder/agents/builder/prompt.template.md) | `src/**` |
+| Reviewer | [`packs/reviewer/agents/reviewer/prompt.template.md`](../../../packs/reviewer/agents/reviewer/prompt.template.md) | `review-reports/<slug>-review.md` |
+| Deployer | [`packs/release-gate/agents/release-gate/prompt.template.md`](../../../packs/release-gate/agents/release-gate/prompt.template.md) | `release-gates/<slug>-gate.md` |
 
 **What's happening here:** Notice the shape is identical across all six packs — same six headings, same "read manifest first" step in Process, same Config Discipline paragraph. This uniformity is the point: once you've read one, you can read the rest in 30 seconds each, and you can edit any of them with the same mental model.
 
@@ -482,7 +483,7 @@ high-severity findings.
 
 ## Recommendation
 APPROVE — minor: add console.warn on fetch error (low severity).
-If you want this enforced, add to packs/builder/prompts/builder.md.tmpl:
+If you want this enforced, add to packs/builder/agents/builder/prompt.template.md:
 "All network errors must be logged via the project logger."
 ```
 
@@ -772,7 +773,7 @@ Use this template per handoff:
 
 ### Step 4: Commit Both Contracts
 
-Append them to `docs/factory-wiring.md` so L2 can read them. In L2, Part 1 Step 3, you'll turn these contracts into concrete edits to `packs/planner/prompts/planner.md.tmpl` (Output Format) and `packs/architect/prompts/architect.md.tmpl` (Inputs + Quality Gate).
+Append them to `docs/factory-wiring.md` so L2 can read them. In L2, Part 1 Step 3, you'll turn these contracts into concrete edits to `packs/planner/agents/planner/prompt.template.md` (Output Format) and `packs/architect/agents/architect/prompt.template.md` (Inputs + Quality Gate).
 
 ### Inline Insight: Config over ad-hoc chat corrections
 
@@ -848,12 +849,12 @@ Each row of your factory design maps directly to a file path under `packs/` and 
 
 | W2 design deliverable | Becomes concrete edit in | Installed in |
 |-----------------------|--------------------------|--------------|
-| "Planner produces `<your work package format>`" | `packs/planner/prompts/planner.md.tmpl` — Output Format section | L2 |
-| "Architect produces `<your ADR format>`" | `packs/architect/prompts/architect.md.tmpl` — Output Format section | L2 |
-| "Designer produces `<your spec format>`" | `packs/designer/prompts/designer.md.tmpl` — Output Format section | L3 |
-| "Coder writes to `<your src layout>`" | `packs/builder/prompts/builder.md.tmpl` — Output + Rules sections | L3 |
-| "Reviewer checks `<your review standards>`" | `packs/reviewer/prompts/reviewer.md.tmpl` + `docs/PROJECT_MANIFEST.md` Review Standards | L4 |
-| "Deployer gates on `<your release criteria>`" | `packs/release-gate/prompts/release-gate.md.tmpl` + `docs/PROJECT_MANIFEST.md` Release Criteria | L4 |
+| "Planner produces `<your work package format>`" | `packs/planner/agents/planner/prompt.template.md` — Output Format section | L2 |
+| "Architect produces `<your ADR format>`" | `packs/architect/agents/architect/prompt.template.md` — Output Format section | L2 |
+| "Designer produces `<your spec format>`" | `packs/designer/agents/designer/prompt.template.md` — Output Format section | L3 |
+| "Coder writes to `<your src layout>`" | `packs/builder/agents/builder/prompt.template.md` — Output + Rules sections | L3 |
+| "Reviewer checks `<your review standards>`" | `packs/reviewer/agents/reviewer/prompt.template.md` + `docs/PROJECT_MANIFEST.md` Review Standards | L4 |
+| "Deployer gates on `<your release criteria>`" | `packs/release-gate/agents/release-gate/prompt.template.md` + `docs/PROJECT_MANIFEST.md` Release Criteria | L4 |
 | Handoff contract Planner → Architect | `## Inputs` + `## Output Format` must match across both prompts | L2 |
 | Handoff contract Architect → Designer | `## Inputs` of designer.md must reference the ADR path format Architect writes | L3 |
 | Handoff contract Designer → Coder | `## Inputs` of coder.md must name the spec format Designer writes | L3 |
@@ -968,7 +969,7 @@ W2 is design-only — no agent runs. These are the file-browsing and scaffolding
 ```bash
 # Browse the shipped packs
 ls /path/to/software-factory-intensive/packs/
-cat /path/to/software-factory-intensive/packs/planner/prompts/planner.md.tmpl
+cat /path/to/software-factory-intensive/packs/planner/agents/planner/prompt.template.md
 cat /path/to/software-factory-intensive/packs/architect/pack.toml
 
 # Read the reference project
@@ -1022,7 +1023,7 @@ After W2, your design doc should answer every row in this table. Fill it in now 
 In **L2**, you'll:
 
 - Install the Planner and Architect packs (`gc rig add --include`)
-- Customize `packs/planner/prompts/planner.md.tmpl` and `packs/architect/prompts/architect.md.tmpl` with the handoff contracts you wrote here
+- Customize `packs/planner/agents/planner/prompt.template.md` and `packs/architect/agents/architect/prompt.template.md` with the handoff contracts you wrote here
 - Create your first bead, sling it to the Planner, review the work package against the Quality Gate
 - Optionally seed tailored ADRs via `actual adr-bot` before running the Architect
 - Sling a dependent bead to the Architect, produce ADR-0001, verify cross-references in both directions

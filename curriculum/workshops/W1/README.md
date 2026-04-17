@@ -521,7 +521,7 @@ You didn't run any `gc` commands this session — intentional. W1 is a design wo
 | Iteration Loop | The bead → sling → watch → review → iterate-config loop (L1 Step 4–7) |
 | Decision Checkpoint | Human-gate beads (`--requires-approval`) in W3; review policies in `docs/REVIEW_POLICY.md` |
 
-Skim [`packs/planner/prompts/planner.md`](../../../packs/planner/prompts/planner.md) to see the mature, per-agent form of a workflow card. Notice how it specifies Inputs, Output Format, Quality Gate, and Process — the same four axes you just wrote for yourself, but specialized to a single agent role.
+Skim [`packs/planner/agents/planner/prompt.template.md`](../../../packs/planner/agents/planner/prompt.template.md) to see the mature, per-agent form of a workflow card. Notice how it specifies Inputs, Output Format, Quality Gate, and Process — the same four axes you just wrote for yourself, but specialized to a single agent role.
 
 The progression you'll see across the curriculum is:
 

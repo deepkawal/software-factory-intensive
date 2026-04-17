@@ -61,7 +61,7 @@ gc sling your-project--builder <bead-id>
 
 * [ ] Design spec written with Props / Interactions / Edge Cases / Test Plan sections
 * [ ] Builder committed working code to a feature branch; `npm test` (or your test runner) passes
-* [ ] Zero manual code edits — every Builder correction was a prompt edit to `packs/builder/prompts/builder.md.tmpl` (shipped or your copy) followed by a re-sling
+* [ ] Zero manual code edits — every Builder correction was a prompt edit to `packs/builder/agents/builder/prompt.template.md` (shipped or your copy) followed by a re-sling
 * [ ] `../../../my-factory/city.toml` now includes Designer + Builder alongside Planner + Architect
 
 ## Skipped this session?

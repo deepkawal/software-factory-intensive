@@ -37,7 +37,7 @@ current `CLAUDE.md` / `AGENTS.md` for architectural context.
 
 To re-vendor:
 ```bash
-./scripts/sync-actual-skill.sh
+./assets/sync-actual-skill.sh
 ```
 
 ### 2. `tracker-to-beads` (pack-local)
@@ -81,7 +81,7 @@ tracker reasons.
 
 Manual import (bypassing the formula):
 ```bash
-./commands/tracker-sync.sh
+./commands/tracker-sync/run.sh
 ```
 
 ## How to run

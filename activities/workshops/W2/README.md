@@ -27,7 +27,7 @@ W2 is a design session — no pack is installed yet, so `../../../my-factory/cit
 ## Exit criteria
 
 * [ ] `factory-wiring.md` exists and covers all six agents.
-* [ ] Each row names a concrete artifact path (e.g. `work-packages/<slug>.md`) and a concrete prompt file (e.g. `../../../packs/builder/prompts/builder.md.tmpl`).
+* [ ] Each row names a concrete artifact path (e.g. `work-packages/<slug>.md`) and a concrete prompt file (e.g. `../../../packs/builder/agents/builder/prompt.template.md`).
 * [ ] Integration surface column lists the specific external services your project touches — not generic "any tracker".
 
 ## Skipped this session?

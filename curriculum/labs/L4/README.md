@@ -12,7 +12,7 @@
 
 ## Session workspace note
 
-Pack renames since this README was first written: **Coder → `builder`** and **Deployer → `release-gate`** (same roles, same outputs, new pack directories). Prompt template paths are `packs/builder/prompts/builder.md.tmpl` and `packs/release-gate/prompts/release-gate.md.tmpl`. Commands `gc sling builder` and `gc sling release-gate` replace their `coder` / `deployer` equivalents.
+Pack renames since this README was first written: **Coder → `builder`** and **Deployer → `release-gate`** (same roles, same outputs, new pack directories). Prompt template paths are `packs/builder/agents/builder/prompt.template.md` and `packs/release-gate/agents/release-gate/prompt.template.md`. Commands `gc sling builder` and `gc sling release-gate` replace their `coder` / `deployer` equivalents.
 
 **Where your work goes this session:**
 * Session deliverables → `../../../activities/labs/L4/` (the activity folder for L4)
@@ -51,7 +51,7 @@ If a prompt edit breaks the pack, swap `includes` back to the shipped `../packs/
                     └─────────────┬─────────────┘     Test Coverage, Recommendation
                                   │
                                   │   If REQUEST_CHANGES:
-                                  │   ◂────── edit packs/builder/prompts/builder.md.tmpl
+                                  │   ◂────── edit packs/builder/agents/builder/prompt.template.md
                                   │           re-sling coder, re-sling reviewer
                                   │
                                   │   If APPROVE:
@@ -115,7 +115,7 @@ Before installing anything, read the two pack files. You will edit them later in
 
 Open this file in your editor and read it end-to-end — it's under 70 lines:
 
-[`packs/reviewer/prompts/reviewer.md`](../../../packs/reviewer/prompts/reviewer.md)
+[`packs/reviewer/agents/reviewer/prompt.template.md`](../../../packs/reviewer/agents/reviewer/prompt.template.md)
 
 You should see the same six-section structure you saw in L2 (Planner) and L3 (Designer, Coder):
 
@@ -157,17 +157,19 @@ You should see the same six-section structure you saw in L2 (Planner) and L3 (De
 
 ```toml
 [pack]
-name = "reviewer"
-schema = 1
-description = "Reviewer agent — automated code review against specs and policy"
+name = "actual-reviewer"
+schema = 2
+```
 
-[[agent]]
-name = "reviewer"
+Plus `packs/reviewer/agents/reviewer/agent.toml`:
+
+```toml
 scope = "rig"
-prompt_template = "prompts/reviewer.md"
-overlay_dir = "overlays/default"
-nudge = "Check your hook for code ready for review."
-idle_timeout = "1h"
+wake_mode = "fresh"
+work_dir = ".gc/agents/{{.Rig}}/reviewer"
+nudge = "Run 'gc prime', then check bd ready --label=needs-review for work."
+idle_timeout = "2h"
+min_active_sessions = 0
 max_active_sessions = 1
 ```
 
@@ -175,7 +177,7 @@ max_active_sessions = 1
 
 ### Step 3: Open the Deployer Pack Prompt
 
-[`packs/release-gate/prompts/release-gate.md.tmpl`](../../../packs/release-gate/prompts/release-gate.md.tmpl)
+[`packs/release-gate/agents/release-gate/prompt.template.md`](../../../packs/release-gate/agents/release-gate/prompt.template.md)
 
 Same six-section structure, different role:
 
@@ -215,21 +217,23 @@ Notice the key phrase in the Quality Gate: **"evidence (not opinions)"**. This i
 
 ```toml
 [pack]
-name = "deployer"
-schema = 1
-description = "Deployer agent — release gate evaluation and deployment prep"
+name = "actual-release-gate"
+schema = 2
+```
 
-[[agent]]
-name = "deployer"
+Plus `packs/release-gate/agents/release-gate/agent.toml` (the curriculum calls this agent "Deployer"; in the shipped packs the role is named `release-gate`):
+
+```toml
 scope = "rig"
-prompt_template = "prompts/deployer.md"
-overlay_dir = "overlays/default"
-nudge = "Check your hook for reviewed code ready for release evaluation."
-idle_timeout = "1h"
+wake_mode = "fresh"
+work_dir = ".gc/agents/{{.Rig}}/release-gate"
+nudge = "Run 'gc prime', then check bd ready --label=ready-to-ship for work."
+idle_timeout = "2h"
+min_active_sessions = 0
 max_active_sessions = 1
 ```
 
-Identical shape to the Reviewer pack, differing only in `name`, `description`, `prompt_template`, and `nudge`. You're done reading. Now install.
+Identical shape to the Reviewer pack, differing only in `name`, `work_dir`, and `nudge`. You're done reading. Now install.
 
 ---
 
@@ -433,7 +437,7 @@ Slinging my-factory-r1r2r3 → reviewer
 Session started: reviewer-r1r2r3 (tmux)
 ```
 
-**What's happening here:** Gas City starts a tmux session, launches Claude Code inside your project directory, loads `packs/reviewer/prompts/reviewer.md` as the system prompt, and hands the bead's description as the task. The Reviewer begins reading the spec, work package, and branch diff.
+**What's happening here:** Gas City starts a tmux session, launches Claude Code inside your project directory, loads `packs/reviewer/agents/reviewer/prompt.template.md` as the system prompt, and hands the bead's description as the task. The Reviewer begins reading the spec, work package, and branch diff.
 
 ### Step 3: Watch the Reviewer Work
 
@@ -507,12 +511,12 @@ edits that would prevent recurrence.
 ## Recommendation
 REQUEST_CHANGES. To resolve:
 
-1. **High: concurrent redeem race** — Update packs/builder/prompts/builder.md.tmpl
+1. **High: concurrent redeem race** — Update packs/builder/agents/builder/prompt.template.md
    Quality Gate to require: "Any code path that both reads and mutates a
    shared balance MUST wrap the read-and-write in a single transaction.
    Use db.transaction() from better-sqlite3."
 
-2. **Medium: redeem auth bypass** — Update packs/builder/prompts/builder.md.tmpl
+2. **Medium: redeem auth bypass** — Update packs/builder/agents/builder/prompt.template.md
    Rules section to require: "Every endpoint that takes a userId parameter
    MUST verify req.user.id === req.body.userId (or equivalent). If the
    spec does not specify auth behavior, assume the authenticated user is
@@ -534,7 +538,7 @@ REQUEST_CHANGES. To resolve:
 
 ### Step 5: Check the Review Report Against the Quality Gate
 
-Open `packs/reviewer/prompts/reviewer.md` and verify each Quality Gate rule:
+Open `packs/reviewer/agents/reviewer/prompt.template.md` and verify each Quality Gate rule:
 
 | Quality Gate Rule | Pass? | Evidence |
 |-------------------|-------|----------|
@@ -543,7 +547,7 @@ Open `packs/reviewer/prompts/reviewer.md` and verify each Quality Gate rule:
 | Each test case has PASS/FAIL | Yes / No | Count test cases in Test Coverage |
 | Recommendation is actionable | Yes / No | Does each finding specify the exact config edit that would fix it? |
 
-If any rule fails: **do not edit the review report by hand.** Edit `packs/reviewer/prompts/reviewer.md` to close the gap, delete the report, and re-sling the Reviewer.
+If any rule fails: **do not edit the review report by hand.** Edit `packs/reviewer/agents/reviewer/prompt.template.md` to close the gap, delete the report, and re-sling the Reviewer.
 
 ---
 
@@ -554,7 +558,7 @@ This is the crux of L4. The Reviewer has produced findings. A developer's instin
 The discipline is:
 
 1. For each reviewer finding, identify what the Coder should have done differently.
-2. Edit `packs/builder/prompts/builder.md.tmpl` to make that behavior the Coder's default.
+2. Edit `packs/builder/agents/builder/prompt.template.md` to make that behavior the Coder's default.
 3. Re-sling the Coder against the same bead. The Coder regenerates the code with the updated prompt.
 4. Re-sling the Reviewer against the same review bead. Verify the finding is gone.
 
@@ -569,7 +573,7 @@ The Reviewer flagged this finding:
 #### Step 1: Open the Coder Prompt
 
 ```bash
-$EDITOR packs/builder/prompts/builder.md.tmpl
+$EDITOR packs/builder/agents/builder/prompt.template.md
 ```
 
 Current Quality Gate section:
@@ -612,7 +616,7 @@ Save and close.
 
 ```bash
 cd ~/path/to/your-repo
-git add packs/builder/prompts/builder.md.tmpl
+git add packs/builder/agents/builder/prompt.template.md
 git commit -m "chore(coder): require transaction wrapping for balance mutations"
 ```
 
@@ -685,7 +689,7 @@ Save.
 
 ```bash
 cd ~/path/to/your-repo
-git add packs/builder/prompts/builder.md.tmpl
+git add packs/builder/agents/builder/prompt.template.md
 git commit -m "chore(coder): require auth check on userId endpoints"
 
 cd my-factory
@@ -702,7 +706,7 @@ After the re-sling, `src/api/loyalty.ts` contains an explicit `if (req.user.id !
 
 Every finding you resolve via config is a systemic improvement — the next feature the Coder writes will already have the transaction-wrapping rule and the auth-check rule baked in. Every finding you resolve via a hand-edit is a one-off — the next feature will re-introduce the bug. The orchestrator runs indefinitely; hand-edits do not accumulate into a better factory. Config edits do.
 
-**Minimum to pass the exit criteria:** at least one review finding must be resolved by editing `packs/builder/prompts/builder.md.tmpl` (or the Designer's spec when the gap is upstream of the Coder). Zero manual code edits in response to review findings.
+**Minimum to pass the exit criteria:** at least one review finding must be resolved by editing `packs/builder/agents/builder/prompt.template.md` (or the Designer's spec when the gap is upstream of the Coder). Zero manual code edits in response to review findings.
 
 ---
 
@@ -843,7 +847,7 @@ If you seeded tailored ADRs via `actual adr-bot` in L2, your Reviewer should che
 1. Project-authored ADRs under `docs/adr/` (written by the Architect in L2)
 2. Tailored industry ADRs in the `# Tailored ADRs` section of `CLAUDE.md` (written by `actual adr-bot`)
 
-Update `packs/reviewer/prompts/reviewer.md` to make this explicit:
+Update `packs/reviewer/agents/reviewer/prompt.template.md` to make this explicit:
 
 ```markdown
 ### Review Checklist
@@ -923,7 +927,7 @@ Concretely:
 - A linter cannot tell you that the spec called for a `refundOrder` path and the Coder skipped it.
 - A linter cannot tell you that `tests/loyalty.test.ts` has 14 passing tests but zero of them cover the concurrent-redeem case that ADR-0001 explicitly flagged as a risk.
 
-The Reviewer can do all three, and its entire toolkit for doing so is `packs/reviewer/prompts/reviewer.md` + `docs/PROJECT_MANIFEST.md § Review Standards`. If a Reviewer is missing a class of finding, the fix is always upstream — add a standard, add a Quality Gate rule, add an input. Never patch the output.
+The Reviewer can do all three, and its entire toolkit for doing so is `packs/reviewer/agents/reviewer/prompt.template.md` + `docs/PROJECT_MANIFEST.md § Review Standards`. If a Reviewer is missing a class of finding, the fix is always upstream — add a standard, add a Quality Gate rule, add an input. Never patch the output.
 
 ## Inline Insight: Why Deployer Findings Must Be Binary
 
@@ -966,13 +970,13 @@ Re-sling the Reviewer. Specific standards produce specific findings.
 
 **Cause:** The Reviewer's Quality Gate has rules that aren't reachable by the Coder (e.g., "100% test coverage"). The Coder's prompt and the Reviewer's prompt are out of sync.
 
-**Fix:** Pick a threshold both prompts agree on. For example, the Coder prompt's Quality Gate says "At least 2 test cases from the work package pass." The Reviewer prompt should then check for ≥2 passing, not 100%. Update `packs/reviewer/prompts/reviewer.md` Quality Gate to match, or update both to a new shared threshold.
+**Fix:** Pick a threshold both prompts agree on. For example, the Coder prompt's Quality Gate says "At least 2 test cases from the work package pass." The Reviewer prompt should then check for ≥2 passing, not 100%. Update `packs/reviewer/agents/reviewer/prompt.template.md` Quality Gate to match, or update both to a new shared threshold.
 
 ### Issue 3: Reviewer writes prose instead of the structured format
 
 **Cause:** The Reviewer either couldn't find the Output Format section or decided it knew better.
 
-**Fix:** Add a hard rule to the prompt: "The review report MUST use the Markdown template in Output Format above. Any deviation from the table structure, the severity labels, or the PASS/FAIL test coverage lines is a Quality Gate violation. Re-read Output Format before writing." Re-sling. If the Reviewer still deviates, inspect whether your `packs/reviewer/prompts/reviewer.md` was actually reloaded (`gc restart` after editing).
+**Fix:** Add a hard rule to the prompt: "The review report MUST use the Markdown template in Output Format above. Any deviation from the table structure, the severity labels, or the PASS/FAIL test coverage lines is a Quality Gate violation. Re-read Output Format before writing." Re-sling. If the Reviewer still deviates, inspect whether your `packs/reviewer/agents/reviewer/prompt.template.md` was actually reloaded (`gc restart` after editing).
 
 ### Issue 4: Reviewer can't find the feature branch
 
@@ -984,7 +988,7 @@ Re-sling the Reviewer. Specific standards produce specific findings.
 
 **Cause:** The prompt edit wasn't reloaded, or the new rule was ambiguous.
 
-**Fix:** Run `gc restart` after editing `packs/builder/prompts/builder.md.tmpl`. Verify the new text is present with `grep "<new rule text>" packs/builder/prompts/builder.md.tmpl`. If ambiguous, tighten the wording — prefer imperative "MUST" over suggestive "should."
+**Fix:** Run `gc restart` after editing `packs/builder/agents/builder/prompt.template.md`. Verify the new text is present with `grep "<new rule text>" packs/builder/agents/builder/prompt.template.md`. If ambiguous, tighten the wording — prefer imperative "MUST" over suggestive "should."
 
 ### Issue 6: Deployer writes PASS/FAIL without evidence
 
@@ -1058,7 +1062,7 @@ Before leaving this lab, verify all of these:
 
 - [ ] `gc status` shows all 6 factory agents: `planner`, `architect`, `designer`, `coder`, `reviewer`, `deployer` (or `devops` if you kept that role name)
 - [ ] `review-reports/loyalty-points-system-review.md` is committed with Spec Compliance, Style, Security, and Test Coverage sections filled in
-- [ ] At least one reviewer finding was resolved by editing `packs/builder/prompts/builder.md.tmpl` (or the Designer's spec), not by hand-editing code
+- [ ] At least one reviewer finding was resolved by editing `packs/builder/agents/builder/prompt.template.md` (or the Designer's spec), not by hand-editing code
 - [ ] `release-gates/loyalty-points-system-gate.md` is committed with binary PASS/FAIL evidence for every criterion
 - [ ] Both the review report and the gate record reference the work package by path
 - [ ] `orchestrator.yaml` drives both the reviewer and the deployer (not just manual `gc sling` invocations)
@@ -1071,7 +1075,7 @@ Before leaving this lab, verify all of these:
 
 ## Suggestions Based on Project Type
 
-- **If your project has strict security requirements:** Update `packs/reviewer/prompts/reviewer.md` to explicitly check the OWASP Top 10 relevant to your stack. Add per-language rules to `PROJECT_MANIFEST.md § Review Standards` (e.g., for Node: "No use of `child_process.exec` with interpolated input"; for Python: "No use of `pickle.loads` on external data").
+- **If your project has strict security requirements:** Update `packs/reviewer/agents/reviewer/prompt.template.md` to explicitly check the OWASP Top 10 relevant to your stack. Add per-language rules to `PROJECT_MANIFEST.md § Review Standards` (e.g., for Node: "No use of `child_process.exec` with interpolated input"; for Python: "No use of `pickle.loads` on external data").
 - **If your project deploys to production:** Extend the Deployer's Release Criteria to include deployment-specific checks: health endpoint returns 200, rollback plan is documented in the gate record, feature flag is defined. Add these as rows in the gate's Criteria table.
 - **If your project is pre-launch:** The Deployer can focus on "merge to main" readiness instead of production deployment. Simplify Release Criteria to: ACs met, review approved, tests pass, no conflicts.
 - **If you use GitHub Actions or another CI:** Update the Deployer prompt so Criterion 4 (Tests pass) references the CI run status instead of a local `npm test`. The Evidence column should contain the CI run URL and commit SHA, not local output.
@@ -1109,8 +1113,8 @@ gc watch reviewer                        # Ctrl+b d to detach
 cat review-reports/loyalty-points-system-review.md
 
 # PART 4 — Fix via config
-$EDITOR packs/builder/prompts/builder.md.tmpl    # add Quality Gate / Rules entries
-git -C ~/path/to/your-repo add packs/builder/prompts/builder.md.tmpl
+$EDITOR packs/builder/agents/builder/prompt.template.md    # add Quality Gate / Rules entries
+git -C ~/path/to/your-repo add packs/builder/agents/builder/prompt.template.md
 git -C ~/path/to/your-repo commit -m "chore(coder): <what rule you added>"
 gc sling builder [coder-bead-id]          # re-sling after prompt edit
 gc watch coder
@@ -1126,8 +1130,8 @@ cat release-gates/loyalty-points-system-gate.md
 bd close my-factory-d1d2d3 --comment "Release gate PASS"
 
 # PART 6 — (optional) tighten Reviewer with tailored ADRs
-$EDITOR packs/reviewer/prompts/reviewer.md   # add CLAUDE.md compliance rule
-git -C ~/path/to/your-repo add packs/reviewer/prompts/reviewer.md
+$EDITOR packs/reviewer/agents/reviewer/prompt.template.md   # add CLAUDE.md compliance rule
+git -C ~/path/to/your-repo add packs/reviewer/agents/reviewer/prompt.template.md
 git -C ~/path/to/your-repo commit -m "chore(reviewer): enforce CLAUDE.md tailored-ADR baselines"
 
 # Cleanup
@@ -1142,14 +1146,14 @@ git -C ~/path/to/your-repo push
 | Component | File / Location | What It Does |
 |-----------|-----------------|--------------|
 | Reviewer pack | `packs/reviewer/` | Defines the Reviewer agent: prompt, overlay, metadata |
-| Reviewer prompt | `packs/reviewer/prompts/reviewer.md` | System prompt for the Reviewer — Role, Inputs, Output Format, Quality Gate, Process, Config Discipline |
+| Reviewer prompt | `packs/reviewer/agents/reviewer/prompt.template.md` | System prompt for the Reviewer — Role, Inputs, Output Format, Quality Gate, Process, Config Discipline |
 | Deployer pack | `packs/release-gate/` | Defines the Deployer agent: prompt, overlay, metadata |
-| Deployer prompt | `packs/release-gate/prompts/release-gate.md.tmpl` | System prompt for the Deployer — same six-section structure |
+| Deployer prompt | `packs/release-gate/agents/release-gate/prompt.template.md` | System prompt for the Deployer — same six-section structure |
 | Review Standards | `docs/PROJECT_MANIFEST.md` (Review Standards section) | Project-specific review policy — what counts as a finding |
 | Release Criteria | `docs/PROJECT_MANIFEST.md` (Release Criteria section) | Project-specific release gate rows — what must be PASS for a release |
 | Review report | `review-reports/loyalty-points-system-review.md` | Reviewer's output: Summary, Spec Compliance, Style, Security, Test Coverage, Recommendation |
 | Release gate | `release-gates/loyalty-points-system-gate.md` | Deployer's output: Overall Verdict, Criteria table with binary PASS/FAIL + evidence, Release Notes, References |
-| Coder prompt edits | `packs/builder/prompts/builder.md.tmpl` diff | The config-discipline artifact — each reviewer finding resolved is a commit on this file |
+| Coder prompt edits | `packs/builder/agents/builder/prompt.template.md` diff | The config-discipline artifact — each reviewer finding resolved is a commit on this file |
 | Reviewer bead | `bd show my-factory-r1r2r3` | Work item that triggered the Reviewer, depends on the Coder bead |
 | Deployer bead | `bd show my-factory-d1d2d3` | Work item that triggered the Deployer, depends on the Reviewer bead |
 | Orchestrator config | `orchestrator.yaml` | Automation wiring: Coder-close → Reviewer-sling → (if APPROVE) Deployer-sling |

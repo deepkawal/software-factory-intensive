@@ -1,20 +1,18 @@
-# actual-factory — Composition pack that wires all 8 Agent Operations
-# into a single runnable software factory.
+# L2-step-0 actual-factory — Composition pack for the L2 lab checkpoint.
 #
-# Includes every leaf pack in examples/actual/ via relative paths.
-# Each leaf pack is also usable standalone — this one just bundles
-# them so a user can bring the whole factory up with a single
-# `includes = ["examples/actual/all"]` line in their city.toml.
+# Imports only the two packs the lab exercises (architect, planner). The
+# L2 lab is the "Architect + Planner handoff contract" exercise from the
+# curriculum; other agents aren't needed until later labs.
 #
-# The "pipeline" is NOT hardcoded here. Each leaf pack's order gate
-# matches on a bead label (needs-architecture, needs-plan, etc.)
-# and wakes on its own. The flow is emergent from labels, not
-# prescribed by Go or by this file.
+# Hosts the `wake-downstream` pack command. See packs/all/README.md for
+# the rationale (workshop:#785 — no PACK_DIR in agent session shells).
 
 [pack]
 name = "actual-factory"
-schema = 1
-includes = [
-    "../architect",
-    "../planner",
-]
+schema = 2
+
+[imports.architect]
+source = "../architect"
+
+[imports.planner]
+source = "../planner"

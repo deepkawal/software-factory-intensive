@@ -15,7 +15,7 @@ Each loop file follows the reference shape: *What triggered it → What rule was
 
 ## Workspace wiring
 
-W4 doesn't add packs. It **edits** prompts on packs you've already installed — typically the Builder's `../../../packs/builder/prompts/builder.md.tmpl` and the Release-Gate's `../../../packs/release-gate/prompts/release-gate.md.tmpl`. If you're running a customised copy under `activities/<session>/packs/`, edit the copy and commit; otherwise edit the shipped pack and commit.
+W4 doesn't add packs. It **edits** prompts on packs you've already installed — typically the Builder's `../../../packs/builder/agents/builder/prompt.template.md` and the Release-Gate's `../../../packs/release-gate/agents/release-gate/prompt.template.md`. If you're running a customised copy under `activities/<session>/packs/`, edit the copy and commit; otherwise edit the shipped pack and commit.
 
 The `includes` list in `../../../my-factory/city.toml` does not change in W4.
 

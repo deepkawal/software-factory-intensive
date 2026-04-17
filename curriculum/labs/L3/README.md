@@ -12,7 +12,7 @@
 
 ## Session workspace note
 
-This README was first written when the shipped pack was named `coder`. The current repository renames it to **`builder`** (same role, same outputs) — wherever this file says *Coder*, the corresponding pack lives at `../../../packs/builder/` and the prompt template is `packs/builder/prompts/builder.md.tmpl`. Commands `gc sling builder <bead>` and `gc session peek <rig>/builder` replace their `coder` equivalents.
+This README was first written when the shipped pack was named `coder`. The current repository renames it to **`builder`** (same role, same outputs) — wherever this file says *Coder*, the corresponding pack lives at `../../../packs/builder/` and the prompt template is `packs/builder/agents/builder/prompt.template.md`. Commands `gc sling builder <bead>` and `gc session peek <rig>/builder` replace their `coder` equivalents.
 
 **Where your work goes this session:**
 * Session deliverables → `../../../activities/labs/L3/` (the activity folder for L3)
@@ -41,7 +41,7 @@ If you skipped an earlier lab or a prompt edit breaks the pack, point `includes`
                     │    • work-packages/<slug>.md│
                     │    • docs/adr/NNNN-<slug>.md│
                     │    • docs/PROJECT_MANIFEST  │
-                    │    • packs/designer/prompts │
+                    │    • agents/designer/prompt  │
                     │                            │
                     │  Produces:                  │
                     │    design/<slug>-spec.md    │───► Purpose, Location,
@@ -57,7 +57,7 @@ If you skipped an earlier lab or a prompt edit breaks the pack, point `includes`
                     │    • docs/adr/NNNN-<slug>.md│
                     │    • docs/PROJECT_MANIFEST  │
                     │    • CLAUDE.md (tailored)   │
-                    │    • packs/builder/prompts    │
+                    │    • agents/builder/prompt    │
                     │                            │
                     │  Produces:                  │
                     │    src/<Location>/*.ts(x)   │───► Implementation files,
@@ -125,27 +125,29 @@ Open this file and read it end-to-end — it's 14 lines:
 
 ```toml
 [pack]
-name = "designer"
-schema = 1
-description = "Designer agent — creates component specs from work packages and ADRs"
+name = "actual-designer"
+schema = 2
+```
 
-[[agent]]
-name = "designer"
+Plus `packs/designer/agents/designer/agent.toml`:
+
+```toml
 scope = "rig"
-prompt_template = "prompts/designer.md"
-overlay_dir = "overlays/default"
-nudge = "Check your hook for work packages needing component specs."
-idle_timeout = "1h"
+wake_mode = "fresh"
+work_dir = ".gc/agents/{{.Rig}}/designer"
+nudge = "Run 'gc prime', then check bd ready --label=needs-design for work."
+idle_timeout = "2h"
+min_active_sessions = 0
 max_active_sessions = 1
 ```
 
-**What's happening here:** Same shape as the Planner and Architect pack files you read in L2. `prompt_template` points to the prompt the agent loads as its system message. `idle_timeout = "1h"` is the tmux session shutdown window. `max_active_sessions = 1` means the Designer handles one bead at a time — this is deliberate, because spec quality drops when the Designer is context-switching between features.
+**What's happening here:** Same shape as the Planner and Architect pack files you read in L2 — `pack.toml` identifies the pack; `agents/<name>/agent.toml` configures the agent. `max_active_sessions = 1` means the Designer handles one bead at a time — this is deliberate, because spec quality drops when the Designer is context-switching between features.
 
 ### Step 2: Open the Designer Prompt
 
 Open this file and read it end-to-end — it's ~75 lines:
 
-[`packs/designer/prompts/designer.md.tmpl`](../../../packs/designer/prompts/designer.md.tmpl)
+[`packs/designer/agents/designer/prompt.template.md`](../../../packs/designer/agents/designer/prompt.template.md)
 
 You should see the familiar six-section structure:
 
@@ -191,28 +193,29 @@ Pay attention to one line in the Output Format section:
 
 ```toml
 [pack]
-name = "coder"
-schema = 1
-description = "Coder agent — implements code from component specs"
-
-[[agent]]
-name = "coder"
-scope = "rig"
-prompt_template = "prompts/coder.md"
-overlay_dir = "overlays/default"
-nudge = "Check your hook for component specs ready to implement."
-idle_timeout = "2h"
-min_active_sessions = 0
-max_active_sessions = 3
+name = "actual-builder"
+schema = 2
 ```
 
-**What's happening here:** Two values differ from the other packs. `idle_timeout = "2h"` is longer because implementation often spans multiple build/test/fix cycles. `max_active_sessions = 3` lets you sling up to three features to three parallel Coder sessions — useful in the capstone when the Planner has queued multiple work packages. For this lab you'll run one at a time.
+Plus `packs/builder/agents/builder/agent.toml` (the curriculum calls this agent "Coder"; in the shipped packs the role is named `builder`):
+
+```toml
+scope = "rig"
+wake_mode = "fresh"
+work_dir = ".gc/agents/{{.Rig}}/builder"
+nudge = "Run 'gc prime', then check bd ready --label=ready-to-build for work."
+idle_timeout = "2h"
+min_active_sessions = 0
+max_active_sessions = 1
+```
+
+**What's happening here:** `idle_timeout = "2h"` matches the other agents. For production use you might raise `max_active_sessions` to 3 so the Coder can take multiple work packages in parallel — useful when the Planner has queued several. For this lab you'll run one at a time.
 
 ### Step 4: Open the Coder Prompt
 
 Open this file and read it end-to-end — it's ~50 lines:
 
-[`packs/builder/prompts/builder.md.tmpl`](../../../packs/builder/prompts/builder.md.tmpl)
+[`packs/builder/agents/builder/prompt.template.md`](../../../packs/builder/agents/builder/prompt.template.md)
 
 Same six-section structure, with one extra section (`Rules`) unique to the Coder:
 
@@ -306,7 +309,7 @@ If `designer` doesn't appear, run `gc rig list` to confirm the pack is registere
 
 The shipped prompt is generic. Two edits make it project-specific:
 
-**a) Open `packs/designer/prompts/designer.md.tmpl` in your editor.**
+**a) Open `packs/designer/agents/designer/prompt.template.md` in your editor.**
 
 **b) Update the Output Format's Location example** with your project's src layout. For a React/TypeScript feature-folder layout (Fired Up Pizza's convention per `docs/PROJECT_MANIFEST.md`):
 
@@ -349,7 +352,7 @@ git add -A
 git commit -m "chore(designer): customize designer prompt for project conventions"
 ```
 
-**Why commit now?** Same reason as L2: the diff between the shipped prompt and your edited version is your config-discipline evidence. If the Designer drifts later, `git log packs/designer/prompts/designer.md.tmpl` tells you exactly what changed and when.
+**Why commit now?** Same reason as L2: the diff between the shipped prompt and your edited version is your config-discipline evidence. If the Designer drifts later, `git log packs/designer/agents/designer/prompt.template.md` tells you exactly what changed and when.
 
 ---
 
@@ -406,7 +409,7 @@ All five agents (four from the factory pipeline plus the `dev-agent` from L1).
 
 ### Step 4: Customize the Coder Prompt for Your Project
 
-Open `packs/builder/prompts/builder.md.tmpl` and make two edits:
+Open `packs/builder/agents/builder/prompt.template.md` and make two edits:
 
 **a) Add the project's quality-gate commands to the Quality Gate section.** The shipped prompt says "Code passes lint (`npm run lint` or equivalent)." Replace with exact commands from the project manifest. For a React/TypeScript project:
 
@@ -513,7 +516,7 @@ Slinging my-factory-design123 → designer
 Session started: designer-design123 (tmux)
 ```
 
-**What's happening here:** Gas City started a tmux session, launched Claude Code inside your repo, loaded `packs/designer/prompts/designer.md.tmpl` as the system prompt, and handed the bead's description as the task. The Designer is now autonomous.
+**What's happening here:** Gas City started a tmux session, launched Claude Code inside your repo, loaded `packs/designer/agents/designer/prompt.template.md` as the system prompt, and handed the bead's description as the task. The Designer is now autonomous.
 
 ### Step 3: Watch the Designer Work
 
@@ -606,7 +609,7 @@ never computes balance client-side.
 
 ### Step 5: Check the Spec Against the Quality Gate
 
-Open `packs/designer/prompts/designer.md.tmpl` and walk the Quality Gate rules:
+Open `packs/designer/agents/designer/prompt.template.md` and walk the Quality Gate rules:
 
 | Quality Gate Rule | Pass? | Evidence |
 |-------------------|-------|----------|
@@ -618,7 +621,7 @@ Open `packs/designer/prompts/designer.md.tmpl` and walk the Quality Gate rules:
 **If any rule fails:**
 
 1. **Do NOT edit the spec file directly.** That breaks config discipline.
-2. Open `packs/designer/prompts/designer.md.tmpl` and add a more specific rule. For example, if the Location is too vague:
+2. Open `packs/designer/agents/designer/prompt.template.md` and add a more specific rule. For example, if the Location is too vague:
 
 ```markdown
 ## Quality Gate
@@ -805,7 +808,7 @@ The Coder wrote `import { describe, it, expect } from 'jest';` but the project's
 - Tell the tmux session "hey, this project uses vitest, fix it"
 - Re-sling with a longer bead description
 
-**What to do:** Update `packs/builder/prompts/builder.md.tmpl` so the *next* feature doesn't hit this problem. Add to the Process section:
+**What to do:** Update `packs/builder/agents/builder/prompt.template.md` so the *next* feature doesn't hit this problem. Add to the Process section:
 
 ```markdown
 ## Process
@@ -818,7 +821,7 @@ The Coder wrote `import { describe, it, expect } from 'jest';` but the project's
 Then:
 
 ```bash
-git add packs/builder/prompts/builder.md.tmpl
+git add packs/builder/agents/builder/prompt.template.md
 git commit -m "chore(coder): require explicit test-framework detection"
 
 rm -r src/features/loyalty-points/
@@ -834,7 +837,7 @@ gc watch coder
 
 **What NOT to do:** Move the files manually with `git mv`.
 
-**What to do:** Update `packs/builder/prompts/builder.md.tmpl` Rules section:
+**What to do:** Update `packs/builder/agents/builder/prompt.template.md` Rules section:
 
 ```markdown
 ## Rules
@@ -852,7 +855,7 @@ gc watch coder
 Then:
 
 ```bash
-git add packs/builder/prompts/builder.md.tmpl
+git add packs/builder/agents/builder/prompt.template.md
 git commit -m "chore(coder): require literal adherence to spec Location paths"
 
 # Back out the wrong-location commit
@@ -865,7 +868,7 @@ gc watch coder
 
 ### Scenario 3 (bonus): Coder skips the empty-state edge case
 
-If the Coder implemented loading and error but silently dropped the empty state, the fix is in the Designer prompt, not the Coder prompt. The Designer's spec should have been explicit enough that a skipped state is a flag the Coder sees. Update `packs/designer/prompts/designer.md.tmpl` Output Format:
+If the Coder implemented loading and error but silently dropped the empty state, the fix is in the Designer prompt, not the Coder prompt. The Designer's spec should have been explicit enough that a skipped state is a flag the Coder sees. Update `packs/designer/agents/designer/prompt.template.md` Output Format:
 
 ```markdown
 ## Edge Cases
@@ -906,7 +909,7 @@ Making manifest-reading explicit in the Coder prompt forces the agent to pull in
 
 ## Inline Insight: Config Changes Compound Across Agents
 
-When you fix a Coder issue in `packs/builder/prompts/builder.md.tmpl`, that fix applies to every future feature the Coder touches — including ones no one has thought of yet. This is the compounding return on config discipline: every prompt edit pays down a class of failures, not a single instance. A chat-based "just fix it this time" correction pays down *only* the single instance, and the next bead re-encounters the same failure. Over a factory lifetime (dozens to hundreds of features), the gap between these two strategies is enormous. This is why the Quality Bar below includes "Zero manual code edits" — it's the single most leveraged habit in the whole lab.
+When you fix a Coder issue in `packs/builder/agents/builder/prompt.template.md`, that fix applies to every future feature the Coder touches — including ones no one has thought of yet. This is the compounding return on config discipline: every prompt edit pays down a class of failures, not a single instance. A chat-based "just fix it this time" correction pays down *only* the single instance, and the next bead re-encounters the same failure. Over a factory lifetime (dozens to hundreds of features), the gap between these two strategies is enormous. This is why the Quality Bar below includes "Zero manual code edits" — it's the single most leveraged habit in the whole lab.
 
 ---
 
@@ -914,19 +917,19 @@ When you fix a Coder issue in `packs/builder/prompts/builder.md.tmpl`, that fix 
 
 ### Issue 1: Designer produces a spec without a Location path
 **Symptom:** Spec has props, state, layout — but the Location section is empty or says `TBD`.
-**Fix:** Add to `packs/designer/prompts/designer.md.tmpl` Quality Gate: "Location must name at least one concrete file path ending in a valid extension (`.tsx`, `.ts`, `.py`, `.go`). Never leave it as a placeholder." Re-sling.
+**Fix:** Add to `packs/designer/agents/designer/prompt.template.md` Quality Gate: "Location must name at least one concrete file path ending in a valid extension (`.tsx`, `.ts`, `.py`, `.go`). Never leave it as a placeholder." Re-sling.
 
 ### Issue 2: Designer produces a spec with untyped props
 **Symptom:** Props table has `Name` and `Description` filled in but `Type` column is blank or says "any".
-**Fix:** Add to `packs/designer/prompts/designer.md.tmpl` Quality Gate: "Every row in the Props and State tables must have a concrete type. Prohibited values in the Type column: `any`, `object`, `unknown`, empty string." Re-sling.
+**Fix:** Add to `packs/designer/agents/designer/prompt.template.md` Quality Gate: "Every row in the Props and State tables must have a concrete type. Prohibited values in the Type column: `any`, `object`, `unknown`, empty string." Re-sling.
 
 ### Issue 3: Coder skips tests
 **Symptom:** Implementation files exist, but no test file — or test file has zero `it(...)` blocks.
-**Fix:** Add to `packs/builder/prompts/builder.md.tmpl` Process section: "You may not commit until `npm test` passes with at least 2 passing test cases that reference the work package's Story <N> acceptance criteria in their test descriptions." Re-sling.
+**Fix:** Add to `packs/builder/agents/builder/prompt.template.md` Process section: "You may not commit until `npm test` passes with at least 2 passing test cases that reference the work package's Story <N> acceptance criteria in their test descriptions." Re-sling.
 
 ### Issue 4: Coder writes code but doesn't commit
 **Symptom:** `git status` shows uncommitted changes after the Coder session ends.
-**Fix:** Add to `packs/builder/prompts/builder.md.tmpl` Process section: "After all quality gates pass, run `git add` and `git commit` before marking the bead ready. An uncommitted implementation is equivalent to no implementation." Re-sling.
+**Fix:** Add to `packs/builder/agents/builder/prompt.template.md` Process section: "After all quality gates pass, run `git add` and `git commit` before marking the bead ready. An uncommitted implementation is equivalent to no implementation." Re-sling.
 
 ### Issue 5: Coder writes files at the wrong location
 **Symptom:** Files exist but under `src/components/` instead of `src/features/<slug>/`.
@@ -938,7 +941,7 @@ When you fix a Coder issue in `packs/builder/prompts/builder.md.tmpl`, that fix 
 
 ### Issue 7: Coder violates a tailored ADR from CLAUDE.md
 **Symptom:** The tailored ADR says "use parameterized queries" and the Coder writes string-concatenation SQL.
-**Fix:** Add to `packs/builder/prompts/builder.md.tmpl` Process section: "Before writing code, read the Tailored ADRs section of `CLAUDE.md`. Every decision in that section is binding unless the Designer's spec explicitly overrides it." Re-sling.
+**Fix:** Add to `packs/builder/agents/builder/prompt.template.md` Process section: "Before writing code, read the Tailored ADRs section of `CLAUDE.md`. Every decision in that section is binding unless the Designer's spec explicitly overrides it." Re-sling.
 
 ### Issue 8: Coder stalls on `npm install`
 **Symptom:** The tmux session shows `npm install` running for 30+ minutes with no progress.
@@ -950,15 +953,15 @@ When you fix a Coder issue in `packs/builder/prompts/builder.md.tmpl`, that fix 
 
 ### Issue 10: Coder produces code that passes tests but violates the spec
 **Symptom:** `npm test` is green but the component has different prop names than the spec declared.
-**Fix:** This is the most common failure mode in L3. Add to `packs/builder/prompts/builder.md.tmpl` Process section: "Before writing any source file, copy the Props table from the spec into a comment at the top of the component file. Your implementation must match those names and types exactly." Re-sling.
+**Fix:** This is the most common failure mode in L3. Add to `packs/builder/agents/builder/prompt.template.md` Process section: "Before writing any source file, copy the Props table from the spec into a comment at the top of the component file. Your implementation must match those names and types exactly." Re-sling.
 
 ### Issue 11: Coder modifies files outside the feature folder
 **Symptom:** The commit diff includes edits to `src/api/orders.ts` or `src/App.tsx` that you didn't expect.
-**Fix:** Add to `packs/builder/prompts/builder.md.tmpl` Rules: "You may read any file in the repo. You may write only files inside the Location path from the spec. If you believe an external file must change for the feature to work, stop, append a `## Open Follow-ups` section to the spec noting what needs to change, and mark the bead blocked." Re-sling.
+**Fix:** Add to `packs/builder/agents/builder/prompt.template.md` Rules: "You may read any file in the repo. You may write only files inside the Location path from the spec. If you believe an external file must change for the feature to work, stop, append a `## Open Follow-ups` section to the spec noting what needs to change, and mark the bead blocked." Re-sling.
 
 ### Issue 12: The spec and the work package disagree on a requirement
 **Symptom:** The work package says "earn 1 point per dollar spent" and the spec says "earn 1 point per $10 spent."
-**Fix:** This is a Designer-side bug that the Coder inherited. Delete the spec, update `packs/designer/prompts/designer.md.tmpl` Process: "Before writing the spec, list every numeric value and quantifier from the work package's Goal and User Stories. Every one must appear verbatim in the spec." Re-sling the Designer, then the Coder.
+**Fix:** This is a Designer-side bug that the Coder inherited. Delete the spec, update `packs/designer/agents/designer/prompt.template.md` Process: "Before writing the spec, list every numeric value and quantifier from the work package's Goal and User Stories. Every one must appear verbatim in the spec." Re-sling the Designer, then the Coder.
 
 ---
 
@@ -983,7 +986,7 @@ Before leaving this lab, verify all of these:
 - [ ] Implementation code is committed at the spec's Location path
 - [ ] At least 2 test cases from the work package are passing
 - [ ] `npm run typecheck`, `npm run lint`, and `npm test` all pass (or equivalent for your stack)
-- [ ] Zero manual code edits — all fixes were prompt updates to `packs/builder/prompts/builder.md.tmpl` or `packs/designer/prompts/designer.md.tmpl` followed by re-slings
+- [ ] Zero manual code edits — all fixes were prompt updates to `packs/builder/agents/builder/prompt.template.md` or `packs/designer/agents/designer/prompt.template.md` followed by re-slings
 - [ ] Both beads (Designer, Coder) are closed
 - [ ] All changes pushed to remote
 
@@ -1016,7 +1019,7 @@ gc rig add ~/path/to/your-repo --include /path/to/packs/designer
 # (edit my-factory/city.toml — ensure [[agent]] block for designer exists)
 gc restart
 gc status
-# (edit packs/designer/prompts/designer.md.tmpl — project-specific Quality Gate rule)
+# (edit packs/designer/agents/designer/prompt.template.md — project-specific Quality Gate rule)
 cd ~/path/to/your-repo
 git add -A && git commit -m "chore(designer): customize designer prompt"
 
@@ -1026,7 +1029,7 @@ gc rig add ~/path/to/your-repo --include /path/to/packs/builder
 # (edit my-factory/city.toml — ensure [[agent]] block for coder exists)
 gc restart
 gc status
-# (edit packs/builder/prompts/builder.md.tmpl — project-specific quality gates + manifest reading)
+# (edit packs/builder/agents/builder/prompt.template.md — project-specific quality gates + manifest reading)
 cd ~/path/to/your-repo
 git add -A && git commit -m "chore(coder): customize coder prompt"
 
@@ -1063,9 +1066,9 @@ git push
 | Component | File / Location | What It Does |
 |-----------|-----------------|--------------|
 | Designer pack | `packs/designer/` | Defines the Designer agent: prompt, overlay, metadata |
-| Designer prompt | `packs/designer/prompts/designer.md.tmpl` | System prompt for the Designer — Role, Inputs, Output Format, Quality Gate, Process, Config Discipline |
+| Designer prompt | `packs/designer/agents/designer/prompt.template.md` | System prompt for the Designer — Role, Inputs, Output Format, Quality Gate, Process, Config Discipline |
 | Coder pack | `packs/builder/` | Defines the Coder agent: prompt, overlay, metadata |
-| Coder prompt | `packs/builder/prompts/builder.md.tmpl` | System prompt for the Coder — same six-section structure plus a Rules section |
+| Coder prompt | `packs/builder/agents/builder/prompt.template.md` | System prompt for the Coder — same six-section structure plus a Rules section |
 | Component spec | `design/<slug>-spec.md` | Designer's output: Purpose, Location, Props, State, Layout, Interactions, Data Flow, Edge Cases, References |
 | Implementation | `src/<Location from spec>/` | Coder's output: typed implementation, co-located tests, matching the spec verbatim |
 | Feature-branch commits | `git log feature-branch --oneline` | Conventional-commit history showing Designer commit + Coder commits |

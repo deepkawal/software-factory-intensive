@@ -10,34 +10,4 @@
 
 [pack]
 name = "actual-release-gate"
-schema = 1
-
-[[doctor]]
-name = "check-release-gate"
-script = "doctor/check-release-gate.sh"
-description = "Verify release-gate prerequisites (bd, gc, git, jq)"
-
-[[commands]]
-name = "status"
-description = "Show release-gate work status"
-script = "commands/status.sh"
-
-[[commands]]
-name = "rollback"
-description = "Print the rollback plan recorded for a released bead"
-script = "commands/rollback.sh"
-
-[formulas]
-dir = "formulas"
-
-[[agent]]
-name = "release-gate"
-scope = "rig"
-wake_mode = "fresh"
-work_dir = ".gc/agents/{{.Rig}}/release-gate"
-prompt_template = "prompts/release-gate.md.tmpl"
-nudge = "Run 'gc prime', then check bd ready --label=ready-to-ship for work."
-overlay_dir = "overlays/default"
-idle_timeout = "2h"
-min_active_sessions = 0
-max_active_sessions = 1
+schema = 2

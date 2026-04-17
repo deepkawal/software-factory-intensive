@@ -1,95 +1,74 @@
-# Software Factory Intensive - Workshop - W2
+# Software Factory Intensive — Workshop — W2
 
 https://github.com/actual-software/software-factory-intensive
 
+The W2 checkpoint is a self-contained v2 factory snapshot. It lives at
+`activites/workshops/W2/gascity/step_0/packs/`. Use it to:
+
+- Reset to a known-good state if you've broken your main `my-factory/` factory.
+- Run the W2 walkthrough in isolation without touching your main factory's
+  rigs/sessions.
+
+The checkpoint has its own `pack.toml.template` + `city.toml.template` — the
+runtime copies (`pack.toml`, `city.toml`) are gitignored so `gc register --name`
+and `gc rig add` can mutate them without dirtying the checkpoint snapshot.
+
 ## Setup
 
-#### Clone Software Factory Intensive
+### 1. Clone the repo (if you haven't already)
 
 ```bash
-mkdir -p ~/Projects/actual-software/
-pushd -p ~/Projects/actual-software
+mkdir -p ~/Projects/actual-software
+pushd ~/Projects/actual-software
 git clone git@github.com:actual-software/software-factory-intensive.git
 ```
 
-#### Setup Factory - Workshop - W2
-
-##### Init Factory and Project
+### 2. Prepare a test rig (the "project" repo the factory operates on)
 
 ```bash
 mkdir -p ~/Projects/factory/workshop_w2/w2-project
 pushd ~/Projects/factory/workshop_w2/w2-project
 git init
-
-gc init ~/Projects/factory/workshop_w2/w2-gc-factory
+touch README.md && git add -A && git commit -m "initial"
 ```
 
-Select `3. custom`
+### 3. Copy the W2 checkpoint's templates to runtime files
 
 ```bash
-Welcome to Gas City SDK!
-
-Choose a config template:
-  1. tutorial  — default coding agent (default)
-  2. gastown   — multi-agent orchestration pack
-  3. custom    — empty workspace, configure it yourself
-Template [1]: 3
+cd ~/Projects/actual-software/software-factory-intensive/activites/workshops/W2/gascity/step_0/packs
+cp pack.toml.template pack.toml
+cp city.toml.template city.toml
 ```
 
-##### Configure Factory
+### 4. Register the W2 checkpoint factory and add the rig
 
 ```bash
-pushd ~/Projects/factory/workshop_w2/w2-gc-factory
-cp ~/Projects/actual-software/software-factory-intensive/activites/workshops/W2/gascity/step_0/packs/city.toml ~/Projects/factory/workshop_w2/w2-gc-factory
-rsync -av ~/Projects/actual-software/software-factory-intensive/activites/workshops/W2/gascity/step_0/packs/ ~/Projects/factory/workshop_w2/w2-gc-factory/packs/actual/
-
-gc service restart
-gc status
-gc doctor
-```
-
-##### Add "Rig" ie Project Source Repo to Factory
-
-```bash
-pushd ~/Projects/factory/workshop_w2/w2-gc-factory
+# Use --name so the W2 city doesn't collide with your main my-factory/
+gc register --name w2-step-0 .
 gc rig add ~/Projects/factory/workshop_w2/w2-project
+bd config set types.custom "convoy"
+(cd ~/Projects/factory/workshop_w2/w2-project && bd config set types.custom "convoy")
 ```
 
-##### Register City
+### 5. Start the factory
 
 ```bash
-gc register ~/Projects/factory/workshop_w2/w2-gc-factory
-```
-
-##### Patch "convoy" in Factory and Project
-
-```bash
-pushd ~/Projects/factory/workshop_w2/w2-project && bd config set types.custom "convoy"
-pushd ~/Projects/factory/workshop_w2/w2-gc-factory && bd config set types.custom "convoy"
-```
-
-##### Restart Factory
-
-```bash
-pushd ~/Projects/factory/workshop_w2/w2-gc-factory
-gc stop
-gc start
 gc restart
+gc status
+gc dashboard serve     # http://localhost:8080
 ```
 
-##### Startup Gascity Dashboard
+Expected `gc doctor` output includes the two documented deprecation warnings
+(`v2-default-rig-import-format`, `v2-workspace-name`) — these are tracked
+upstream and can be ignored. See `my-factory/README.md` for details.
+
+### 6. Kick off a task to verify the factory
 
 ```bash
-pushd ~/Projects/factory/workshop_w2/w2-gc-factory
-gc dashboard serve
+cd ~/Projects/factory/workshop_w2/w2-project
+bd create --title "Create a script that prints hello world" --label needs-architecture
+gc poke   # or wait for the 30s patrol tick
 ```
 
-Open Gascity Dashboard in Browser
-
-* http://localhost:8080
-
-##### Generate Task to Verify Factory
-
-```bash
-gc sling w2-gc-factory "Create a script that prints hello world"
-```
+The architect wakes, picks up the bead, and hands off via `gc all
+wake-downstream &`. Watch the dashboard as the bead flows through the agents.

@@ -1006,7 +1006,7 @@ Before starting L2, walk through this retrospective on your L1 run. It takes 5 m
 4. **Did the agent commit to a feature branch?** `git branch --show-current` should show `claude-md-setup` or similar, not `main`. If it's on `main`, add a branch-discipline rule to `CLAUDE.md` before L2 — you don't want six agents pushing to main in L4.
 5. **Did the agent follow the Output Format?** Check `git log --oneline -3`. Every commit should match `type(scope): description`. If any don't, your Output Format needs a concrete example (not just the pattern).
 
-Bring your answers to L2 — the gaps you identify now will become per-agent rules in `packs/planner/prompts/planner.md` and beyond.
+Bring your answers to L2 — the gaps you identify now will become per-agent rules in `packs/planner/agents/planner/prompt.template.md` and beyond.
 
 ---
 

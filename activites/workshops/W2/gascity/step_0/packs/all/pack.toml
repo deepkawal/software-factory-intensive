@@ -1,26 +1,42 @@
-# actual-factory — Composition pack that wires all 8 Agent Operations
-# into a single runnable software factory.
+# W2-step-0 actual-factory — Composition pack wiring the 8 Agent Operations
+# at the state this checkpoint captures (pre-W2-Part-2 curriculum edits).
 #
-# Includes every leaf pack in examples/actual/ via relative paths.
-# Each leaf pack is also usable standalone — this one just bundles
-# them so a user can bring the whole factory up with a single
-# `includes = ["examples/actual/all"]` line in their city.toml.
+# Differs from canonical packs/all/ by importing `deployer` instead of
+# `release-gate` — the W2 checkpoint uses the curriculum's older naming.
 #
 # The "pipeline" is NOT hardcoded here. Each leaf pack's order gate
-# matches on a bead label (needs-architecture, needs-plan, etc.)
-# and wakes on its own. The flow is emergent from labels, not
-# prescribed by Go or by this file.
+# matches on a bead label (needs-architecture, needs-plan, etc.) and
+# wakes on its own. The flow is emergent from labels, not prescribed
+# by Go or by this file.
+#
+# Hosts the `wake-downstream` pack command invoked from every agent's
+# formula handoff. See packs/all/README.md for background on why this
+# is a pack command rather than a scripts/<n>.sh path.
 
 [pack]
 name = "actual-factory"
-schema = 1
-includes = [
-    "../architect",
-    "../planner",
-    "../designer",
-    "../validator",
-    "../builder",
-    "../reviewer",
-    "../deployer",
-    "../improver",
-]
+schema = 2
+
+[imports.architect]
+source = "../architect"
+
+[imports.planner]
+source = "../planner"
+
+[imports.designer]
+source = "../designer"
+
+[imports.validator]
+source = "../validator"
+
+[imports.builder]
+source = "../builder"
+
+[imports.reviewer]
+source = "../reviewer"
+
+[imports.deployer]
+source = "../deployer"
+
+[imports.improver]
+source = "../improver"

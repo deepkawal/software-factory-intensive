@@ -40,7 +40,7 @@ If a pack edit breaks your factory, swap back to the shipped `../packs/<name>` p
                     │  Reads:                     │
                     │    • bead description       │
                     │    • docs/PROJECT_MANIFEST  │
-                    │    • packs/planner/prompts  │
+                    │    • agents/planner/prompt  │
                     │                            │
                     │  Produces:                  │
                     │    work-packages/<slug>.md  │───► Goal, Stories, ACs,
@@ -94,7 +94,7 @@ Before installing anything, read what you're about to install. Each pack is a fo
 
 Open this file in your editor and read it end-to-end — it's 65 lines:
 
-[`packs/planner/prompts/planner.md.tmpl`](../../../packs/planner/prompts/planner.md.tmpl)
+[`packs/planner/agents/planner/prompt.template.md`](../../../packs/planner/agents/planner/prompt.template.md)
 
 You should see six sections:
 
@@ -128,25 +128,27 @@ You should see six sections:
 
 ```toml
 [pack]
-name = "planner"
-schema = 1
-description = "Planner agent — breaks feature requests into structured work packages"
+name = "actual-planner"
+schema = 2
+```
 
-[[agent]]
-name = "planner"
+Plus a sibling file at `packs/planner/agents/planner/agent.toml`:
+
+```toml
 scope = "rig"
-prompt_template = "prompts/planner.md"
-overlay_dir = "overlays/default"
-nudge = "Check your hook for new feature requests to plan."
-idle_timeout = "1h"
+wake_mode = "fresh"
+work_dir = ".gc/agents/{{.Rig}}/planner"
+nudge = "Run 'gc prime', then check bd ready --label=needs-plan for work."
+idle_timeout = "2h"
+min_active_sessions = 0
 max_active_sessions = 1
 ```
 
-**What's happening here:** The `[[agent]]` block is what gets merged into your city when you run `gc rig add --include`. `prompt_template` points to the prompt file you just read. `idle_timeout = "1h"` means the agent's tmux session shuts down after 1 hour of inactivity. `max_active_sessions = 1` means one bead at a time.
+**What's happening here:** In Pack v2, the pack identity (`pack.toml`) and the agent config (`agents/<name>/agent.toml`) are separate files. The agent is discovered by convention — Gas City finds every subdirectory under `agents/` and treats it as an agent. `idle_timeout = "2h"` means the agent's tmux session shuts down after 2 hours of inactivity; `max_active_sessions = 1` means one bead at a time. The prompt file lives at `agents/planner/prompt.template.md` — also convention-discovered.
 
 ### Step 3: Open the Architect Pack
 
-[`packs/architect/prompts/architect.md.tmpl`](../../../packs/architect/prompts/architect.md.tmpl)
+[`packs/architect/agents/architect/prompt.template.md`](../../../packs/architect/agents/architect/prompt.template.md)
 
 Same six-section structure as the Planner, but different role:
 
@@ -177,21 +179,22 @@ Notice the key difference from the Planner: Step 5 says "Add a cross-reference t
 
 ```toml
 [pack]
-name = "architect"
-schema = 1
-description = "Architect agent — produces ADRs and technical decisions from work packages"
+name = "actual-architect"
+schema = 2
+```
 
-[[agent]]
-name = "architect"
+Plus `packs/architect/agents/architect/agent.toml`:
+
+```toml
 scope = "rig"
-prompt_template = "prompts/architect.md"
-overlay_dir = "overlays/default"
-nudge = "Check your hook for work packages needing architecture decisions."
+wake_mode = "fresh"
+work_dir = ".gc/agents/{{.Rig}}/architect"
+nudge = "Run 'gc prime', then check bd ready --label=needs-architecture for work."
 idle_timeout = "1h"
 max_active_sessions = 1
 ```
 
-Same shape as the Planner's `pack.toml`. The only differences are `name`, `description`, `prompt_template`, and `nudge`. All agent packs follow this pattern — you'll see it again in L3 (Designer, Coder) and L4 (Reviewer, Deployer).
+Same shape as the Planner's `pack.toml` + `agent.toml` split. The only differences between agent packs are `name`, `work_dir`, and `nudge`. All agent packs follow this pattern — you'll see it again in L3 (Designer, Coder) and L4 (Reviewer, Deployer).
 
 You're done reading. Now install.
 
@@ -213,7 +216,9 @@ You should see output like:
 rig "your-repo" updated — added pack "planner"
 ```
 
-**What's happening here:** `gc rig add --include` tells Gas City: "for this rig, also load the agent definition and prompt from the specified pack directory." The `[[agent]]` block from `packs/planner/pack.toml` is merged into your city's effective configuration. The prompt file at `packs/planner/prompts/planner.md.tmpl` becomes the system prompt for any session started by this agent.
+**What's happening here:** `gc rig add --include` tells Gas City: "for this rig, also load the agent definition and prompt from the specified pack directory." The contents of `packs/planner/agents/planner/agent.toml` are merged into your city's effective configuration. The prompt file at `packs/planner/agents/planner/prompt.template.md` becomes the system prompt for any session started by this agent.
+
+> **Note:** In the canonical `my-factory/` setup, all 8 agent packs compose automatically via `default_rig_includes` in `my-factory/city.toml` — you don't need `--include` per-pack. The explicit `--include` here is for teaching: it shows exactly which pack is being wired up.
 
 ### Step 2: Restart Gas City and Verify
 
@@ -236,7 +241,7 @@ If `planner` doesn't appear, check that the `--include` path was correct (absolu
 
 The shipped prompt is generic. You need to tailor two things for your project:
 
-**a) Open `packs/planner/prompts/planner.md.tmpl` in your editor** (or copy it into your repo if you prefer local overrides).
+**a) Open `packs/planner/agents/planner/prompt.template.md` in your editor** (or copy it into your repo if you prefer local overrides).
 
 **b) Update the Output Format section** with your project's naming convention. For example, if your project is Fired Up Pizza:
 
@@ -378,7 +383,7 @@ Three agents. The first two stages of your factory pipeline are installed.
 
 ### Step 4: Customize the Architect Prompt
 
-Open `packs/architect/prompts/architect.md.tmpl` and make two changes:
+Open `packs/architect/agents/architect/prompt.template.md` and make two changes:
 
 **a) Add `CLAUDE.md` to the Inputs section** (so the Architect reads tailored ADRs):
 
@@ -527,7 +532,7 @@ Slinging my-factory-a1b2c3 → planner
 Session started: planner-a1b2c3 (tmux)
 ```
 
-**What's happening here:** Gas City starts a tmux session, launches Claude Code inside your repo directory, loads `packs/planner/prompts/planner.md.tmpl` as the system prompt, and hands the bead's description as the task. The Planner agent is now working autonomously.
+**What's happening here:** Gas City starts a tmux session, launches Claude Code inside your repo directory, loads `packs/planner/agents/planner/prompt.template.md` as the system prompt, and hands the bead's description as the task. The Planner agent is now working autonomously.
 
 ### Step 4: Watch the Planner Work
 
@@ -600,7 +605,7 @@ page, so that I know how many points I have.
 
 ### Step 6: Check the Work Package Against the Quality Gate
 
-Open `packs/planner/prompts/planner.md.tmpl` and read the Quality Gate section. Check each rule:
+Open `packs/planner/agents/planner/prompt.template.md` and read the Quality Gate section. Check each rule:
 
 | Quality Gate Rule | Pass? | Evidence |
 |-------------------|-------|----------|
@@ -612,7 +617,7 @@ Open `packs/planner/prompts/planner.md.tmpl` and read the Quality Gate section. 
 **If any rule fails:**
 
 1. **Do NOT edit the work package file directly.** That's a manual fix — it breaks config discipline.
-2. Instead, open `packs/planner/prompts/planner.md.tmpl` and add a more specific rule. For example, if test cases are missing:
+2. Instead, open `packs/planner/agents/planner/prompt.template.md` and add a more specific rule. For example, if test cases are missing:
 
 ```markdown
 ## Quality Gate
@@ -784,7 +789,7 @@ expected volume (<10K orders/month).
 
 ### Step 5: Check the ADR Against the Quality Gate
 
-Open `packs/architect/prompts/architect.md.tmpl` and check each Quality Gate rule:
+Open `packs/architect/agents/architect/prompt.template.md` and check each Quality Gate rule:
 
 | Quality Gate Rule | Pass? | Evidence |
 |-------------------|-------|----------|
@@ -795,7 +800,7 @@ Open `packs/architect/prompts/architect.md.tmpl` and check each Quality Gate rul
 
 **If any rule fails:**
 
-1. Open `packs/architect/prompts/architect.md.tmpl` and add a more specific rule. For example, if the Architect only considered one option:
+1. Open `packs/architect/agents/architect/prompt.template.md` and add a more specific rule. For example, if the Architect only considered one option:
 
 ```markdown
 ## Quality Gate
@@ -847,14 +852,14 @@ You should see:
 
 **If cross-references are missing:** this is a prompt gap. Add to both pack prompts:
 
-In `packs/planner/prompts/planner.md.tmpl`, add to the Output Format:
+In `packs/planner/agents/planner/prompt.template.md`, add to the Output Format:
 
 ```markdown
 ## Architectural Decisions
 [Leave blank — the Architect agent will fill this in after producing ADRs]
 ```
 
-In `packs/architect/prompts/architect.md.tmpl`, add to the Process section:
+In `packs/architect/agents/architect/prompt.template.md`, add to the Process section:
 
 ```markdown
 5. After writing the ADR, open the work package file and append the ADR
@@ -1024,7 +1029,7 @@ Every command you ran during this lab, in order:
 gc rig add ~/path/to/your-repo --include /path/to/packs/planner
 gc restart
 gc status
-# (edit packs/planner/prompts/planner.md.tmpl — add project-specific Quality Gate rule)
+# (edit packs/planner/agents/planner/prompt.template.md — add project-specific Quality Gate rule)
 git checkout -b l2-planner-architect
 git add -A && git commit -m "chore(planner): customize planner prompt"
 
@@ -1036,7 +1041,7 @@ git add CLAUDE.md && git commit -m "chore: seed tailored industry ADRs"
 gc rig add ~/path/to/your-repo --include /path/to/packs/architect
 gc restart
 gc status
-# (edit packs/architect/prompts/architect.md.tmpl — add CLAUDE.md as input)
+# (edit packs/architect/agents/architect/prompt.template.md — add CLAUDE.md as input)
 git add -A && git commit -m "chore(architect): customize architect prompt"
 
 # PART 3 — Run the Planner
@@ -1075,9 +1080,9 @@ git push
 | Component | File / Location | What It Does |
 |-----------|-----------------|--------------|
 | Planner pack | `packs/planner/` | Defines the Planner agent: prompt, overlay, metadata |
-| Planner prompt | `packs/planner/prompts/planner.md.tmpl` | System prompt for the Planner — Role, Inputs, Output Format, Quality Gate, Process |
+| Planner prompt | `packs/planner/agents/planner/prompt.template.md` | System prompt for the Planner — Role, Inputs, Output Format, Quality Gate, Process |
 | Architect pack | `packs/architect/` | Defines the Architect agent: prompt, overlay, metadata |
-| Architect prompt | `packs/architect/prompts/architect.md.tmpl` | System prompt for the Architect — same six-section structure |
+| Architect prompt | `packs/architect/agents/architect/prompt.template.md` | System prompt for the Architect — same six-section structure |
 | Tailored ADRs | `CLAUDE.md` (appended by `actual adr-bot`) | Industry-standard ADRs tailored to your codebase — the Architect's baseline |
 | Work package | `work-packages/loyalty-points-system.md` | Planner's output: Goal, Stories, ACs, Dependencies, Tests, Scope |
 | ADR | `docs/adr/0001-loyalty-points-storage.md` | Architect's output: Context, Options, Decision, Consequences, References |
@@ -1105,7 +1110,7 @@ When you review your own output, check:
 |---------|-----|
 | `gc rig add --include` says "pack not found" | Use the absolute path to the pack directory, not relative. Verify with `ls /path/to/packs/planner/pack.toml`. |
 | `gc status` doesn't show `planner` after restart | The `--include` may have failed silently. Run `gc rig list` and check the PACKS column. Re-run `gc rig add --include` with the correct path. |
-| Planner writes to wrong directory (e.g., `plan/` instead of `work-packages/`) | Open `packs/planner/prompts/planner.md.tmpl` → Output Format section. Make the path explicit and add "never anywhere else." Re-sling. |
+| Planner writes to wrong directory (e.g., `plan/` instead of `work-packages/`) | Open `packs/planner/agents/planner/prompt.template.md` → Output Format section. Make the path explicit and add "never anywhere else." Re-sling. |
 | Architect writes ADR without reading the work package | The bead description didn't include the work package path. Edit the bead: `bd edit my-factory-d4e5f6` and add the path explicitly. Re-sling. |
 | Architect produces a 1-option ADR | Add to Quality Gate: "You MUST evaluate at least 3 options. List the naive approach and explain why it was rejected." Re-sling. |
 | Cross-references are missing | Add explicit instructions to both prompts (see Part 4, Step 6). Re-sling the Architect only — it's responsible for back-linking. |

@@ -1,0 +1,36 @@
+# my-factory/city.toml — Deployment config for the factory.
+#
+# This file's committed as a .template. First-time setup:
+#
+#     cp pack.toml.template pack.toml
+#     cp city.toml.template city.toml
+#     cd my-factory
+#     gc register .               # or: gc register --name <cohort-unique> .
+#     gc rig add ~/Projects/your-project
+#
+# `pack.toml` and `city.toml` are gitignored so `gc register --name` and
+# `gc rig add` can mutate your local copy without dirtying the tree or
+# conflicting with curriculum pulls (workshop:#602 workaround).
+#
+# default_rig_includes is a v1 shape honored on schema=2 with a
+# deprecation warning at every gc doctor run — that's expected
+# (workshop:#781). Keep it until the v2 target shape lands upstream.
+# Expected gc doctor warnings:
+#   ⚠ v2-default-rig-import-format — workshop:#781
+#   ⚠ v2-workspace-name — workshop comment on gastownhall/gascity#600
+
+[workspace]
+name = "my-factory"
+provider = "claude"
+# start_command intentionally omitted — rely on `claude` on PATH.
+# Install instructions: ../installation.md.
+default_rig_includes = ["../packs/all"]
+
+[session]
+startup_timeout = "3m"
+
+[daemon]
+patrol_interval = "30s"
+max_restarts = 5
+restart_window = "1h"
+shutdown_timeout = "5s"

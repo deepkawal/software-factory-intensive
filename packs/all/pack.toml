@@ -1,26 +1,48 @@
 # actual-factory — Composition pack that wires all 8 Agent Operations
 # into a single runnable software factory.
 #
-# Includes every leaf pack in examples/actual/ via relative paths.
-# Each leaf pack is also usable standalone — this one just bundles
-# them so a user can bring the whole factory up with a single
-# `includes = ["examples/actual/all"]` line in their city.toml.
+# Imports every leaf pack in packs/ via relative paths. Each leaf pack is
+# also usable standalone — this one just bundles them so a user can bring
+# the whole factory up with a single [imports.all] entry in their root
+# pack.toml (see my-factory/pack.toml.template).
 #
 # The "pipeline" is NOT hardcoded here. Each leaf pack's order gate
-# matches on a bead label (needs-architecture, needs-plan, etc.)
-# and wakes on its own. The flow is emergent from labels, not
-# prescribed by Go or by this file.
+# matches on a bead label (needs-architecture, needs-plan, etc.) and
+# wakes on its own. The flow is emergent from labels, not prescribed
+# by Go or by this file.
+#
+# This pack also hosts the `wake-downstream` pack command that every
+# leaf agent's formula handoff step invokes via `gc all wake-downstream &`.
+# Packaging it as a pack command (rather than a scripts/wake-downstream.sh
+# path) makes the handoff topology-agnostic — workshop:#785 (no PACK_DIR
+# in agent session shells) and workshop:#786 (rig-imported packs don't
+# expose commands; `packs/all` must be imported at workspace scope on the
+# root pack.toml for `gc all wake-downstream` to resolve).
 
 [pack]
 name = "actual-factory"
-schema = 1
-includes = [
-    "../architect",
-    "../planner",
-    "../designer",
-    "../validator",
-    "../builder",
-    "../reviewer",
-    "../release-gate",
-    "../improver",
-]
+schema = 2
+
+[imports.architect]
+source = "../architect"
+
+[imports.planner]
+source = "../planner"
+
+[imports.designer]
+source = "../designer"
+
+[imports.validator]
+source = "../validator"
+
+[imports.builder]
+source = "../builder"
+
+[imports.reviewer]
+source = "../reviewer"
+
+[imports.release-gate]
+source = "../release-gate"
+
+[imports.improver]
+source = "../improver"

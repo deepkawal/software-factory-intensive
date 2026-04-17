@@ -4,7 +4,7 @@
 **Work package:** [`work-packages/loyalty-points-system.md`](../work-packages/loyalty-points-system.md)
 **Design spec:** [`design/loyalty-points-spec.md`](../design/loyalty-points-spec.md)
 **ADR:** [`docs/adr/0001-loyalty-points-storage.md`](../docs/adr/0001-loyalty-points-storage.md)
-**Reviewer run:** sling 3 (prior two runs flagged issues that were resolved via coder prompt edits — see commits on `packs/coder/prompts/coder.md`)
+**Reviewer run:** sling 3 (prior two runs flagged issues that were resolved via coder prompt edits — see commits on `packs/builder/agents/builder/prompt.template.md`)
 **Generated:** 2026-04-12
 
 ---
@@ -63,12 +63,12 @@ Response body always includes `points_earned: <number>`, including when the valu
 
 ## Resolved Findings from Prior Slings
 
-These were flagged in earlier Reviewer runs and resolved by updating `packs/coder/prompts/coder.md`. Kept here for audit.
+These were flagged in earlier Reviewer runs and resolved by updating `packs/builder/agents/builder/prompt.template.md`. Kept here for audit.
 
 ### (Was Medium-1, now resolved) · `rollback` was not idempotent in sling 1
 
 **Original severity:** Medium
-**Resolution:** Coder prompt updated with `"Rollback functions must be idempotent — a second call with the same arguments must be a no-op, not a second rollback."` (commit `a7c3d19` on `packs/coder/prompts/coder.md`). Sling 2 produced a correct idempotent implementation. Verified.
+**Resolution:** Coder prompt updated with `"Rollback functions must be idempotent — a second call with the same arguments must be a no-op, not a second rollback."` (commit `a7c3d19` on `packs/builder/agents/builder/prompt.template.md`). Sling 2 produced a correct idempotent implementation. Verified.
 
 ### (Was High-1, now resolved) · Phone validation missing at API layer in sling 2
 

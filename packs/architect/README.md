@@ -1,8 +1,8 @@
 # actual-architect
 
 The **Architect** agent of the Actual Software Factory. One of eight
-Agent-Operation packs under `examples/actual/`. Maps to the
-"Architect" operation at https://www.actual.ai/softwarefactory.
+Agent-Operation packs under `packs/`. Maps to the "Architect" operation
+at https://www.actual.ai/softwarefactory.
 
 ## Persona
 
@@ -27,17 +27,16 @@ Write implementation code. Decompose work. Run CI. Review PRs.
 
 ## How to run
 
-As part of the full factory:
+As part of the full factory (from `my-factory/`):
 ```bash
 gc rig add /path/to/your/project
-gc start examples/actual/
+gc restart
 ```
 
-Standalone (just this agent):
-```bash
-# add to a city.toml:
-# [workspace]
-# includes = ["examples/actual/architect"]
+Standalone (just this agent), in a factory `pack.toml`:
+```toml
+[imports.architect]
+source = "../packs/architect"
 ```
 
 Manual dispatch of the formula against a specific bead:
@@ -48,32 +47,39 @@ gc sling <rig>/architect --on mol-architect-review \
 
 ## Pack contents
 
-| File | Purpose |
+| Path | Purpose |
 |------|---------|
-| `pack.toml` | Agent + formulas + orders + doctor + commands declaration |
-| `prompts/architect.md.tmpl` | The Principal-Engineer persona prompt |
-| `formulas/mol-architect-review.formula.toml` | 5-step review workflow |
-| `formulas/orders/architect-guardrail-check/order.toml` | Condition-gated auto-dispatch |
-| `doctor/check-architect.sh` | Verifies `bd`, `gc`, `git`, `jq`, and (optional) `actual` |
-| `commands/status.sh` | Shows architect work queue |
-| `commands/rules.sh` | Lists rules under `.actual/rules/` |
-| `scripts/sync-actual-skill.sh` | Author tool: re-vendor upstream actual-skill |
-| `overlays/default/.claude/skills/actual/` | Vendored upstream actual-skill |
+| `pack.toml` | Pack identity (v2 — schema=2) |
+| `agents/architect/agent.toml` | Agent scope, wake mode, work dir, nudge, session limits |
+| `agents/architect/prompt.template.md` | The Principal-Engineer persona prompt |
+| `agents/architect/overlay/.claude/settings.json` | Claude Code session settings |
+| `agents/architect/overlay/.claude/skills/actual/` | Vendored upstream actual-skill |
+| `formulas/mol-architect-review.toml` | 5-step review workflow |
+| `orders/architect-guardrail-check.toml` | Condition-gated auto-dispatch |
+| `commands/status/run.sh` + `command.toml` | `gc architect status` — work queue |
+| `commands/rules/run.sh` + `command.toml` | `gc architect rules` — list rules |
+| `doctor/check-architect/run.sh` + `doctor.toml` | Verifies `bd`, `gc`, `git`, `jq`, `actual` |
+| `assets/sync-actual-skill.sh` | Author tool: re-vendor upstream actual-skill |
 
 ## Updating the vendored actual-skill
 
-The `overlays/default/.claude/skills/actual/` tree is a verbatim copy
-of `skills/actual/` from
+The `agents/architect/overlay/.claude/skills/actual/` tree is a verbatim
+copy of `skills/actual/` from
 [actual-software/actual-skill](https://github.com/actual-software/actual-skill).
 When upstream publishes a new version:
 
 ```bash
-./scripts/sync-actual-skill.sh            # pulls main
-./scripts/sync-actual-skill.sh v1.2.3     # pins to a tag
-git diff -- overlays/default/.claude/skills/actual
+./assets/sync-actual-skill.sh            # pulls main
+./assets/sync-actual-skill.sh v1.2.3     # pins to a tag
+git diff -- agents/architect/overlay/.claude/skills/actual
 ```
 
 Review and commit the diff.
+
+The skill is duplicated under each agent's overlay rather than shared from
+a pack-root `skills/` directory because Gas City 0.15.x only materializes
+overlay content into sessions — see
+[workshop comment on gastownhall/gascity#669](https://github.com/gastownhall/gascity/issues/669).
 
 ## Handoff protocol
 
@@ -90,4 +96,6 @@ architect (this pack)  →  planner  →  designer/validator  →  builder
 ```
 
 Each step advances via a label change on the bead. No Go code, no
-hardcoded pipeline — just beads and label-matching order gates.
+hardcoded pipeline — just beads and label-matching order gates. The
+formula's handoff step calls `gc all wake-downstream &` to nudge the
+next agent whose label just became ready.

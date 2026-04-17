@@ -1,0 +1,17 @@
+# W2-step-0 factory pack.toml.template — checkpoint snapshot for W2 Part 1.
+#
+# First-time setup (from this directory):
+#   cp pack.toml.template pack.toml
+#   cp city.toml.template city.toml
+#   gc register --name w2-step0-<your-name> .
+#   gc rig add <path-to-test-rig>
+#
+# pack.toml and city.toml are gitignored so gc register / gc rig add
+# mutate your local copy without touching the checkpoint snapshot.
+
+[pack]
+name = "w2-step-0-factory"
+schema = 2
+
+[imports.all]
+source = "./all"

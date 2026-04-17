@@ -113,7 +113,7 @@ When should an ADR reject an option outright vs. document it as a trade-off? The
 - `review-reports/order-history-review.md`
 - `release-gates/order-history-gate.md`
 - `DECISIONS.md` — two new entries
-- Updated: `packs/architect/prompts/architect.md`
-- Updated: `packs/coder/prompts/coder.md`
+- Updated: `packs/architect/agents/architect/prompt.template.md`
+- Updated: `packs/builder/agents/builder/prompt.template.md`
 
 Feature branch `feat/order-history` is mergeable with `main`. Final merge pending founder sign-off outside the capstone session.

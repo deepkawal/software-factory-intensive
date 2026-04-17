@@ -38,7 +38,7 @@ Anchor personas are defined in
 
 This pack vendors the upstream
 [actual-software/actual-skill](https://github.com/actual-software/actual-skill)
-under `overlays/default/.claude/skills/actual/`. The builder reads
+under `agents/builder/overlay/.claude/skills/actual/`. The builder reads
 the rig's generated rules via `actual status` and refuses to code
 against stale ADRs — instead it files a `needs-architecture` bead
 back to the architect.
@@ -65,7 +65,7 @@ includes = ["examples/actual/builder"]
 
 Manual dispatch against a specific bead:
 ```bash
-./commands/build.sh <bead-id>
+./commands/build/run.sh <bead-id>
 # or:
 gc sling <rig>/builder --bead <bead-id> --on mol-build-from-spec
 ```

@@ -53,7 +53,7 @@ gc status
 2. Sling to the planner: `gc sling <rig>/planner <bead-id>`
 3. Watch the agent work: `gc session peek <rig>/planner`
 4. Verify output: `cat work-packages/loyalty-points.md`
-5. If output is incomplete, update the planner prompt (`packs/planner/prompts/planner.md.tmpl`) and re-run — NOT re-prompt
+5. If output is incomplete, update the planner prompt (`packs/planner/agents/planner/prompt.template.md`) and re-run — NOT re-prompt
 
 ### Architect Run
 1. Sling the same bead to the architect: `gc sling <rig>/architect <bead-id>`

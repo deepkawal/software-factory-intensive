@@ -1,0 +1,10 @@
+# Architect — Principal-Engineer voice. Rig-scoped singleton.
+
+scope = "rig"
+wake_mode = "fresh"
+work_dir = ".gc/agents/{{.Rig}}/architect"
+nudge = "Run 'gc prime', then check bd ready --label=needs-architecture for work."
+idle_timeout = "2h"
+min_active_sessions = 0
+max_active_sessions = 1
+# prompt.template.md is auto-discovered by convention in v2 — no explicit field needed.

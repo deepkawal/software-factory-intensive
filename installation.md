@@ -22,9 +22,11 @@ Gas City is the orchestration framework this workshop is built on. It manages ag
 # macOS / WSL / Linux (with Homebrew)
 brew install gastownhall/gascity/gascity
 
-# Verify
-gc --version
+# Verify (must report >= 0.15.0 — schema=2 packs require v2-capable gc)
+gc version
 ```
+
+**Minimum version: 0.15.0.** The factory uses Pack v2 (`schema = 2` in pack.toml). Earlier Gas City releases will fail to load the packs.
 
 Gas City brings in the core tool dependencies it needs: `tmux`, `jq`, `git`, `dolt`. On macOS they are installed as Homebrew dependencies. On Linux, install any missing ones via your package manager.
 
@@ -34,7 +36,12 @@ Confirm everything is wired up:
 gc doctor
 ```
 
-All `check-core-tools` lines should show `✓`. Warnings for optional integrations (Jira, Linear, Sentry, etc.) are expected at this point — you'll enable those later.
+All `check-core-tools` lines should show `✓`. Two deprecation warnings are **expected** for the factory's intentional v1-shape workarounds (documented in `my-factory/README.md`):
+
+- `v2-default-rig-import-format` — tracked at [workshop:#781](https://github.com/gastownhall/gascity/issues/781)
+- `v2-workspace-name` — tracked at [comment on #600](https://github.com/gastownhall/gascity/issues/600)
+
+Warnings for optional integrations (Jira, Linear, Sentry, etc.) are also expected at this point — you'll enable those later.
 
 ---
 
@@ -91,7 +98,7 @@ git clone https://github.com/actual-software/software-factory-intensive.git
 cd software-factory-intensive
 ```
 
-Your Gas City workspace lives at `my-factory/` — you'll register it in L1 and add pack includes as you progress. Your per-session deliverables land under `activities/`. See `reference-project/fired-up-pizza/` for a completed example.
+Your Gas City factory lives at `my-factory/` — you'll copy the committed templates and register it in L1 (or see [`my-factory/README.md`](my-factory/README.md) for the step-by-step). Your per-session deliverables land under `activities/`. See `reference-project/fired-up-pizza/` for a completed example.
 
 ---
 

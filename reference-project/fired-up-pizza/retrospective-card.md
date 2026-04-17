@@ -8,7 +8,7 @@
 
 ## Keep
 
-**Pack prompts are the unit of truth.** Every correction during this run was a prompt edit, committed with a conventional message, linked back to the bead. When the Architect proposed a single-option ADR, the muscle memory was *edit `packs/architect/prompts/architect.md`* — not *re-prompt the agent*. That's the W1→C1 discipline paying off. The two prompt edits are now ambient: the next feature run inherits them for free.
+**Pack prompts are the unit of truth.** Every correction during this run was a prompt edit, committed with a conventional message, linked back to the bead. When the Architect proposed a single-option ADR, the muscle memory was *edit `packs/architect/agents/architect/prompt.template.md`* — not *re-prompt the agent*. That's the W1→C1 discipline paying off. The two prompt edits are now ambient: the next feature run inherits them for free.
 
 ## Change
 

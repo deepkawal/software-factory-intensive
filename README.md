@@ -28,7 +28,7 @@ Use [`curriculum/PROJECT_OVERVIEW_TEMPLATE.md`](curriculum/PROJECT_OVERVIEW_TEMP
 
 Install Gas City and the tools it depends on. See [`installation.md`](installation.md) for the full dependency list and platform-specific notes.
 
-- **Gas City**: `brew install gastownhall/gascity/gascity`
+- **Gas City ≥ 0.15.0**: `brew install gastownhall/gascity/gascity` (verify with `gc version`)
 - **Supporting tools**: `git`, `tmux`, `jq`, `dolt` — typically installed automatically alongside Gas City on macOS
 
 ### 3. CLI Coding Agents
@@ -110,9 +110,13 @@ software-factory-intensive/
 ├── README.md                        # You are here
 ├── installation.md                  # Dependency install guide
 │
-├── my-factory/                      # Your Gas City workspace (top-level city.toml lives here)
-│   ├── city.toml                    # Workspace config — add pack includes as you progress
-│   ├── README.md                    # Quickstart: register workspace, add rig, wire packs
+├── my-factory/                      # Your Gas City factory (pack.toml + city.toml live here)
+│   ├── pack.toml.template           # Committed — copy to pack.toml at setup
+│   ├── city.toml.template           # Committed — copy to city.toml at setup
+│   ├── pack.toml                    # (gitignored) your local copy — mutated by gc register
+│   ├── city.toml                    # (gitignored) your local copy — mutated by gc rig add
+│   ├── .gitignore                   # Ignores the runtime copies above
+│   ├── README.md                    # Quickstart: register factory, add rig, kick off a task
 │   └── PROJECT_MANIFEST.md          # Manifest template (filled in during L1)
 │
 ├── activities/                      # Where you place per-session deliverables + pack customisations
@@ -138,9 +142,8 @@ software-factory-intensive/
 │   ├── labs/L1..L4/                 # Each has README.md + PROMPT.md
 │   └── capstone/C1/                 # README.md + PROMPT.md
 │
-├── packs/                           # Shipped Gas City agent packs — use as-is or copy + customise
+├── packs/                           # Shipped Gas City agent packs (all v2 — schema=2)
 │   ├── README.md                    # Pack authoring + persona mapping
-│   ├── city.toml                    # Sample workspace for standalone pack runs
 │   ├── planner/                     # Added in L2
 │   ├── architect/                   # Added in L2
 │   ├── designer/                    # Added in L3
@@ -149,8 +152,8 @@ software-factory-intensive/
 │   ├── release-gate/                # Added in L4 (called "Deployer" in the curriculum)
 │   ├── validator/                   # Optional — writes failing tests from ACs
 │   ├── improver/                    # Optional — harvests feedback from runs
-│   ├── all/                         # Composition pack bundling all 8
-│   ├── fired-up-pizza/              # Composite pack for the reference project
+│   ├── all/                         # Composition pack; hosts `gc all wake-downstream`
+│   ├── fired-up-pizza/              # Composite for the reference project
 │   └── workshop/                    # Pre-configured integrations (Jira, Linear, GitHub, etc.)
 │
 └── reference-project/
@@ -161,22 +164,21 @@ software-factory-intensive/
 
 ## Integrations
 
-The [`packs/workshop/`](packs/workshop/) pack provides pre-configured integrations for external services your factory can connect to. Include it alongside your agent packs to get:
+The [`packs/workshop/`](packs/workshop/) pack provides pre-configured integrations for external services your factory can connect to:
 
 - **Issue tracker sync** — Jira, Linear, GitHub Issues, GitLab Issues, Azure DevOps, Notion (via `bd` native sync with periodic orders)
 - **Observability** — Sentry, DataDog, PostHog, Grafana (via MCP servers giving agents direct tool access)
 - **Cloud providers** — AWS, GCP, Azure (validated via CLI auth)
 - **Communication** — Slack, Discord (via MCP servers)
 
-```bash
-# From my-factory/, add the workshop integrations pack to city.toml includes:
-#   includes = [..., "../packs/workshop"]
+The workshop pack is already imported in `my-factory/pack.toml.template` at workspace scope, so commands like `gc workshop status` and `gc workshop sync-all` are available once you've registered the factory:
 
+```bash
 # Copy the env template and fill in your credentials
-cp ../packs/workshop/env.example .env
+cp packs/workshop/env.example .env
 
 # Validate connections
-gc doctor
+cd my-factory && gc doctor
 ```
 
 Only configure the integrations your project actually uses. See [`packs/workshop/README.md`](packs/workshop/README.md) for the full list and setup details.
@@ -186,19 +188,25 @@ Only configure the integrations your project actually uses. See [`packs/workshop
 ## Getting Started
 
 ```bash
-# Clone the repo (it already contains a ready-to-use workspace at my-factory/)
+# Clone the repo
 git clone https://github.com/actual-software/software-factory-intensive.git
 cd software-factory-intensive
+
+# Copy the committed templates to your local runtime copies (gitignored)
+cp my-factory/pack.toml.template my-factory/pack.toml
+cp my-factory/city.toml.template my-factory/city.toml
 
 # Register my-factory/ with the Gas City supervisor
 cd my-factory
 gc register .
 
-# Add your project as a rig (agents added incrementally in labs)
-gc rig add ../../path/to/your-project
+# Add your project as a rig — all 8 agent packs compose in automatically
+# via default_rig_includes
+gc rig add ~/Projects/your-project
 
-# Your first agent pack gets added to my-factory/city.toml in L2:
-#   includes = ["../packs/planner", "../packs/architect"]
+# Start the factory
+gc restart
+gc status
 ```
 
-See [`my-factory/README.md`](my-factory/README.md) for the full workspace quickstart, [`activities/README.md`](activities/README.md) for the per-session deliverable layout, or the [curriculum README](curriculum/README.md) for session structure. Jump to [W1](curriculum/workshops/W1/) to start.
+See [`my-factory/README.md`](my-factory/README.md) for the full factory quickstart, [`activities/README.md`](activities/README.md) for the per-session deliverable layout, or the [curriculum README](curriculum/README.md) for session structure. Jump to [W1](curriculum/workshops/W1/) to start.

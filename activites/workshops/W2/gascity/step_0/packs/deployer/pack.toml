@@ -1,13 +1,13 @@
+# W2-step-0 deployer — Release-gate evaluation agent, curriculum-early name.
+#
+# Functionally equivalent to packs/release-gate in the canonical tree; W2
+# uses the older curriculum terminology ("Deployer"). The checkpoint
+# snapshot preserves this naming so students working through W2 see the
+# pack that the W2 README references.
+#
+# Prompt is plain markdown (no .template suffix) because the W2 step_0
+# snapshot captures it before any templating was introduced.
+
 [pack]
 name = "deployer"
-schema = 1
-description = "Deployer agent — release gate evaluation and deployment prep"
-
-[[agent]]
-name = "deployer"
-scope = "rig"
-prompt_template = "prompts/deployer.md"
-overlay_dir = "overlays/default"
-nudge = "Check your hook for reviewed code ready for release evaluation."
-idle_timeout = "1h"
-max_active_sessions = 1
+schema = 2

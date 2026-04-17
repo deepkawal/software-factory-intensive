@@ -49,7 +49,7 @@ gc status  # Should show all 6 agents
 4. Identify the highest-severity finding
 
 ### Fix Via Config (Critical Step)
-1. The finding must be fixed by updating `packs/builder/prompts/builder.md.tmpl` — NOT by manually editing code
+1. The finding must be fixed by updating `packs/builder/agents/builder/prompt.template.md` — NOT by manually editing code
 2. Re-run the builder: `gc sling <rig>/builder <bead-id>`
 3. Re-run the reviewer to verify the fix
 4. This loop is the core discipline: **code quality improves by improving agent config, not by human intervention**

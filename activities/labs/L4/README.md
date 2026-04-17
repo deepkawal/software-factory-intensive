@@ -64,7 +64,7 @@ gc sling your-project--release-gate <bead-id>
 ## Exit criteria
 
 * [ ] Review report produced with findings at Low/Medium/High severity
-* [ ] At least one finding was resolved by editing `packs/builder/prompts/builder.md.tmpl` (shipped or your copy) and re-slinging — no hand-edits to code in response to reviewer findings
+* [ ] At least one finding was resolved by editing `packs/builder/agents/builder/prompt.template.md` (shipped or your copy) and re-slinging — no hand-edits to code in response to reviewer findings
 * [ ] Release gate emitted with a clear PASS / FAIL verdict plus evidence per required check
 * [ ] `../../../my-factory/city.toml` has all six packs included
 

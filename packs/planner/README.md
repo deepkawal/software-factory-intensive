@@ -81,7 +81,7 @@ tracker reasons.
 
 Manual import (bypassing the formula):
 ```bash
-./commands/tracker-sync.sh
+./commands/tracker-sync/run.sh
 ```
 
 ## How to run

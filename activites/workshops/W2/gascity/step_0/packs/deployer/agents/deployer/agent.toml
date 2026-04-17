@@ -1,0 +1,6 @@
+scope = "rig"
+work_dir = ".gc/agents/{{.Rig}}/deployer"
+nudge = "Check your hook for reviewed code ready for release evaluation."
+idle_timeout = "1h"
+max_active_sessions = 1
+# prompt.md (plain markdown) is auto-discovered by convention.

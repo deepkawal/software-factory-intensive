@@ -165,7 +165,7 @@ If an agent produces wrong output — missing sections, wrong directory, vague r
 
 **Example violation.** The Planner's work package omits the Scope Boundary section. You notice, and in the same `gc watch planner` tmux you type "please add a Scope Boundary section." The section gets added — and the next time the Planner runs on a different bead, the scope boundary is missing again. The fix didn't stick.
 
-**Correct move.** Open `packs/planner/prompts/planner.md.tmpl`, sharpen the Output Format or Quality Gate to require Scope Boundary explicitly, commit the change, delete the half-finished work package, re-sling the Planner.
+**Correct move.** Open `packs/planner/agents/planner/prompt.template.md`, sharpen the Output Format or Quality Gate to require Scope Boundary explicitly, commit the change, delete the half-finished work package, re-sling the Planner.
 
 ### Rule 2: All fixes via config.
 
@@ -175,7 +175,7 @@ If tests fail after the Coder runs, if the Reviewer flags an issue, if the Deplo
 
 **Example violation.** The Coder writes a React component that imports from `@/lib/formatPrice` but your project uses `src/utils/formatPrice`. You open the file and change the import path by hand. The code builds, the PR merges. Three features later the Coder makes the same mistake — because the fix never reached its prompt.
 
-**Correct move.** Open `packs/builder/prompts/builder.md.tmpl`, add a rule to the Output Format: "All imports use project-relative paths from `src/` — never aliases like `@/lib/*` unless they're declared in the manifest's `tsconfig.paths`." Commit. Re-sling the Coder on the same bead.
+**Correct move.** Open `packs/builder/agents/builder/prompt.template.md`, add a rule to the Output Format: "All imports use project-relative paths from `src/` — never aliases like `@/lib/*` unless they're declared in the manifest's `tsconfig.paths`." Commit. Re-sling the Coder on the same bead.
 
 ### Rule 3: Log everything.
 
@@ -274,8 +274,8 @@ gc watch planner          # Ctrl+b d to detach when you've seen it start
 
 | Symptom | Root cause | Config fix |
 |---------|-----------|-----------|
-| Work package missing Scope Boundary | Planner prompt Output Format is ambiguous | Sharpen `packs/planner/prompts/planner.md.tmpl` Output Format; require `## Scope Boundary` verbatim; re-sling |
-| Work package uses "improve UX" or "make it faster" language | Quality Gate rule on ambiguous terms isn't being enforced | Add explicit forbidden-words list to `packs/planner/prompts/planner.md.tmpl` Quality Gate |
+| Work package missing Scope Boundary | Planner prompt Output Format is ambiguous | Sharpen `packs/planner/agents/planner/prompt.template.md` Output Format; require `## Scope Boundary` verbatim; re-sling |
+| Work package uses "improve UX" or "make it faster" language | Quality Gate rule on ambiguous terms isn't being enforced | Add explicit forbidden-words list to `packs/planner/agents/planner/prompt.template.md` Quality Gate |
 | File written to `plan/` or `docs/plans/` instead of `work-packages/` | Output path drift | Make output path literal in the prompt: "Write to `work-packages/<feature-slug>.md` — never anywhere else" |
 | Acceptance criteria are rephrases of bead criteria, not expansions | Planner isn't adding edge cases | Add Quality Gate rule: "Each AC must include a happy-path AND at least one edge case" |
 
@@ -326,7 +326,7 @@ gc watch architect
 | Symptom | Root cause | Config fix |
 |---------|-----------|-----------|
 | ADR considers only 1 option | Architect prompt doesn't force comparison | Add Quality Gate: "You MUST evaluate at least 3 distinct approaches. List the naive approach and explain why rejected" |
-| ADR decides something already covered in tailored ADRs | Architect isn't reading `CLAUDE.md` | Add `CLAUDE.md` to Inputs section of `packs/architect/prompts/architect.md.tmpl` (see L2 Part 2 Step 4) |
+| ADR decides something already covered in tailored ADRs | Architect isn't reading `CLAUDE.md` | Add `CLAUDE.md` to Inputs section of `packs/architect/agents/architect/prompt.template.md` (see L2 Part 2 Step 4) |
 | No cross-reference appended to work package | Process step 5 missing or unclear | Make it literal in the Process: "Open the work package file and append the ADR path under `## Architectural Decisions`. Create the heading if it doesn't exist" |
 | Consequences lists only positives | Quality Gate isn't requiring risk | Add rule: "Consequences must include at least one line starting with `- Risk:`" |
 
@@ -392,7 +392,7 @@ gc watch coder
 | Symptom | Root cause | Config fix |
 |---------|-----------|-----------|
 | Tests fail on the same pattern repeatedly (e.g., "Cannot read property 'map' of undefined") | This is exactly what W4 feedback loops exist for | Your feedback rule from W4 should detect this and append a "Common Pitfalls" section to `CLAUDE.md`. If it doesn't fire, the rule's detection logic is wrong — fix the rule, not the code |
-| Coder writes to wrong directory (e.g., `components/` instead of `src/components/`) | Coder prompt doesn't reference manifest's Project Structure explicitly | Add to `packs/builder/prompts/builder.md.tmpl` Process: "Read `docs/PROJECT_MANIFEST.md` Project Structure section and use those paths exclusively" |
+| Coder writes to wrong directory (e.g., `components/` instead of `src/components/`) | Coder prompt doesn't reference manifest's Project Structure explicitly | Add to `packs/builder/agents/builder/prompt.template.md` Process: "Read `docs/PROJECT_MANIFEST.md` Project Structure section and use those paths exclusively" |
 | Coder re-implements something that already exists (e.g., a `formatPhone` util) | Coder isn't scanning existing `src/utils/` | Add to Process: "Before writing any util function, grep `src/utils/` for an existing implementation" |
 | Lint fails on every commit | Coder isn't running lint locally | Add to Quality Gate: "Before marking ready, run `npm run lint` and `npm test` — both must exit 0" |
 | Coder commits secrets or `.env` contents | Guardrail missing | Add hard rule: "Never commit files matching `.env*`, `*.pem`, `credentials*`" |
@@ -799,7 +799,7 @@ A "stall" is 10+ minutes of no session activity or a stage producing output that
 
 **Root cause 85% of the time.** The bead description is too thin. You fed the Planner three sentences of feature intent and no acceptance criteria.
 
-**Config fix.** Open the bead description (or the source ticket the bead came from) and tighten it. If the Planner is halting for clarification on every run, add a rule to `packs/planner/prompts/planner.md.tmpl` Process: "If acceptance criteria are absent from the bead, write your own best-guess AC list and mark the work package as `Status: draft — AC needs human review`." This converts halting into progress-with-a-flag.
+**Config fix.** Open the bead description (or the source ticket the bead came from) and tighten it. If the Planner is halting for clarification on every run, add a rule to `packs/planner/agents/planner/prompt.template.md` Process: "If acceptance criteria are absent from the bead, write your own best-guess AC list and mark the work package as `Status: draft — AC needs human review`." This converts halting into progress-with-a-flag.
 
 ### Stall at Architect
 
@@ -807,7 +807,7 @@ A "stall" is 10+ minutes of no session activity or a stage producing output that
 
 **Root cause.** Quality Gate isn't forcing option count, or Inputs doesn't include `CLAUDE.md`, or no decision threshold tells the Architect when *not* to write an ADR.
 
-**Config fix.** Add to `packs/architect/prompts/architect.md.tmpl`: "Only write an ADR if the decision affects more than one file OR has long-term consequences OR contradicts a tailored ADR. For cosmetic or single-file changes, write a one-line note in the work package and close the bead." Then the minimum-3-options rule for cases that do pass this threshold.
+**Config fix.** Add to `packs/architect/agents/architect/prompt.template.md`: "Only write an ADR if the decision affects more than one file OR has long-term consequences OR contradicts a tailored ADR. For cosmetic or single-file changes, write a one-line note in the work package and close the bead." Then the minimum-3-options rule for cases that do pass this threshold.
 
 ### Stall at Designer
 
@@ -974,22 +974,30 @@ The capstone ends here. Your factory continues. Below are the habits that separa
 
 ### Building a composite pack for your team
 
-If you've made it through the capstone, you've installed six packs individually. The next time a teammate joins, they shouldn't have to install six — they should install one composite that pulls in all six. The reference project ships `packs/fired-up-pizza/pack.toml` as a 20-line composite bundle. The shape is:
+If you've made it through the capstone, you've worked with six individual agent packs. The next time a teammate joins, they shouldn't have to think about six packs — they should install one composite that imports all six. The reference project ships `packs/fired-up-pizza/pack.toml` as exactly that — a composition pack. The Pack v2 shape is:
 
 ```toml
 [pack]
-name = "fired-up-pizza-factory"
-schema = 1
-description = "Composite: all six factory agents for Fired Up Pizza"
+name = "fired-up-pizza"
+schema = 2
 
-includes = [
-  "../planner",
-  "../architect",
-  "../designer",
-  "../builder",
-  "../reviewer",
-  "../release-gate",
-]
+[imports.planner]
+source = "../planner"
+
+[imports.architect]
+source = "../architect"
+
+[imports.designer]
+source = "../designer"
+
+[imports.builder]
+source = "../builder"
+
+[imports.reviewer]
+source = "../reviewer"
+
+[imports.release-gate]
+source = "../release-gate"
 ```
 
 After the capstone, build the equivalent for your own factory:
@@ -997,16 +1005,24 @@ After the capstone, build the equivalent for your own factory:
 ```bash
 mkdir -p packs/team-factory
 # Write packs/team-factory/pack.toml using the shape above,
-# listing the six leaf packs under includes.
+# listing the six leaf packs as [imports.<binding>] blocks.
 ```
 
-Then the next teammate bootstraps with a single include in their `my-factory/city.toml`:
+Then the next teammate bootstraps by pointing their `my-factory/city.toml` at it:
 
 ```toml
-includes = ["../packs/team-factory"]
+[workspace]
+default_rig_includes = ["../packs/team-factory"]
 ```
 
-One command instead of six. This is how your factory becomes shareable.
+Plus the matching workspace-scope import in `my-factory/pack.toml` if they want the composition pack's commands to surface as `gc team-factory <cmd>`:
+
+```toml
+[imports.team-factory]
+source = "../packs/team-factory"
+```
+
+One command per teammate instead of six. This is how your factory becomes shareable.
 
 ---
 
@@ -1088,12 +1104,12 @@ gc events --dump --since 2h > factory-runs/capstone-<date>-events.log
 
 | Stage | Agent | Primary Input | Output Artifact | Quality Gate Source |
 |-------|-------|---------------|------------------|--------------------|
-| 1 | Planner | Bead description + manifest | `work-packages/<slug>.md` | `packs/planner/prompts/planner.md.tmpl` |
-| 2 | Architect | Work package + manifest + `CLAUDE.md` + existing ADRs | `docs/adr/NNNN-<slug>.md` | `packs/architect/prompts/architect.md.tmpl` |
-| 3 | Designer | Work package + ADR + manifest | `design/<slug>-spec.md` | `packs/designer/prompts/designer.md.tmpl` |
-| 4 | Coder | Design spec + manifest + `CLAUDE.md` | Feature branch under `src/` + tests | `packs/builder/prompts/builder.md.tmpl` + manifest build gates |
-| 5 | Reviewer | Code diff + spec + manifest Review Standards + `CLAUDE.md` | `review-reports/<slug>-review.md` + PR comment | `packs/reviewer/prompts/reviewer.md.tmpl` + manifest |
-| 6 | Deployer | Review report + manifest Release Criteria | `release-gates/<slug>-gate.md` + (if passes) deploy | `packs/release-gate/prompts/release-gate.md.tmpl` + manifest |
+| 1 | Planner | Bead description + manifest | `work-packages/<slug>.md` | `packs/planner/agents/planner/prompt.template.md` |
+| 2 | Architect | Work package + manifest + `CLAUDE.md` + existing ADRs | `docs/adr/NNNN-<slug>.md` | `packs/architect/agents/architect/prompt.template.md` |
+| 3 | Designer | Work package + ADR + manifest | `design/<slug>-spec.md` | `packs/designer/agents/designer/prompt.template.md` |
+| 4 | Coder | Design spec + manifest + `CLAUDE.md` | Feature branch under `src/` + tests | `packs/builder/agents/builder/prompt.template.md` + manifest build gates |
+| 5 | Reviewer | Code diff + spec + manifest Review Standards + `CLAUDE.md` | `review-reports/<slug>-review.md` + PR comment | `packs/reviewer/agents/reviewer/prompt.template.md` + manifest |
+| 6 | Deployer | Review report + manifest Release Criteria | `release-gates/<slug>-gate.md` + (if passes) deploy | `packs/release-gate/agents/release-gate/prompt.template.md` + manifest |
 
 ### Capstone deliverables
 
@@ -1130,12 +1146,12 @@ One-line fixes for the top issues you're likely to hit during the run. These are
 | Symptom | One-line fix |
 |---------|-------------|
 | `gc sling` "agent not found" | `gc rig list`; re-run `gc rig add --include /abs/path/to/pack`; `gc restart` |
-| Planner produces output with vague language | Add forbidden-words list to `packs/planner/prompts/planner.md.tmpl` Quality Gate; re-sling |
-| Architect writes 1-option ADR | Add "minimum 3 options" rule to `packs/architect/prompts/architect.md.tmpl`; re-sling |
+| Planner produces output with vague language | Add forbidden-words list to `packs/planner/agents/planner/prompt.template.md` Quality Gate; re-sling |
+| Architect writes 1-option ADR | Add "minimum 3 options" rule to `packs/architect/agents/architect/prompt.template.md`; re-sling |
 | Designer spec has no types | Convert Output Format to literal template with `### Types` required; re-sling |
-| Coder uses wrong import paths | Add manifest-declared-paths-only rule to `packs/builder/prompts/builder.md.tmpl`; re-sling |
-| Reviewer over-approves | Add severity-threshold-for-verdict rule to `packs/reviewer/prompts/reviewer.md.tmpl`; re-sling |
-| Deployer marks gates PASS without evidence | Add "show command + exit code per gate" rule to `packs/release-gate/prompts/release-gate.md.tmpl`; re-sling |
+| Coder uses wrong import paths | Add manifest-declared-paths-only rule to `packs/builder/agents/builder/prompt.template.md`; re-sling |
+| Reviewer over-approves | Add severity-threshold-for-verdict rule to `packs/reviewer/agents/reviewer/prompt.template.md`; re-sling |
+| Deployer marks gates PASS without evidence | Add "show command + exit code per gate" rule to `packs/release-gate/agents/release-gate/prompt.template.md`; re-sling |
 | Cross-references missing between artifacts | Add explicit Process step to downstream prompt: "Open upstream artifact and append back-reference"; re-sling downstream |
 | Orchestrator doesn't advance | Check `bd list --status needs-approval`; check previous bead closed; check orchestrator.yaml agent names |
 | Feedback rule not firing | Check detection regex against actual log lines with `bd event list --since 1h` |

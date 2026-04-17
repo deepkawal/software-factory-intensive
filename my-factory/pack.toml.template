@@ -1,0 +1,25 @@
+# my-factory/pack.toml — Workspace-scope imports for the factory.
+#
+# This file's committed as a .template. First-time setup:
+#
+#     cp pack.toml.template pack.toml
+#     cp city.toml.template city.toml
+#
+# `pack.toml` and `city.toml` are gitignored; your local edits (and any
+# mutations from `gc register --name` / `gc rig add`) stay untracked.
+#
+# Imports here are workspace-scope — this is how gc makes pack commands
+# visible (gc all wake-downstream, gc workshop sync-all, etc.). For
+# rig-scope agent composition, see city.toml's default_rig_includes.
+# Yes, packs/all ends up imported twice (workspace + rig scope) — that's
+# a current Gas City 0.15.x gap (workshop:#786); don't remove.
+
+[pack]
+name = "my-factory"
+schema = 2
+
+[imports.all]
+source = "../packs/all"
+
+[imports.workshop]
+source = "../packs/workshop"

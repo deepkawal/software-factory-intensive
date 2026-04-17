@@ -63,7 +63,7 @@ Three packs — **architect**, **planner**, **builder** — vendor the
 upstream [actual-software/actual-skill](https://github.com/actual-software/actual-skill)
 Claude Code companion for the `actual` CLI
 (ADR-powered CLAUDE.md/AGENTS.md generator). The skill sits under
-each pack's `overlays/default/.claude/skills/actual/` and is picked
+each pack's `agents/<agent>/overlay/.claude/skills/actual/` and is picked
 up automatically when the agent starts.
 
 To re-vendor after upstream releases a new version:
