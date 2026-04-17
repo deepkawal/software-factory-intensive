@@ -16,18 +16,17 @@ You'll also generate your project's `PROJECT_MANIFEST.md` during L1. That file b
 
 ## Workspace wiring
 
-L1 registers `../../../my-factory/` as a Gas City workspace and adds your project repo as a rig. No pack is included yet — the first pack gets added in L2. After L1, `../../../my-factory/city.toml` should have:
+L1 registers `../../../my-factory/` as a Gas City workspace and adds your project repo as a rig. No extra pack is wired yet — the first custom pack gets added in L2 (the shipped `packs/all` composition is already wired via `default_rig_includes`). After L1, `../../../my-factory/city.toml` should have:
 
 ```toml
 [workspace]
 name = "my-factory"
 provider = "claude"
-includes = []
+default_rig_includes = ["../packs/all"]
 
 [[rigs]]
 name = "your-project"
-path = "../../path/to/your-project"
-includes = []
+# No rig-scoped overrides yet — rig inherits default_rig_includes above.
 ```
 
 ## Exit criteria

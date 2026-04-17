@@ -1,24 +1,23 @@
 # actual-factory (composition pack)
 
-Brings up all 8 Agent Operations of the Actual Software Factory in
-one include. Depends on the 8 sibling leaf packs under
-`examples/actual/`.
+Brings up all 8 Agent Operations of the Actual Software Factory via
+`[imports.<binding>]` entries in `pack.toml`. Depends on the 8 sibling
+leaf packs under this checkpoint's `packs/` directory.
 
 ## Usage
 
+In the checkpoint's `city.toml.template`:
+
 ```toml
-# city.toml at the top level of examples/actual/
 [workspace]
-name = "actual-factory"
+name = "w2-step-0-factory"
 provider = "claude"
-includes = ["all"]
+default_rig_includes = ["./all"]
 ```
 
-Or from outside this directory, with an absolute or relative path:
-
-```toml
-includes = ["/abs/path/to/gascity/examples/actual/all"]
-```
+`./all` is this composition pack. It expands to all 8 leaf packs via
+its own `pack.toml` `[imports.*]` entries, so every rig registered
+with `gc rig add` gets all 8 agents automatically.
 
 ## The 8 agents
 

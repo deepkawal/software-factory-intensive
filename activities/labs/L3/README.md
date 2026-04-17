@@ -13,19 +13,9 @@
 
 ## Pack wiring
 
-Packs live at `../../../packs/designer/` and `../../../packs/builder/`.
+Packs live at `../../../packs/designer/` and `../../../packs/builder/`, already wired into every rig via `default_rig_includes = ["../packs/all"]` in `city.toml.template`.
 
-**(a) Use shipped packs as-is:**
-
-```toml
-# my-factory/city.toml
-includes = [
-    "../packs/planner",        # from L2
-    "../packs/architect",      # from L2
-    "../packs/designer",
-    "../packs/builder",
-]
-```
+**(a) Use shipped packs as-is:** nothing to wire — `packs/all` already contains designer and builder. Skip straight to restart.
 
 **(b) Customise:**
 
@@ -35,13 +25,25 @@ cp -r ../../../packs/designer packs/designer
 cp -r ../../../packs/builder packs/builder
 ```
 
-Then include `../activities/labs/L3/packs/designer` and `../activities/labs/L3/packs/builder` in `../../../my-factory/city.toml` in place of (or in addition to) the shipped paths.
+Then override the shipped packs for your rig only by adding rig-scoped imports to `../../../my-factory/city.toml`:
+
+```toml
+[[rigs]]
+name = "your-project"
+# ...existing fields...
+
+[rigs.imports.designer]
+source = "../activities/labs/L3/packs/designer"
+
+[rigs.imports.builder]
+source = "../activities/labs/L3/packs/builder"
+```
 
 Restart:
 
 ```bash
 cd ../../../my-factory
-gc service restart
+gc restart
 gc doctor
 ```
 
@@ -62,7 +64,7 @@ gc sling your-project--builder <bead-id>
 * [ ] Design spec written with Props / Interactions / Edge Cases / Test Plan sections
 * [ ] Builder committed working code to a feature branch; `npm test` (or your test runner) passes
 * [ ] Zero manual code edits — every Builder correction was a prompt edit to `packs/builder/agents/builder/prompt.template.md` (shipped or your copy) followed by a re-sling
-* [ ] `../../../my-factory/city.toml` now includes Designer + Builder alongside Planner + Architect
+* [ ] Designer + Builder ran successfully (shipped packs via `default_rig_includes`, or customised copies via `[rigs.imports.designer]` / `[rigs.imports.builder]`)
 
 ## Skipped this session?
 
@@ -71,5 +73,5 @@ L4 (review) runs on committed code from some feature branch. If you skipped L3, 
 ## Recover from a broken run
 
 * Revert: `git checkout activities/labs/L3/packs/`
-* Swap `../activities/labs/L3/packs/designer` / `builder` in `city.toml` back to `../packs/designer` / `../packs/builder`
-* `gc service restart` — the shipped packs always pass their doctor checks
+* Remove the `[rigs.imports.designer]` / `[rigs.imports.builder]` blocks from `../../../my-factory/city.toml`. The rig falls back to `default_rig_includes = ["../packs/all"]` and runs the shipped packs.
+* `gc restart` — the shipped packs always pass their doctor checks

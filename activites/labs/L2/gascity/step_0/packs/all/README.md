@@ -1,37 +1,33 @@
 # actual-factory (composition pack)
 
-Brings up all 8 Agent Operations of the Actual Software Factory in
-one include. Depends on the 8 sibling leaf packs under
-`examples/actual/`.
+For this L2 checkpoint, this composition pack imports only the two
+leaf packs exercised by the L2 lab — architect and planner — via
+`[imports.<binding>]` entries in `pack.toml`.
 
 ## Usage
 
+In the checkpoint's `city.toml.template`:
+
 ```toml
-# city.toml at the top level of examples/actual/
 [workspace]
-name = "actual-factory"
+name = "l2-step-0-factory"
 provider = "claude"
-includes = ["all"]
+default_rig_includes = ["./all"]
 ```
 
-Or from outside this directory, with an absolute or relative path:
+`./all` expands to architect + planner via its own `pack.toml`
+`[imports.*]` entries, so every rig registered with `gc rig add`
+gets both agents automatically.
 
-```toml
-includes = ["/abs/path/to/gascity/examples/actual/all"]
-```
-
-## The 8 agents
+## The 2 agents shipped in L2
 
 | Operation | Pack | Label gate |
 |-----------|------|------------|
 | Architect | `../architect` | `needs-architecture` |
 | Plan / Work Breakdown | `../planner` | `needs-plan` |
-| UI/UX Design | `../designer` | `needs-design` |
-| Validate / Test Cases | `../validator` | `needs-tests` |
-| Build Code | `../builder` | `ready-to-build` |
-| Code Review | `../reviewer` | `needs-review` |
-| Deploy / Release Gate | `../release-gate` | `ready-to-ship` |
-| Improve / Feedback Loop | `../improver` | cooldown (24h) |
+
+The full 8-agent factory lives in the canonical `packs/all/` at repo
+root; this L2 checkpoint ships only what the lab exercises.
 
 ## Handoff flow
 

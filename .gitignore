@@ -14,3 +14,6 @@
 
 # macOS editor/swap tempfiles (e.g. .!PID!filename)
 .!*!*
+
+# Scratch review / experiment directories
+.tmp/

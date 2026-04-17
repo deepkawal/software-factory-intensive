@@ -67,7 +67,8 @@ upstream and can be ignored. See `my-factory/README.md` for details.
 ```bash
 cd ~/Projects/factory/workshop_w2/w2-project
 bd create --title "Create a script that prints hello world" --label needs-architecture
-gc poke   # or wait for the 30s patrol tick
+# Wait up to 30s for the patrol tick. There is no user-facing force-reload
+# command in 0.15.x; `gc restart` is the heavy-handed alternative.
 ```
 
 The architect wakes, picks up the bead, and hands off via `gc all

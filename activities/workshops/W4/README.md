@@ -17,7 +17,7 @@ Each loop file follows the reference shape: *What triggered it → What rule was
 
 W4 doesn't add packs. It **edits** prompts on packs you've already installed — typically the Builder's `../../../packs/builder/agents/builder/prompt.template.md` and the Release-Gate's `../../../packs/release-gate/agents/release-gate/prompt.template.md`. If you're running a customised copy under `activities/<session>/packs/`, edit the copy and commit; otherwise edit the shipped pack and commit.
 
-The `includes` list in `../../../my-factory/city.toml` does not change in W4.
+The pack wiring in `../../../my-factory/city.toml` (`default_rig_includes` + any `[rigs.imports.<agent>]` blocks you added in L2–L4) does not change in W4.
 
 ## Exit criteria
 

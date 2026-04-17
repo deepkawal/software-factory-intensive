@@ -1,8 +1,8 @@
 # actual-designer
 
 The **UI/UX Design** agent of the Actual Software Factory. One of
-eight Agent-Operation packs under `examples/actual/`. Maps to the
-"Design" operation at https://www.actual.ai/softwarefactory.
+eight Agent-Operation packs under `packs/`. Maps to the "Design"
+operation at https://www.actual.ai/softwarefactory.
 
 ## Persona
 
@@ -22,15 +22,21 @@ within the existing design system rather than inventing new patterns.
 
 ## How to run
 
+As part of the full factory (via `my-factory/city.toml`'s `default_rig_includes`):
 ```bash
 gc rig add /path/to/your/project
-gc start examples/actual/
+gc restart
 ```
 
-Standalone:
+Standalone (rig picks up only the designer):
+```bash
+gc rig add /path/to/your/project --include ../packs/designer
+```
+
+Note: `--include` applies only at first-time rig registration. To change pack wiring on an existing rig, edit `city.toml` directly and add a rig-scoped import:
 ```toml
-[workspace]
-includes = ["examples/actual/designer"]
+[rigs.imports.designer]
+source = "../packs/designer"
 ```
 
 ## Handoff

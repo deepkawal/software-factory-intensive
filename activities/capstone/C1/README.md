@@ -21,20 +21,17 @@ cd ../../../my-factory
 gc doctor
 ```
 
-All of `check-planner`, `check-architect`, `check-designer`, `check-builder`, `check-reviewer`, and `check-release-gate` should be green.
+All of `actual-planner:check-planner`, `actual-architect:check-architect`, `actual-designer:check-designer`, `actual-builder:check-builder`, `actual-reviewer:check-reviewer`, and `actual-release-gate:check-release-gate` should be green. (`gc doctor` prefixes check IDs with the pack name.)
 
-If any are missing (e.g. you skipped a lab), add the shipped path for that pack before starting the run:
+All six packs are included by default via `default_rig_includes = ["../packs/all"]` in `my-factory/city.toml.template` — `packs/all` is a composition pack that imports all 8 agents. There is nothing to wire before the capstone run unless you want to override a specific pack with a customised copy, in which case add a rig-scoped block to `../../../my-factory/city.toml`:
 
 ```toml
-# my-factory/city.toml — append any missing
-includes = [
-    "../packs/planner",
-    "../packs/architect",
-    "../packs/designer",
-    "../packs/builder",
-    "../packs/reviewer",
-    "../packs/release-gate",
-]
+[[rigs]]
+name = "your-project"
+# ...existing fields...
+
+[rigs.imports.builder]
+source = "../activities/labs/L3/packs/builder"   # your customised builder, for example
 ```
 
 ## Running the capstone

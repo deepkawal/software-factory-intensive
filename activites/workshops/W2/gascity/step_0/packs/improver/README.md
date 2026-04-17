@@ -1,8 +1,8 @@
 # actual-improver
 
 The **Improve / Feedback-Loop** agent of the Actual Software Factory.
-One of eight Agent-Operation packs under `examples/actual/`. Maps to
-the "Improve" operation at https://www.actual.ai/softwarefactory.
+One of eight Agent-Operation packs under `packs/`. Maps to the
+"Improve" operation at https://www.actual.ai/softwarefactory.
 
 ## Persona
 

@@ -66,7 +66,8 @@ upstream and can be ignored. See `my-factory/README.md` for details.
 ```bash
 cd ~/Projects/factory/lab_l2/l2-project
 bd create --title "Plan user profile feature" --label needs-architecture
-gc poke
+# Wait up to 30s for the patrol tick. There is no user-facing force-reload
+# command in 0.15.x; `gc restart` is the heavy-handed alternative.
 ```
 
 Architect wakes, produces a plan, hands off via `gc all wake-downstream` to the

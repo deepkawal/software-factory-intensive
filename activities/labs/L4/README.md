@@ -15,21 +15,9 @@
 
 ## Pack wiring
 
-Packs live at `../../../packs/reviewer/` and `../../../packs/release-gate/`.
+Packs live at `../../../packs/reviewer/` and `../../../packs/release-gate/`, already wired into every rig via `default_rig_includes = ["../packs/all"]` in `city.toml.template`.
 
-**(a) Use shipped packs as-is:**
-
-```toml
-# my-factory/city.toml
-includes = [
-    "../packs/planner",          # from L2
-    "../packs/architect",        # from L2
-    "../packs/designer",         # from L3
-    "../packs/builder",          # from L3
-    "../packs/reviewer",
-    "../packs/release-gate",
-]
-```
+**(a) Use shipped packs as-is:** nothing to wire — `packs/all` already contains reviewer and release-gate. Skip straight to restart.
 
 **(b) Customise:**
 
@@ -39,14 +27,26 @@ cp -r ../../../packs/reviewer packs/reviewer
 cp -r ../../../packs/release-gate packs/release-gate
 ```
 
-Replace the shipped paths with `../activities/labs/L4/packs/reviewer` and `../activities/labs/L4/packs/release-gate` in `../../../my-factory/city.toml`.
+Then override the shipped packs for your rig only by adding rig-scoped imports to `../../../my-factory/city.toml`:
+
+```toml
+[[rigs]]
+name = "your-project"
+# ...existing fields...
+
+[rigs.imports.reviewer]
+source = "../activities/labs/L4/packs/reviewer"
+
+[rigs.imports.release-gate]
+source = "../activities/labs/L4/packs/release-gate"
+```
 
 Restart:
 
 ```bash
 cd ../../../my-factory
-gc service restart
-gc doctor      # should be green for all six agents
+gc restart
+gc doctor      # should be green for all eight agents
 ```
 
 ## Running the lab
@@ -66,14 +66,14 @@ gc sling your-project--release-gate <bead-id>
 * [ ] Review report produced with findings at Low/Medium/High severity
 * [ ] At least one finding was resolved by editing `packs/builder/agents/builder/prompt.template.md` (shipped or your copy) and re-slinging — no hand-edits to code in response to reviewer findings
 * [ ] Release gate emitted with a clear PASS / FAIL verdict plus evidence per required check
-* [ ] `../../../my-factory/city.toml` has all six packs included
+* [ ] All six agents ran (shipped via `default_rig_includes`, or customised copies via `[rigs.imports.<agent>]` blocks)
 
 ## Skipped this session?
 
-C1 assumes all six agents are running. If you skip L4, add `../packs/reviewer` and `../packs/release-gate` (shipped) to `../../../my-factory/city.toml` directly — the capstone still runs, just without your review-standards customisations.
+C1 assumes all six agents are running. Shipped `packs/all` includes them all via `default_rig_includes` in the factory's `city.toml.template`, so even without L4 the capstone still runs — just without your review-standards customisations.
 
 ## Recover from a broken run
 
 * Revert: `git checkout activities/labs/L4/packs/`
-* Swap in the shipped paths `../packs/reviewer` and `../packs/release-gate` in `city.toml`
-* `gc service restart && gc doctor`
+* Remove the `[rigs.imports.reviewer]` / `[rigs.imports.release-gate]` blocks from `../../../my-factory/city.toml`. The rig falls back to `default_rig_includes = ["../packs/all"]` and runs the shipped packs.
+* `gc restart && gc doctor`

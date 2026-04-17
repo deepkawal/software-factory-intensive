@@ -1,8 +1,8 @@
 # actual-builder
 
 The **Build** agent of the Actual Software Factory. One of eight
-Agent-Operation packs under `examples/actual/`. Maps to the "Build"
-operation at https://www.actual.ai/softwarefactory.
+Agent-Operation packs under `packs/`. Maps to the "Build" operation
+at https://www.actual.ai/softwarefactory.
 
 ## Persona
 
@@ -45,22 +45,26 @@ back to the architect.
 
 To re-vendor the skill:
 ```bash
-./scripts/sync-actual-skill.sh
+./assets/sync-actual-skill.sh
 ```
 
 ## How to run
 
-As part of the full factory:
+As part of the full factory (via `my-factory/city.toml`'s `default_rig_includes`, which imports `packs/all`):
 ```bash
 gc rig add /path/to/your/project
-gc start examples/actual/
+gc restart
 ```
 
-Standalone:
+Standalone (rig picks up only the builder):
+```bash
+gc rig add /path/to/your/project --include ../packs/builder
+```
+
+Note: `--include` applies only at first-time rig registration. To change pack wiring on an existing rig, edit `city.toml` directly and add a rig-scoped import:
 ```toml
-# city.toml
-[workspace]
-includes = ["examples/actual/builder"]
+[rigs.imports.builder]
+source = "../packs/builder"
 ```
 
 Manual dispatch against a specific bead:

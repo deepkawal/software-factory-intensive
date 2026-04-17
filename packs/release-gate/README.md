@@ -1,8 +1,8 @@
 # actual-release-gate
 
 The **Deploy / Release-Gate** agent of the Actual Software Factory.
-One of eight Agent-Operation packs under `examples/actual/`. Maps to
-the "Deploy" operation at https://www.actual.ai/softwarefactory.
+One of eight Agent-Operation packs under `packs/`. Maps to the
+"Deploy" operation at https://www.actual.ai/softwarefactory.
 
 ## Persona
 

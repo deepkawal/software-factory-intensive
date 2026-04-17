@@ -16,23 +16,40 @@ gc init ~/pizza-factory
 
 ### 2. Add agents incrementally (or all at once)
 
+`gc rig add --include <pack>` applies only at **first-time rig registration**. Re-running it on an existing rig ignores `--include` and prints "edit city.toml to change." So pick one of the two options below before running any `gc rig add`, and use `city.toml` edits for subsequent changes.
+
 ```bash
 cd ~/pizza-factory
 
-# Option A: Add agents one at a time (matches the lab progression)
+# Option A: Register the rig with just the Planner pack (matches L2 progression).
+#          Add more packs later by editing city.toml — see below.
 gc rig add /path/to/fired-up-pizza --include /path/to/packs/planner
-gc rig add /path/to/fired-up-pizza --include /path/to/packs/architect
-# ... add designer, coder, reviewer, deployer as needed
 
-# Option B: Add all 6 agents at once
+# Option B: Register the rig with all 6 agents at once via the composition pack.
 gc rig add /path/to/fired-up-pizza --include /path/to/packs/fired-up-pizza
+```
+
+To add more packs to an existing rig (Option A progression), edit `city.toml` directly:
+
+```toml
+[[rigs]]
+name = "fired-up-pizza"
+# ...existing fields...
+
+[rigs.imports.architect]
+source = "/path/to/packs/architect"
+
+[rigs.imports.designer]
+source = "/path/to/packs/designer"
+
+# ... repeat for coder, reviewer, deployer as the labs progress
 ```
 
 ### 3. Import the ticket backlog
 
 ```bash
 cd /path/to/fired-up-pizza
-bash /path/to/packs/fired-up-pizza/scripts/import-tickets.sh tickets.md
+gc fired-up-pizza import-tickets tickets.md
 bd list
 ```
 
@@ -107,7 +124,7 @@ This reference is designed to be forked and modified:
 
 1. Replace `docs/PROJECT_MANIFEST.md` with your project's tech stack and domain model
 2. Replace `tickets.md` with your feature backlog
-3. Adjust agent prompts in `packs/fired-up-pizza/prompts/` for your conventions
+3. Adjust agent prompts in `packs/<agent>/agents/<agent>/prompt.template.md` (or `prompt.md`) for your conventions
 4. Update `docs/REVIEW_POLICY.md` and `docs/RELEASE_CRITERIA.md` for your standards
 5. Re-run the factory against your codebase
 

@@ -1,8 +1,8 @@
 # actual-builder
 
 The **Build** agent of the Actual Software Factory. One of eight
-Agent-Operation packs under `examples/actual/`. Maps to the "Build"
-operation at https://www.actual.ai/softwarefactory.
+Agent-Operation packs under `packs/`. Maps to the "Build" operation
+at https://www.actual.ai/softwarefactory.
 
 ## Persona
 
@@ -50,17 +50,19 @@ To re-vendor the skill:
 
 ## How to run
 
-As part of the full factory:
+As part of the full factory (this checkpoint's `packs/all/` imports this pack):
 ```bash
 gc rig add /path/to/your/project
-gc start examples/actual/
+gc restart
 ```
 
-Standalone:
+Standalone (just this agent), override via rig-scoped import in city.toml:
 ```toml
-# city.toml
-[workspace]
-includes = ["examples/actual/builder"]
+[[rigs]]
+name = "myrig"
+
+[rigs.imports.builder]
+source = "./builder"
 ```
 
 Manual dispatch against a specific bead:

@@ -1,8 +1,8 @@
 # actual-architect
 
 The **Architect** agent of the Actual Software Factory. One of eight
-Agent-Operation packs under `examples/actual/`. Maps to the
-"Architect" operation at https://www.actual.ai/softwarefactory.
+Agent-Operation packs under `packs/`. Maps to the "Architect"
+operation at https://www.actual.ai/softwarefactory.
 
 ## Persona
 
@@ -27,17 +27,19 @@ Write implementation code. Decompose work. Run CI. Review PRs.
 
 ## How to run
 
-As part of the full factory:
+As part of the L2 checkpoint factory (`packs/all/` imports this pack + planner):
 ```bash
 gc rig add /path/to/your/project
-gc start examples/actual/
+gc restart
 ```
 
-Standalone (just this agent):
-```bash
-# add to a city.toml:
-# [workspace]
-# includes = ["examples/actual/architect"]
+Standalone (just this agent), override via rig-scoped import in city.toml:
+```toml
+[[rigs]]
+name = "myrig"
+
+[rigs.imports.architect]
+source = "./architect"
 ```
 
 Manual dispatch of the formula against a specific bead:

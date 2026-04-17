@@ -13,27 +13,14 @@
 
 ## Pack wiring
 
-The two packs are already shipped under `../../../packs/planner/` and `../../../packs/architect/`. Two paths forward:
+The two packs are already shipped under `../../../packs/planner/` and `../../../packs/architect/`, and they're already wired into every rig via `default_rig_includes = ["../packs/all"]` in `city.toml.template` (packs/all is the composition pack that imports all 8 agents). Two paths forward:
 
-**(a) Use shipped packs as-is** — fastest.
-
-Edit `../../../my-factory/city.toml` and add:
-
-```toml
-[workspace]
-# ...existing content...
-includes = [
-    "../packs/planner",
-    "../packs/architect",
-]
-```
-
-Then restart:
+**(a) Use shipped packs as-is** — fastest, no city.toml edit needed.
 
 ```bash
 cd ../../../my-factory
-gc service restart
-gc doctor         # both check-planner and check-architect should pass
+gc restart
+gc doctor         # both actual-planner:check-planner and actual-architect:check-architect should pass
 ```
 
 **(b) Customise** — if the shipped prompts don't match your project's voice.
@@ -45,13 +32,18 @@ cp -r ../../../packs/architect packs/architect
 # edit packs/planner/agents/planner/prompt.template.md and packs/architect/agents/architect/prompt.template.md
 ```
 
-Then include **your copies** in `../../../my-factory/city.toml`:
+Then override the shipped packs for your rig only by adding rig-scoped imports to `../../../my-factory/city.toml`:
 
 ```toml
-includes = [
-    "../activities/labs/L2/packs/planner",
-    "../activities/labs/L2/packs/architect",
-]
+[[rigs]]
+name = "your-project"
+# ...existing fields...
+
+[rigs.imports.planner]
+source = "../activities/labs/L2/packs/planner"
+
+[rigs.imports.architect]
+source = "../activities/labs/L2/packs/architect"
 ```
 
 ## Running the lab
@@ -69,7 +61,7 @@ gc sling your-project--architect <bead-id>
 
 * [ ] Planner produced a work package file in the rig with at least one user story and acceptance criteria
 * [ ] Architect produced an ADR with at least two options considered
-* [ ] `../../../my-factory/city.toml` includes the Planner and Architect packs (shipped or customised)
+* [ ] `../../../my-factory/city.toml` uses shipped packs (default) or has `[rigs.imports.planner]` / `[rigs.imports.architect]` blocks pointing at customised copies
 * [ ] Any prompt correction was made by editing the pack file and re-slinging — not by typing a correction into chat
 
 ## Skipped this session?
@@ -79,5 +71,5 @@ L3 assumes a work package + ADR exist for the feature it implements. If you skip
 ## Recover from a broken run
 
 * Revert the pack edit: `git checkout activities/labs/L2/packs/`
-* Point `../../../my-factory/city.toml` at `../packs/planner` and `../packs/architect` (shipped) instead of your copies
-* `gc service restart` — you're back on the known-good shipped packs
+* Remove the `[rigs.imports.planner]` / `[rigs.imports.architect]` blocks from `../../../my-factory/city.toml`. The rig falls back to `default_rig_includes = ["../packs/all"]` and runs the shipped packs.
+* `gc restart` — you're back on the known-good shipped packs

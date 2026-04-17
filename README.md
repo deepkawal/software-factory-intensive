@@ -113,8 +113,8 @@ software-factory-intensive/
 ├── my-factory/                      # Your Gas City factory (pack.toml + city.toml live here)
 │   ├── pack.toml.template           # Committed — copy to pack.toml at setup
 │   ├── city.toml.template           # Committed — copy to city.toml at setup
-│   ├── pack.toml                    # (gitignored) your local copy — mutated by gc register
-│   ├── city.toml                    # (gitignored) your local copy — mutated by gc rig add
+│   ├── pack.toml                    # (gitignored) your local copy — not mutated by gc
+│   ├── city.toml                    # (gitignored) your local copy — gc register --name / gc rig add mutate this
 │   ├── .gitignore                   # Ignores the runtime copies above
 │   ├── README.md                    # Quickstart: register factory, add rig, kick off a task
 │   └── PROJECT_MANIFEST.md          # Manifest template (filled in during L1)

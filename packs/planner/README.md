@@ -1,8 +1,8 @@
 # actual-planner
 
 The **Plan / Work-Breakdown** agent of the Actual Software Factory.
-One of eight Agent-Operation packs under `examples/actual/`. Maps to
-the "Plan" operation at https://www.actual.ai/softwarefactory.
+One of eight Agent-Operation packs under `packs/`. Maps to the "Plan"
+operation at https://www.actual.ai/softwarefactory.
 
 ## Persona
 
@@ -37,7 +37,7 @@ current `CLAUDE.md` / `AGENTS.md` for architectural context.
 
 To re-vendor:
 ```bash
-./scripts/sync-actual-skill.sh
+./assets/sync-actual-skill.sh
 ```
 
 ### 2. `tracker-to-beads` (pack-local)
@@ -86,17 +86,21 @@ Manual import (bypassing the formula):
 
 ## How to run
 
-As part of the full factory:
+As part of the full factory (via `my-factory/city.toml`'s `default_rig_includes`, which imports `packs/all` — a composition pack containing all 8 agents):
 ```bash
 gc rig add /path/to/your/project
-gc start examples/actual/
+gc restart
 ```
 
-Standalone:
+Standalone (rig picks up only the planner, not the full factory):
+```bash
+gc rig add /path/to/your/project --include ../packs/planner
+```
+
+Note: `--include` applies only at first-time rig registration. To change pack wiring on an existing rig, edit `city.toml` directly and add a rig-scoped import:
 ```toml
-# city.toml
-[workspace]
-includes = ["examples/actual/planner"]
+[rigs.imports.planner]
+source = "../packs/planner"
 ```
 
 Manual dispatch:

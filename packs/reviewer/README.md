@@ -1,8 +1,8 @@
 # actual-reviewer
 
 The **Code Review** agent of the Actual Software Factory. One of
-eight Agent-Operation packs under `examples/actual/`. Maps to the
-"Review" operation at https://www.actual.ai/softwarefactory.
+eight Agent-Operation packs under `packs/`. Maps to the "Review"
+operation at https://www.actual.ai/softwarefactory.
 
 ## Persona
 

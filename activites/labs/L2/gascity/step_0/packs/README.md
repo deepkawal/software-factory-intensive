@@ -19,26 +19,22 @@ A self-contained set of Gas City custom-agent packs implementing the
 
 Each operation is one pack. Each pack is a single custom Gas City
 agent with its own prompt template, formula, order gate, doctor
-check, and commands. The 9th pack (`all/`) is a thin composition
-shell that `includes` all 8 leaf packs.
+check, and commands. This L2 checkpoint only ships the three packs
+exercised by the Architect + Planner handoff exercise — architect,
+planner, and `all/` (the composition pack, which for L2 imports just
+those two).
 
 ## Directory layout
 
 ```
-examples/actual/
+packs/
 ├── README.md            # you are here
-├── city.toml            # runnable sample workspace
+├── pack.toml.template   # workspace-scope imports; copy to pack.toml at setup
+├── city.toml.template   # workspace + default_rig_includes; copy to city.toml
 ├── architect/           # Principal-Engineer persona
 ├── planner/             # Product-Manager + Program-Manager persona
 │                        # (ships the tracker-to-beads bridge skill)
-├── designer/            # UI/UX-Designer + Accessibility-Engineer persona
-├── validator/           # QA-Engineer persona
-├── builder/             # Backend+Frontend generalist persona
-├── reviewer/            # Engineering-Manager + Principal-Engineer +
-│                        # Security-Engineer persona
-├── release-gate/        # Release-Engineer + DevOps-Engineer persona
-├── improver/            # SRE + Performance-Engineer + DevRel persona
-└── all/                 # composition pack — includes all 8
+└── all/                 # composition pack — imports architect + planner for L2
 ```
 
 ## Persona mapping
@@ -69,9 +65,9 @@ up automatically when the agent starts.
 To re-vendor after upstream releases a new version:
 
 ```bash
-cd examples/actual/architect && ./scripts/sync-actual-skill.sh
-cd examples/actual/planner   && ./scripts/sync-actual-skill.sh
-cd examples/actual/builder   && ./scripts/sync-actual-skill.sh
+cd packs/architect && ./assets/sync-actual-skill.sh
+cd packs/planner   && ./assets/sync-actual-skill.sh
+# builder is not shipped in this L2 checkpoint
 ```
 
 The three packs use the skill slightly differently:
@@ -149,29 +145,41 @@ honors Gas City's core invariant: **ZERO hardcoded roles**.
 ## How to run
 
 ```bash
-# 1. Register at least one rig (your project repo)
+# 1. Copy the templates (once)
+cd packs
+cp pack.toml.template pack.toml
+cp city.toml.template city.toml
+
+# 2. Register this directory as a city
+gc register --name l2-check .
+
+# 3. Register your project repo as a rig — architect + planner compose via
+#    default_rig_includes in city.toml.template
 gc rig add /path/to/your/project
 
-# 2. Start the factory — this brings up all 8 agents
-gc start examples/actual/
+# 4. chmod .beads (fresh-clone permission fix) and start
+chmod 700 ../../../../../.beads       # path to repo-root .beads
+gc start
 
-# 3. File a goal to kick things off
+# 5. File a goal to kick things off
 bd create --title "Build user profiles" --label needs-architecture
 ```
 
 The architect's order gate will match, wake the architect, which
 runs `mol-architect-review`, produces rules and child beads labelled
-`needs-plan`, which wakes the planner, and so on.
+`needs-plan`, which wakes the planner.
 
 ## Standalone use
 
-Each leaf pack works on its own. To use just one:
+Each leaf pack works on its own. To use just one, override the rig's
+imports in your city.toml:
 
 ```toml
-# in your own city.toml
-[workspace]
-name = "mycity"
-includes = ["/abs/path/to/examples/actual/builder"]
+[[rigs]]
+name = "myrig"
+
+[rigs.imports.architect]
+source = "/abs/path/to/packs/architect"
 ```
 
 ## Principles honored

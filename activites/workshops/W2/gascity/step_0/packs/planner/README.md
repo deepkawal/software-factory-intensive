@@ -1,8 +1,8 @@
 # actual-planner
 
 The **Plan / Work-Breakdown** agent of the Actual Software Factory.
-One of eight Agent-Operation packs under `examples/actual/`. Maps to
-the "Plan" operation at https://www.actual.ai/softwarefactory.
+One of eight Agent-Operation packs under `packs/`. Maps to the "Plan"
+operation at https://www.actual.ai/softwarefactory.
 
 ## Persona
 
@@ -86,17 +86,19 @@ Manual import (bypassing the formula):
 
 ## How to run
 
-As part of the full factory:
+As part of the full factory (this checkpoint's `packs/all/` imports this pack + architect):
 ```bash
 gc rig add /path/to/your/project
-gc start examples/actual/
+gc restart
 ```
 
-Standalone:
+Standalone (just this agent), override via rig-scoped import in city.toml:
 ```toml
-# city.toml
-[workspace]
-includes = ["examples/actual/planner"]
+[[rigs]]
+name = "myrig"
+
+[rigs.imports.planner]
+source = "./planner"
 ```
 
 Manual dispatch:
