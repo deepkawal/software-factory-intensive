@@ -149,6 +149,12 @@ lesson_run() {
   log "gc status output (stderr suppressed, first 40 lines):"
   (cd "$WALK_FACTORY" && gc status 2>/dev/null) | head -40 | sed 's/^/    /' | tee -a "$WALK_LOG"
 
+  # Start the event stream so the log captures factory-side activity
+  # (bead transitions, order fires, agent state changes) during the
+  # live-agent section. Primary forensic tool when a lesson fails —
+  # gc-events.log is a linear record of what the factory did.
+  start_event_stream "$WALK_FACTORY"
+
   echo
   echo "[8/8] bd create → wait for factory to do real work"
   if [ "$WALK_DRY_RUN" = "1" ]; then
@@ -245,6 +251,11 @@ lesson_run() {
   WALK_MYFACTORY_AGENTS_SEEN="$(echo "$agents_active" | tr '\n' ' ')"
   save_state WALK_MYFACTORY_AGENTS_SEEN
   step_pass "factory produced tangible work in the rig"
+
+  # Stop the event stream so the log is flushed and closed before the
+  # dispatcher runs its cleanup. The log stays at $WALK_SCRATCH/gc-events.log
+  # for post-mortem; KEEP_SCRATCH=1 retains it.
+  stop_event_stream
 
   return "$lesson_rc"
 }

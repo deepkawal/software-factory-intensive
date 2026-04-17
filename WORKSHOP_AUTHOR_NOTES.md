@@ -128,7 +128,23 @@ rg -ln 'includes = \[|gc service restart' curriculum/ -g '*.md'
 
 ---
 
-## 10. Verification the mechanical doc-fix pass passed
+## 10. Walkthrough harness: L1 intentionally skipped
+
+`test-harness/walkthroughs/` covers `my-factory.sh` and `L2.sh` live end-to-end. An `L1.sh` walkthrough is intentionally NOT planned. L1's deliverables are prose-only student artifacts:
+
+- `activities/labs/L1/CLAUDE.md` — filled in by the student for their own project
+- `activities/labs/L1/DECISIONS.md` — log of rule edits the student makes
+- `my-factory/PROJECT_MANIFEST.md` — the student's project manifest
+
+A walkthrough for L1 would either (a) check file-existence — near-zero value since those files come from the student's keyboard, not the factory, or (b) spin up an agent to hallucinate these files for the bundled hello-world rig — cargo-cult work that doesn't resemble the real lesson.
+
+L1's only downstream consumer is the presence of a `CLAUDE.md` that sets project rules for later labs. The walkthrough harness's bundled rig (`test-harness/tutorial-walkthrough-rig/`) ships its own `CLAUDE.md`, which is what the Architect/Planner read during `my-factory.sh` and `L2.sh`. So L2+ don't need an L1 walkthrough to establish their inputs.
+
+If a future decision makes sense to add L1 coverage, the shape would likely be: assert the student's CLAUDE.md/DECISIONS.md/PROJECT_MANIFEST.md exist at the expected paths with non-trivial content, as a precondition check rather than a walkthrough. Not a priority for v1 handoff.
+
+---
+
+## 11. Verification the mechanical doc-fix pass passed
 
 These greps should return 0 hits outside `plans/`, this file, and `curriculum/**` (which is flagged above for author rewrite, not mechanical fix):
 

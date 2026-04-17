@@ -56,6 +56,58 @@ save_state() {
   done
 }
 
+# --- Event stream observability ---------------------------------------
+
+# start_event_stream <factory-path>
+# Spawns `gc events --follow` against the factory, filters noise, and
+# appends to $WALK_SCRATCH/gc-events.log. The PID is saved so
+# stop_event_stream can kill it. Safe to call even if gc events fails —
+# the stream is best-effort observability, never a correctness signal.
+#
+# The filter drops:
+#   - agent session lifecycle beads (issue_type == "session")
+#   - beads-health / improver-cooldown / mol-feedback system-pack noise
+#   - system-pack session beads (sw<digits>-<hash> pattern)
+start_event_stream() {
+  local factory="$1"
+  local events_log="$WALK_SCRATCH/gc-events.log"
+  : > "$events_log"
+
+  # As of gc 0.15+, `gc events` always outputs JSON Lines — no --json
+  # flag. `--follow` streams continuously. The jq filter is tolerant of
+  # missing fields (old wire format had .subject/.message/.payload;
+  # shape may evolve further — we use `//""` defaults throughout).
+  (
+    cd "$factory" && gc events --follow 2>/dev/null \
+      | stdbuf -oL jq --unbuffered -r '
+          select(
+            (.payload.issue_type // "") != "session"
+            and ((.message // "") | test("order:(beads-health|improver-cooldown|mol-feedback)") | not)
+            and ((.subject // "") | test("^sw[0-9]+-") | not)
+          )
+          | "\((.ts // "")[11:19]) \(.type // "?") subject=\(.subject // "") msg=\(.message // "") actor=\(.actor // "")"'
+  ) > "$events_log" 2>&1 &
+
+  echo $! > "$WALK_SCRATCH/events.pid"
+  log "event stream → $events_log (PID $(cat "$WALK_SCRATCH/events.pid"))"
+}
+
+# stop_event_stream
+# Safe to call multiple times; no-op if stream wasn't started.
+stop_event_stream() {
+  local pid_file="$WALK_SCRATCH/events.pid"
+  if [ -f "$pid_file" ]; then
+    local pid
+    pid="$(cat "$pid_file")"
+    if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
+      kill "$pid" 2>/dev/null || true
+      # Give the jq pipe a beat to flush.
+      sleep 1
+    fi
+    rm -f "$pid_file"
+  fi
+}
+
 # --- Poll-for-condition ------------------------------------------------
 
 # wait_for <description> <shell-command> <timeout-seconds> [<poll-interval>]
@@ -119,7 +171,13 @@ assert_glob_nonempty() {
 }
 
 # assert_artifact_has_sections <file> <section-header-regex>...
-# Each regex must match at least one line in <file>.
+# Each regex must match at least one line in <file>. Match is
+# case-INSENSITIVE — LLM-authored markdown varies in title-case vs
+# sentence-case across prompts (we've observed "## User story" vs
+# "## User Story" in the same Planner pack). Case doesn't change which
+# section a header identifies semantically, so the helper matches
+# either. If a walkthrough author needs case-strict matching, write
+# the regex directly with grep inline.
 assert_artifact_has_sections() {
   local file="$1"; shift
   if [ ! -s "$file" ]; then
@@ -129,7 +187,7 @@ assert_artifact_has_sections() {
   local missing=()
   local sect
   for sect in "$@"; do
-    if ! grep -Eq "$sect" "$file"; then
+    if ! grep -iEq "$sect" "$file"; then
       missing+=("$sect")
     fi
   done

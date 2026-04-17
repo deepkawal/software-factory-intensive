@@ -36,11 +36,12 @@ TUTORIAL_SCRATCH_ROOT="/tmp/sfi-tutorial-walkthrough"
 # shellcheck source=lib/tutorial-common.sh
 source "$repo_root/test-harness/lib/tutorial-common.sh"
 
-# Canonical lesson order. For v1 only my-factory has a body; the rest
-# are not yet built. Add new lessons here as they land.
-ALL_LESSONS=(my-factory)
-# Future:
-# ALL_LESSONS=(my-factory W1 L1 W2 L2 W3 L3 W4 L4 C1)
+# Canonical lesson order. Add new lessons here as they land.
+# Chaining order matches a real student's path through the curriculum:
+# my-factory sets up the factory; each lab builds on the prior lab's
+# state (work-package → ADR → design → code → review → release-gate).
+ALL_LESSONS=(my-factory L2)
+# Future: (my-factory W1 L1 W2 L2 W3 L3 W4 L4 C1)
 
 # --- state -------------------------------------------------------------
 
@@ -58,6 +59,17 @@ walkthrough_cleanup() {
   # only exported it (and this cleanup runs after it exited).
   if [ -s "$WALK_STATE_ENV" ]; then
     set -a; source "$WALK_STATE_ENV"; set +a
+  fi
+  # Safety-net: kill any lesson-started event stream whose process
+  # survived (lesson_run normally calls stop_event_stream, but if it
+  # crashed or was interrupted the PID file may still be live).
+  if [ -f "$WALK_SCRATCH/events.pid" ]; then
+    local ev_pid
+    ev_pid="$(cat "$WALK_SCRATCH/events.pid" 2>/dev/null)"
+    if [ -n "$ev_pid" ] && kill -0 "$ev_pid" 2>/dev/null; then
+      kill "$ev_pid" 2>/dev/null || true
+    fi
+    rm -f "$WALK_SCRATCH/events.pid"
   fi
   # Best-effort stop of any factory the lessons spun up.
   if [ -n "${WALK_FACTORY:-}" ] && [ -d "${WALK_FACTORY:-}" ]; then
