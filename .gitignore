@@ -11,3 +11,6 @@
 # Claude Code local settings
 .claude/
 .vscode/settings.json
+
+# macOS editor/swap tempfiles (e.g. .!PID!filename)
+.!*!*
