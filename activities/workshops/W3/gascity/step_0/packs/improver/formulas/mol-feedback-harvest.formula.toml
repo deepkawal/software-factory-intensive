@@ -23,20 +23,25 @@ default = "docs/feedback"
 
 [[steps]]
 id = "collect"
-title = "Collect runtime signals from whatever the rig exposes"
+title = "Collect runtime signals from the project application"
 description = """
-Signals you look for (any that are accessible — no signal is
-required):
+**SCOPE: Project application only.** Do NOT inspect gc controller
+logs, Dolt server logs, beads database errors, tmux session output,
+or Gas City infrastructure. Those are platform concerns.
+
+Signals you look for in the **project application** (any that are
+accessible — no signal is required):
 
 1. **Error-tracker** (Sentry, Rollbar, etc.) — new error
    signatures in the last {{since}}.
 2. **Metrics** (Prometheus, Datadog, Grafana) — SLO burn or
    anomalies on latency / error rate / saturation in the last
    {{since}}.
-3. **Logs** — elevated ERROR / WARN rates, crash loops.
+3. **App logs** — application ERROR / WARN rates, crash loops.
+   Do NOT read .gc/ or .beads/ logs.
 4. **User feedback** — support tickets, GitHub issues labelled
    `user-report`, Discord / Slack pain-point posts.
-5. **CI** — recent flaky test signals.
+5. **CI** — recent flaky test signals in the project test suite.
 6. **Dependency vulnerabilities** — new CVEs against pinned deps.
 
 **Write raw collected data to {{feedback_dir}}/<today>.raw.md.**
@@ -132,44 +137,35 @@ id = "file-beads"
 title = "Create the beads, close the source needs-improve beads, mail"
 needs = ["propose"]
 description = """
-**1. Create each drafted bead:**
+**1. Create each drafted bead and route to the right agent:**
 ```bash
 while read -r row; do
-    # Parse the draft row into title, label, severity, body.
+    # Parse the draft row into title, target_agent, severity, body.
     NEW_ID=$(bd create \\
         --title "<title>" \\
-        --label "<upstream-label>" \\
         --label "<severity>" \\
         --label "source:actual-improver" \\
         --notes "<body>" \\
         --json | jq -r '.id')
-    echo "filed: $NEW_ID"
+    # Route to the right downstream agent via gc sling
+    gc sling <rig>/<target_agent> "$NEW_ID"
+    echo "filed and routed: $NEW_ID → <target_agent>"
 done
 ```
 
-**2. Close any `needs-improve` beads** that motivated this cycle:
+Agent routing map:
+- systemic/architectural → `gc sling <rig>/architect $NEW_ID`
+- new feature work → `gc sling <rig>/pm $NEW_ID`
+- UX paper cuts → `gc sling <rig>/designer $NEW_ID`
+- test gaps → `gc sling <rig>/validator $NEW_ID`
+- direct fixes → `gc sling <rig>/builder $NEW_ID`
+- audit concerns → `gc sling <rig>/reviewer $NEW_ID`
+
+**2. Close any source beads** that motivated this cycle:
 ```bash
-bd ready --label=needs-improve --json 2>/dev/null \\
-    | jq -r '.[] | .id' \\
-    | while read -r imp_id; do
-        bd close "$imp_id" --reason "feedback harvested $(date -u +%Y-%m-%d)"
-    done
+bd close <source-bead-id> --reason "feedback harvested $(date -u +%Y-%m-%d)"
 ```
 
-**3. Downstream agents pick up work automatically via labels:**
-```bash
-# Each label triggers the corresponding intake order automatically:
-#   needs-architecture → architect-guardrail-check
-#   needs-plan         → pm-intake
-#   needs-design       → designer-intake
-#   needs-tests        → validator-intake
-#   ready-to-build     → builder-intake
-#   needs-review       → reviewer-intake
-# Do NOT gc mail send — it creates duplicate sessions.
-# Wake downstream agents.
-sh packs/actual/all/scripts/wake-downstream.sh &
-```
-
-**Exit criteria:** Drafted beads exist; needs-improve beads closed;
-downstream agents pick up labelled work via intake orders.
+**Exit criteria:** Drafted beads exist and routed via gc sling;
+source beads closed.
 """

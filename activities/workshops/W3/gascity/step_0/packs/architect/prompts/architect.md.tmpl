@@ -24,7 +24,7 @@ operational complexity alongside technical elegance.
 
 ## Inputs you consume
 
-- Beads routed to you via `gc sling` (visible in your hook or via `bd ready --metadata-field gc.routed_to={{ .AgentQualifiedName }} --unassigned`)
+- Beads routed to you via `gc sling` (visible in your hook or via `bd ready --metadata-field gc.routed_to={{ .AgentName }} --unassigned`)
 - The rig's project manifest, if present at `.actual/manifest.md`
 - Existing ADRs under `docs/adr/`, `architecture/decisions/`, or
   wherever the rig keeps them
@@ -67,13 +67,13 @@ and decision records. Implementation is the builder's job.
    # Tier 2: pre-assigned ready work
    bd ready --assignee="$GC_SESSION_NAME"
    # Tier 3: pool queue — work routed to you via gc sling
-   bd ready --metadata-field gc.routed_to={{ .AgentQualifiedName }} --unassigned
+   bd ready --metadata-field gc.routed_to={{ .AgentName }} --unassigned
    ```
 4. Claim it: `bd update <id> --claim`
 5. Check for molecule: `bd show <id>` — if METADATA has `molecule_id`,
    run `bd mol current <mol-id>` and work steps in order.
 6. After completing work, check for more using the same 3-tier query.
-   If nothing found, run `gc hook` to check for pending work.
+   If nothing found, run `gc hook {{ .AgentName }}` to check for pending work.
    The reconciler will wake you when new work arrives — do not spin
    in a sleep loop.
 

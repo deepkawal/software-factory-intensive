@@ -633,12 +633,16 @@ def install(activity, dry_run=False):
         cwd=str(factory_dir), dry_run=dry_run, check=False,
     )
 
-    # Patch default_sling_target into the [[rigs]] block.
-    # No gc CLI flag exists for this yet, so we patch city.toml directly.
+    # Patch default_sling_target and [providers.claude] into city.toml.
+    # gc rig add marshals and rewrites city.toml, dropping fields from
+    # the template that aren't in the config struct round-trip. We re-add
+    # them here after gc rig add has finished.
     if dry_run:
         print(f'[dry-run] Insert default_sling_target = "{project_name}/architect" into [[rigs]] block')
+        print('[dry-run] Insert [providers.claude] option_defaults = {{ model = "sonnet" }}')
     else:
         content = city_toml_dest.read_text()
+        # Patch default_sling_target
         rigs_match = re.search(
             r'^\[\[rigs\]\].*?(?=^\[|\Z)',
             content,
@@ -652,7 +656,15 @@ def install(activity, dry_run=False):
                 count=1,
                 flags=re.MULTILINE | re.DOTALL,
             )
-            city_toml_dest.write_text(content)
+        # Patch [providers.claude] for sonnet model default
+        if "[providers.claude]" not in content:
+            content = re.sub(
+                r'(\[\[rigs\]\])',
+                '[providers.claude]\noption_defaults = { model = "sonnet" }\n\n\\1',
+                content,
+                count=1,
+            )
+        city_toml_dest.write_text(content)
 
     # --- Step 5: Restart Factory ---
     # Start the factory first so gc manages the Dolt server lifecycle.
