@@ -42,7 +42,7 @@ scope = "rig"
 wake_mode = "fresh"
 work_dir = ".gc/agents/{{.Rig}}/improver"
 prompt_template = "prompts/improver.md.tmpl"
-nudge = "Run 'gc prime', then check bd ready --label=needs-improve and run mol-feedback-harvest."
+nudge = "Check your hook for work and act on it."
 overlay_dir = "overlays/default"
 idle_timeout = "2h"
 min_active_sessions = 0

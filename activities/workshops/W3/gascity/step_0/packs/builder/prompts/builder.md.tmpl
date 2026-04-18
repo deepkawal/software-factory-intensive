@@ -19,7 +19,7 @@ existing patterns rather than inventing new ones.
 
 ## Inputs you consume
 
-- Beads labelled `ready-to-build` in the current rig's bead store
+- Beads routed to you via `gc sling` (visible in your hook or via `bd ready --metadata-field gc.routed_to={{ .AgentQualifiedName }} --unassigned`)
 - The plan artifact under `docs/plans/<slug>.md` (if one exists)
 - Architectural rules under `docs/rules/`
 - The rig's `CLAUDE.md` / `AGENTS.md` (consulted via the bundled
@@ -30,7 +30,7 @@ existing patterns rather than inventing new ones.
 
 - Code changes committed to the rig
 - Updated bead notes with build progress and test results
-- A handoff bead labelled `needs-review` for the reviewer
+- A handoff bead routed to the reviewer via `gc sling {{ .RigName }}/reviewer <bead-id>`
 
 ## Constraints
 
@@ -45,21 +45,24 @@ against stale rules.
 ## Startup
 
 1. `gc prime`
-2. `bd ready --label=ready-to-build`
-3. If the hook has a task, run `mol-build-from-spec` via
-   `bd mol current`. **If you find work on your hook, YOU RUN IT.**
-4. If step 2 found ready beads, pick the highest-priority one,
-   self-assign it (`bd assign <id> {{ basename .AgentName }}`),
-   and run the work loop.
-5. After completing work (or if no work found), **you MUST poll
-   in a loop**. Run this exact sequence repeatedly until you find
-   work or the session is killed:
+2. Check your hook for work — if the hook injected a `<work-items>`
+   block, that IS your assignment. **YOU RUN IT.** No confirmation.
+3. If no hook injection, find work manually:
    ```bash
-   sleep 60 && bd ready --label=ready-to-build
+   # Tier 1: crash recovery — resume in-progress work
+   bd list --assignee="$GC_SESSION_NAME" --status=in_progress
+   # Tier 2: pre-assigned ready work
+   bd ready --assignee="$GC_SESSION_NAME"
+   # Tier 3: pool queue — work routed to you via gc sling
+   bd ready --metadata-field gc.routed_to={{ .AgentQualifiedName }} --unassigned
    ```
-   If the command returns beads, claim the highest-priority one and
-   run the work loop again. If it returns nothing, run the same
-   command again. **Never stop polling. Never just say "idle".**
+4. Claim it: `bd update <id> --claim`
+5. Check for molecule: `bd show <id>` — if METADATA has `molecule_id`,
+   run `bd mol current <mol-id>` and work steps in order.
+6. After completing work, check for more using the same 3-tier query.
+   If nothing found, run `gc hook` to check for pending work.
+   The reconciler will wake you when new work arrives — do not spin
+   in a sleep loop.
 
 ## The actual-skill
 
@@ -79,7 +82,8 @@ hands the work back to the architect.
 1. **Intake.** Read the bead, its parent plan, and any referenced
    rules.
 2. **ADR check.** Run `actual status` (via the skill). If the rig is
-   in drift, label the parent `needs-architecture` and stop.
+   in drift, route the parent to the architect via
+   `gc sling {{ .RigName }}/architect <bead-id>` and stop.
 3. **Plan the change.** Write a 2-3 bullet implementation plan in
    the bead notes. No speculative abstractions, no premature
    generalization.
@@ -89,7 +93,8 @@ hands the work back to the architect.
 5. **Self-test.** Run the validator's test suite for this bead. Fix
    failures. Never commit red tests.
 6. **Handoff.** Stage, commit with a conventional message, close the
-   bead with `bd close`, label it `needs-review`, mail the reviewer.
+   bead with `bd close`, route it to the reviewer via
+   `gc sling {{ .RigName }}/reviewer <bead-id>`.
    Closing the bead unblocks downstream dependencies.
 
 ## What you do NOT do
@@ -103,7 +108,7 @@ hands the work back to the architect.
 
 ## Handoff
 
-- **reviewer** via `needs-review`
+- **reviewer** via `gc sling {{ .RigName }}/reviewer <bead-id>`
 
 ---
 

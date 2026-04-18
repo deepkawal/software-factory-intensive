@@ -49,3 +49,47 @@ No --label flag on gc sling.
   Or just create with the label and let the architect's polling loop find it naturally (no sling needed):                                                                                                                                                   
                                                                                                                                                                                                                                                             
   gc bd create "Create a SPA nextjs site" --label needs-architecture               
+
+
+
+
+
+
+
+
+
+  From the project directory:
+
+  cd ~/Projects/factory/workshop_w3/w3-project
+  gc sling w3-project/architect "Create a hello world index.html"
+
+  Or from anywhere with --city:
+
+  gc sling w3-project/architect "Create a hello world index.html" --city ~/Projects/factory/workshop_w3/w3-gc-factory
+
+  Then verify pickup:
+
+  gc bd --rig w3-project list
+  gc events --city ~/Projects/factory/workshop_w3/w3-gc-factory | grep architect | tail -5
+
+
+
+
+
+  Three ways to monitor:
+                                                                                                                                                                                                                                                                                                             
+  1. Watch events in real-time:                                                                                                                                                                                                                                                                              
+  gc events --city ~/Projects/factory/workshop_w3/w3-gc-factory | grep "wp-"
+                                                                                                                                                                                                                                                                                                             
+  2. Check project bead status:                                                                                                                                                                                                                                                                              
+  gc bd --rig w3-project list --status=all
+                                                                                                                                                                                                                                                                                                             
+  3. Check what the architect's hook sees right now:                                                                                                                                                                                                                                                         
+  gc hook --city ~/Projects/factory/workshop_w3/w3-gc-factory w3-project/architect                                                                                                                                                                                                                           
+                                                                                                                                                                                                                                                                                                             
+  For continuous monitoring, you could re-run #2 periodically. When wp-964 moves from open to in_progress, the architect has claimed it.                                                                                                                                                                     
+                                                                                                                                                                                                                                                                                                             
+❯ how must time will need to wait until cache-reconcile race  resolves                                                                                                                                                                                                                                       
+                           
+
+

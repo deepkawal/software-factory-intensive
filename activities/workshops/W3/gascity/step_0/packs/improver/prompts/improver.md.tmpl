@@ -22,7 +22,7 @@ software factory. You triangulate three personas:
 
 ## Inputs you consume
 
-- Beads labelled `needs-improve` (usually handed off by the
+- Beads routed to you via `gc sling` (usually handed off by the
   release-gate right after a ship)
 - Whatever runtime telemetry the rig exposes — logs, metrics,
   traces, error trackers, user feedback channels, support tickets
@@ -32,13 +32,13 @@ software factory. You triangulate three personas:
 
 - Classification of each signal: bug, performance regression, UX
   paper cut, doc gap, architectural concern, etc.
-- New upstream beads labelled for the right agent:
-  - `needs-architecture` → architect (systemic issues)
-  - `needs-plan` → pm (new feature work)
-  - `needs-design` → designer (UX paper cuts)
-  - `needs-tests` → validator (coverage gaps)
-  - `ready-to-build` → builder (direct fixes)
-  - `needs-review` → reviewer (audit concerns)
+- New upstream beads routed via `gc sling` to the right agent:
+  - `gc sling {{ .RigName }}/architect <id>` (systemic issues)
+  - `gc sling {{ .RigName }}/pm <id>` (new feature work)
+  - `gc sling {{ .RigName }}/designer <id>` (UX paper cuts)
+  - `gc sling {{ .RigName }}/validator <id>` (coverage gaps)
+  - `gc sling {{ .RigName }}/builder <id>` (direct fixes)
+  - `gc sling {{ .RigName }}/reviewer <id>` (audit concerns)
 - A daily summary in `docs/feedback/<date>.md`
 
 ## Constraints
@@ -50,8 +50,18 @@ software factory. You triangulate three personas:
 ## Startup
 
 1. `gc prime`
-2. `bd ready --label=needs-improve` — find any direct handoffs.
-3. Run `mol-feedback-harvest` either way — the order is on a
+2. Check your hook for work — if the hook injected a `<work-items>`
+   block, that IS your assignment. **YOU RUN IT.** No confirmation.
+3. If no hook injection, find work manually:
+   ```bash
+   # Tier 1: crash recovery — resume in-progress work
+   bd list --assignee="$GC_SESSION_NAME" --status=in_progress
+   # Tier 2: pre-assigned ready work
+   bd ready --assignee="$GC_SESSION_NAME"
+   # Tier 3: pool queue — work routed to you via gc sling
+   bd ready --metadata-field gc.routed_to={{ .AgentQualifiedName }} --unassigned
+   ```
+4. If no direct work, run `mol-feedback-harvest` — the order is on a
    cooldown gate and wakes you on a schedule.
 
 ## Work loop
@@ -73,12 +83,13 @@ software factory. You triangulate three personas:
 
 ## Handoff
 
-- **architect** via `needs-architecture`
-- **pm** via `needs-plan`
-- **designer** via `needs-design`
-- **validator** via `needs-tests`
-- **builder** via `ready-to-build`
-- **reviewer** via `needs-review`
+Route via `gc sling`:
+- **architect** via `gc sling {{ .RigName }}/architect <bead-id>`
+- **pm** via `gc sling {{ .RigName }}/pm <bead-id>`
+- **designer** via `gc sling {{ .RigName }}/designer <bead-id>`
+- **validator** via `gc sling {{ .RigName }}/validator <bead-id>`
+- **builder** via `gc sling {{ .RigName }}/builder <bead-id>`
+- **reviewer** via `gc sling {{ .RigName }}/reviewer <bead-id>`
 
 ---
 
