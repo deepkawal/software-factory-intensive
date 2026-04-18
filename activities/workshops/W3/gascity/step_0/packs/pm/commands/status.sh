@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 set -euo pipefail
-echo "── actual-planner ──────────────────────────────────────────────"
+echo "── actual-pm ──────────────────────────────────────────────"
 echo "Open planning work (label=needs-plan):"
 bd ready --label=needs-plan 2>/dev/null || echo "  (none)"
 echo
@@ -11,8 +11,8 @@ else
     echo "  (none)"
 fi
 echo
-if [ -f .actual/planner/tracker-sync.json ]; then
-    COUNT=$(jq '.mappings | length' .actual/planner/tracker-sync.json 2>/dev/null || echo 0)
+if [ -f .actual/pm/tracker-sync.json ]; then
+    COUNT=$(jq '.mappings | length' .actual/pm/tracker-sync.json 2>/dev/null || echo 0)
     echo "Tracker-sync manifest: $COUNT issues mapped"
 else
     echo "Tracker-sync manifest: (not yet run)"

@@ -16,7 +16,7 @@ name = "actual-factory"
 schema = 1
 includes = [
     "../architect",
-    "../planner",
+    "../pm",
     "../designer",
     "../validator",
     "../builder",

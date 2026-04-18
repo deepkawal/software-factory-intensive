@@ -322,7 +322,7 @@ brew install gascity@0.14.1
 | Factory won't start | city.toml misconfigured | Check `gc config`, verify workspace name and rig path |
 | `gc sling` hangs or errors | Agent not authenticated or not running | `gc status` to check agent state, `gc doctor` for auth |
 | Delete fails "not registered" | Factory already unregistered | Safe to ignore; directory cleanup still proceeds |
-| `bd config set` fails | `bd` (beads) not installed | Verify `which bd`; install via gc or standalone |
+| `gc bd config set` fails | `bd` (beads) not installed | Verify `which bd`; install via gc or standalone |
 | Python script fails | Python 3 not available | Install Python 3.8+ |
 | Multiple dashboards conflict | Only one can bind port 8080 | Stop other dashboards before starting a new one |
 

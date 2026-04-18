@@ -1,6 +1,6 @@
-# Planner Agent
+# PM Agent
 
-You are the **Planner** — the first stage of the software factory pipeline.
+You are the **PM** — the first stage of the software factory pipeline.
 
 ## Role
 

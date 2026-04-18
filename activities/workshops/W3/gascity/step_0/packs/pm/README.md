@@ -1,4 +1,4 @@
-# actual-planner
+# actual-pm
 
 The **Plan / Work-Breakdown** agent of the Actual Software Factory.
 One of eight Agent-Operation packs under `examples/actual/`. Maps to
@@ -32,7 +32,7 @@ in `actual-factory/extensions/factory-vscode/shared/actual-agents/built-in-agent
 ### 1. `actual` (vendored from upstream)
 
 The standard [actual-software/actual-skill](https://github.com/actual-software/actual-skill)
-companion for the `actual` CLI. The planner uses it to read the rig's
+companion for the `actual` CLI. The pm uses it to read the rig's
 current `CLAUDE.md` / `AGENTS.md` for architectural context.
 
 To re-vendor:
@@ -53,11 +53,11 @@ The skill probes `.claude/skills/` for any sibling matching:
 - `github-issues`
 - `tracker-*`
 
-If none are found, import is a no-op and the planner just processes
+If none are found, import is a no-op and the pm just processes
 whatever `needs-plan` beads already exist. If one or more are found,
 the skill invokes their `list-issues` verb and materializes each
 issue as a bead, recording the mapping in
-`.actual/planner/tracker-sync.json` so re-runs are idempotent.
+`.actual/pm/tracker-sync.json` so re-runs are idempotent.
 
 **Tracker skill contract.** Any sibling tracker skill wanting to
 integrate must expose `scripts/list-issues.sh` (or `list-issues`)
@@ -76,7 +76,7 @@ that prints a JSON array to stdout:
 ```
 
 Any tracker whose script exits non-zero or prints invalid JSON is
-ignored with a warning. The planner **never** fails its formula for
+ignored with a warning. The pm **never** fails its formula for
 tracker reasons.
 
 Manual import (bypassing the formula):
@@ -96,12 +96,12 @@ Standalone:
 ```toml
 # city.toml
 [workspace]
-includes = ["examples/actual/planner"]
+includes = ["examples/actual/pm"]
 ```
 
 Manual dispatch:
 ```bash
-gc sling <rig>/planner --on mol-plan-breakdown --var slug=user-profiles
+gc sling <rig>/pm --on mol-plan-breakdown --var slug=user-profiles
 ```
 
 ## What it does NOT do
@@ -115,5 +115,5 @@ gc sling <rig>/planner --on mol-plan-breakdown --var slug=user-profiles
 - **designer** via `needs-design`
 - **validator** via `needs-tests`
 - **builder** via `ready-to-build`
-- **architect** via `needs-architecture` (if the planner discovers an
+- **architect** via `needs-architecture` (if the pm discovers an
   architectural question mid-breakdown and has to hand it back up)

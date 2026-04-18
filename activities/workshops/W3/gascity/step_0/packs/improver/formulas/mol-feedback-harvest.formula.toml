@@ -160,7 +160,7 @@ bd ready --label=needs-improve --json 2>/dev/null \\
 ```bash
 # Each label triggers the corresponding intake order automatically:
 #   needs-architecture → architect-guardrail-check
-#   needs-plan         → planner-intake
+#   needs-plan         → pm-intake
 #   needs-design       → designer-intake
 #   needs-tests        → validator-intake
 #   ready-to-build     → builder-intake

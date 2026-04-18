@@ -7,13 +7,13 @@
 
 One file in this folder:
 
-* `factory-wiring.md` — a per-agent table for the six agents (Planner, Architect, Designer, Builder, Reviewer, Release-Gate) showing input artifact, output artifact, config file, and the integration surface each agent touches (e.g. Jira, Slack, GitHub).
+* `factory-wiring.md` — a per-agent table for the six agents (PM, Architect, Designer, Builder, Reviewer, Release-Gate) showing input artifact, output artifact, config file, and the integration surface each agent touches (e.g. Jira, Slack, GitHub).
 
 The six agents map to these shipped packs:
 
 | Role in the curriculum | Pack path |
 |------------------------|-----------|
-| Planner | `../../../packs/planner` |
+| PM | `../../../packs/pm` |
 | Architect | `../../../packs/architect` |
 | Designer | `../../../packs/designer` |
 | Builder (Coder) | `../../../packs/builder` |

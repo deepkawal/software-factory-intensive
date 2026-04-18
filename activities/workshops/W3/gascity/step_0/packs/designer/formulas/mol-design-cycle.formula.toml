@@ -8,7 +8,7 @@ handed off to the builder.
 2. Designer produces a wireframe + a11y audit in
    `docs/designs/<slug>.md`.
 3. Bead gets relabelled `needs-plan` with `source:actual-designer` and
-   the planner decomposes it into implementation tasks.
+   the pm decomposes it into implementation tasks.
 
 ## Variables
 
@@ -114,7 +114,7 @@ Never ship a design without this section.
 
 [[steps]]
 id = "handoff"
-title = "Relabel bead and hand off to planner"
+title = "Relabel bead and hand off to pm"
 needs = ["a11y-check"]
 description = """
 ```bash
@@ -125,13 +125,13 @@ bd update $ROOT_ID \\
     --notes "<existing notes>
 design_artifact: docs/designs/{{slug}}.md"
 
-# The needs-plan label triggers planner-intake order automatically.
-# The planner will decompose the completed UX design into
+# The needs-plan label triggers pm-intake order automatically.
+# The pm will decompose the completed UX design into
 # implementation beads labelled ready-to-build.
 # Do NOT gc mail send — it creates duplicate sessions.
 # Wake any downstream agents whose beads just unblocked.
 sh packs/actual/all/scripts/wake-downstream.sh &
 ```
 
-**Exit criteria:** Bead relabelled `needs-plan`; planner picks up work via intake order.
+**Exit criteria:** Bead relabelled `needs-plan`; pm picks up work via intake order.
 """

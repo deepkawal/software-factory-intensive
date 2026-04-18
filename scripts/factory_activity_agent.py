@@ -2,6 +2,7 @@
 """Factory Activity Agent — install or delete Gas City factory setups for activities."""
 
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -55,7 +56,7 @@ def find_guide(activity):
     return None, None
 
 
-def run(cmd, cwd=None, *, dry_run=False, check=True, input_text=None, shell=False):
+def run(cmd, cwd=None, *, dry_run=False, check=True, input_text=None, shell=False, env=None):
     """Run a command, or print it in dry-run mode."""
     label = f"  [cwd: {cwd}]" if cwd else ""
     if isinstance(cmd, list):
@@ -67,7 +68,7 @@ def run(cmd, cwd=None, *, dry_run=False, check=True, input_text=None, shell=Fals
         return None
     print(f"==> {display}{label}")
     return subprocess.run(
-        cmd, cwd=cwd, check=check, input=input_text, text=True, shell=shell,
+        cmd, cwd=cwd, check=check, input=input_text, text=True, shell=shell, env=env,
     )
 
 
@@ -157,11 +158,11 @@ gc formula cook <name>
 
 ### Check and manage work items
 ```bash
-bd ready              # Show tasks ready to work on
-bd list               # List all issues
-bd list --status=in_progress  # See active work
-bd show <id>          # View issue details
-bd stats              # Project statistics
+gc bd ready              # Show tasks ready to work on
+gc bd list               # List all issues
+gc bd list --status=in_progress  # See active work
+gc bd show <id>          # View issue details
+gc bd stats              # Project statistics
 ```
 
 ---
@@ -317,7 +318,7 @@ What beads issues are ready to work on in {activity}?
 ```
 CLI command:
 ```bash
-cd ~/Projects/factory/{slug}/{project_name} && bd ready
+gc bd --rig {project_name} ready
 ```
 
 **List all issues**
@@ -328,7 +329,7 @@ Show me all beads issues for {activity}
 ```
 CLI command:
 ```bash
-cd ~/Projects/factory/{slug}/{project_name} && bd list
+gc bd --rig {project_name} list
 ```
 
 **Check active work in progress**
@@ -339,7 +340,7 @@ What work is currently in progress in {activity}?
 ```
 CLI command:
 ```bash
-cd ~/Projects/factory/{slug}/{project_name} && bd list --status=in_progress
+gc bd --rig {project_name} list --status=in_progress
 ```
 
 **View issue details**
@@ -350,7 +351,7 @@ Show me the details of beads issue <id>
 ```
 CLI command:
 ```bash
-cd ~/Projects/factory/{slug}/{project_name} && bd show <id>
+gc bd show <id>
 ```
 
 **Project statistics**
@@ -361,7 +362,7 @@ Show me beads stats for {activity}
 ```
 CLI command:
 ```bash
-cd ~/Projects/factory/{slug}/{project_name} && bd stats
+gc bd --rig {project_name} stats
 ```
 
 **Beads database seems broken — diagnose**
@@ -372,7 +373,7 @@ The beads database in {activity} seems broken. Diagnose and fix it.
 ```
 CLI command:
 ```bash
-cd ~/Projects/factory/{slug}/{project_name} && bd doctor
+gc bd --rig {project_name} doctor
 ```
 
 **Sync beads with remote**
@@ -383,7 +384,7 @@ Sync beads for {activity} with the remote
 ```
 CLI command:
 ```bash
-cd ~/Projects/factory/{slug}/{project_name} && bd dolt pull && bd dolt push
+gc bd --rig {project_name} dolt pull && gc bd --rig {project_name} dolt push
 ```
 
 **Find stale or orphaned issues**
@@ -394,7 +395,7 @@ Find stale and orphaned beads issues in {activity}
 ```
 CLI command:
 ```bash
-cd ~/Projects/factory/{slug}/{project_name} && bd stale && bd orphans
+gc bd --rig {project_name} stale && gc bd --rig {project_name} orphans
 ```
 
 **Search for an issue by keyword**
@@ -405,7 +406,7 @@ Search beads for "keyword" in {activity}
 ```
 CLI command:
 ```bash
-cd ~/Projects/factory/{slug}/{project_name} && bd search "keyword"
+gc bd --rig {project_name} search "keyword"
 ```
 
 **View blocked issues and their dependencies**
@@ -416,7 +417,7 @@ What issues are blocked in {activity} and why?
 ```
 CLI command:
 ```bash
-cd ~/Projects/factory/{slug}/{project_name} && bd blocked
+gc bd --rig {project_name} blocked
 ```
 
 ---
@@ -548,7 +549,7 @@ bash skills/factory-activity-agent/scripts/install.sh {activity}
 | Dashboard won't start | `The gc dashboard won't start. Fix it.` | `lsof -i :8080 && kill <PID>` |
 | `gc sling` hangs | `My sling to {activity} architect is hanging. Diagnose.` | `gc status` then `gc doctor` |
 | Factory won't start | `My {activity} factory won't start. Fix it.` | `gc config` then `gc service restart` |
-| Beads sync issues | `Sync beads for {activity} with remote` | `bd dolt pull && bd dolt push` |
+| Beads sync issues | `Sync beads for {activity} with remote` | `gc bd dolt pull && gc bd dolt push` |
 | Agent not responding | `Restart all agents in {activity}` | `gc stop && gc start` |
 | Need command reference | `Show me the gc command reference from the factory-activity-agent skill` | `gc --help` |
 """
@@ -626,48 +627,52 @@ def install(activity, dry_run=False):
 
     # --- Step 4: Add Rig ---
     print("\n##### Add Rig")
-    run(["gc", "rig", "add", str(project_dir)], cwd=str(factory_dir), dry_run=dry_run, check=False)
+    project_name = f"{alias_lower}-project"
+    run(
+        ["gc", "rig", "add", str(project_dir), "--include", "packs/actual/all"],
+        cwd=str(factory_dir), dry_run=dry_run, check=False,
+    )
 
-    # Insert includes into the [[rigs]] block that gc rig add just created.
-    # The [[rigs]] block has name and path lines — add includes after the path line.
-    # Note: [workspace] also has an includes line, so we can't just check for the string globally.
+    # Patch default_sling_target into the [[rigs]] block.
+    # No gc CLI flag exists for this yet, so we patch city.toml directly.
     if dry_run:
-        print(f'[dry-run] Insert includes = ["packs/actual/all"] into [[rigs]] block in city.toml')
+        print(f'[dry-run] Insert default_sling_target = "{project_name}/architect" into [[rigs]] block')
     else:
         content = city_toml_dest.read_text()
-        # Check if the [[rigs]] block already has includes
         rigs_match = re.search(
             r'^\[\[rigs\]\].*?(?=^\[|\Z)',
             content,
             flags=re.MULTILINE | re.DOTALL,
         )
-        if rigs_match and "includes" not in rigs_match.group():
-            # Insert includes after the path line within the [[rigs]] block
+        if rigs_match and "default_sling_target" not in rigs_match.group():
             content = re.sub(
-                r'(^\[\[rigs\]\].*?^path\s*=\s*"[^"]*")',
-                r'\1\nincludes = ["packs/actual/all"]',
+                r'(^\[\[rigs\]\].*?^includes\s*=\s*\[[^\]]*\])',
+                rf'\1\ndefault_sling_target = "{project_name}/architect"',
                 content,
                 count=1,
                 flags=re.MULTILINE | re.DOTALL,
             )
             city_toml_dest.write_text(content)
 
-    # --- Step 5: Patch convoy ---
-    print("\n##### Patch convoy")
-    run(
-        ["bd", "config", "set", "types.custom", "convoy"],
-        cwd=str(factory_dir), dry_run=dry_run,
-    )
-    run(
-        ["bd", "config", "set", "types.custom", "convoy"],
-        cwd=str(project_dir), dry_run=dry_run,
-    )
-
-    # --- Step 6: Restart Factory ---
+    # --- Step 5: Restart Factory ---
+    # Start the factory first so gc manages the Dolt server lifecycle.
     print("\n##### Restart Factory")
     run(["gc", "stop"], cwd=str(factory_dir), dry_run=dry_run, check=False)
     run(["gc", "start"], cwd=str(factory_dir), dry_run=dry_run, check=False)
     run(["gc", "restart"], cwd=str(factory_dir), dry_run=dry_run, check=False)
+
+    # --- Step 6: Patch convoy ---
+    # Use gc bd to ensure gc manages the Dolt lifecycle (no rogue servers).
+    # Must run after gc start so the Dolt server is available.
+    print("\n##### Patch convoy")
+    run(
+        ["gc", "bd", "config", "set", "types.custom", "convoy"],
+        cwd=str(factory_dir), dry_run=dry_run, check=False,
+    )
+    run(
+        ["gc", "bd", "--rig", alias_lower + "-project", "config", "set", "types.custom", "convoy"],
+        cwd=str(factory_dir), dry_run=dry_run, check=False,
+    )
 
     # --- Step 7: Start Dashboard ---
     print("\n##### Startup Gascity Dashboard")

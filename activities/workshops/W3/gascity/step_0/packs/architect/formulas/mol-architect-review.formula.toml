@@ -9,7 +9,7 @@ skill to keep ADRs in sync with generated CLAUDE.md/AGENTS.md files.
 
 1. Caller slings with a bead id (passed implicitly via `bd mol current`).
 2. Architect reads steps, executes each in order.
-3. On completion, child beads labelled `needs-plan` exist for the planner.
+3. On completion, child beads labelled `needs-plan` exist for the pm.
 
 ## Variables
 
@@ -273,11 +273,11 @@ git commit -m "actual-architect: add rule for {{topic}} (refs $ROOT_ID)"
 
 [[steps]]
 id = "handoff"
-title = "Create downstream work beads and hand off to planner"
+title = "Create downstream work beads and hand off to pm"
 needs = ["rules"]
 description = """
 Convert the architectural decision into concrete next-action beads
-for the planner.
+for the pm.
 
 **1. For each implication of the new rule, create a child bead:**
 ```bash
@@ -295,9 +295,9 @@ bd dep add $CHILD_ID --blocked-by $ROOT_ID
 bd close $ROOT_ID --reason "architecture complete, see docs/architecture/{{topic}}.md"
 ```
 
-**3. The planner picks up work automatically:**
+**3. The pm picks up work automatically:**
 ```bash
-# The needs-plan label triggers planner-intake order automatically.
+# The needs-plan label triggers pm-intake order automatically.
 # Do NOT gc mail send — it creates duplicate sessions.
 # Wake any downstream agents whose beads just unblocked.
 sh packs/actual/all/scripts/wake-downstream.sh &

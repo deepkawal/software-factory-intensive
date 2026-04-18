@@ -20,3 +20,32 @@ cp -r skills/factory-activity-agent ~/.claude/skills/factory-activity-agent
 mkdir -p ~/.codex/skills
 cp -r skills/factory-activity-agent ~/.codex/skills/factory-activity-agent
 ```
+
+
+
+
+
+No --label flag on gc sling.
+                                                                                                                                                                                                                                                            
+  The difference:                                                 
+                                                                                                                                                                                                                                                            
+  ┌───────────────┬─────────────────────────┬───────────────┐                                                                                                                                                                                               
+  │               │        gc sling         │ gc bd create  │                                                                                                                                                                                               
+  ├───────────────┼─────────────────────────┼───────────────┤                                                                                                                                                                                               
+  │ Creates bead  │ Yes (from text)         │ Yes           │     
+  ├───────────────┼─────────────────────────┼───────────────┤
+  │ Adds label    │ No                      │ Yes (--label) │                                                                                                                                                                                               
+  ├───────────────┼─────────────────────────┼───────────────┤
+  │ Nudges agent  │ Yes (routes + notifies) │ No            │                                                                                                                                                                                               
+  ├───────────────┼─────────────────────────┼───────────────┤                                                                                                                                                                                               
+  │ Spawns convoy │ Yes (auto)              │ No            │
+  └───────────────┴─────────────────────────┴───────────────┘                                                                                                                                                                                               
+                                                                  
+  So they're complementary. The cleanest workflow is:                                                                                                                                                                                                       
+                                                                  
+  # Create with label, then sling                                                                                                                                                                                                                           
+  gc bd create "Create a SPA nextjs site" --label needs-architecture --silent | xargs gc sling w3-project/architect
+                                                                                                                                                                                                                                                            
+  Or just create with the label and let the architect's polling loop find it naturally (no sling needed):                                                                                                                                                   
+                                                                                                                                                                                                                                                            
+  gc bd create "Create a SPA nextjs site" --label needs-architecture               
