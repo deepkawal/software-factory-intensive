@@ -10,4 +10,6 @@ prompt_template = "prompts/deployer.md"
 overlay_dir = "overlays/default"
 nudge = "Check your hook for reviewed code ready for release evaluation."
 idle_timeout = "1h"
-max_active_sessions = 1
+min_active_sessions = 1
+max_active_sessions = 2
+
