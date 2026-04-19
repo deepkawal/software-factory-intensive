@@ -682,7 +682,7 @@ Produce an ADR at docs/adr/0001-loyalty-points-storage.md
 using the MADR template in your prompt.
 EOF
 )" \
-  --depends-on my-factory-a1b2c3
+  --deps blocks:my-factory-a1b2c3
 ```
 
 You should see:
@@ -691,7 +691,7 @@ You should see:
 Created bead: my-factory-d4e5f6
 ```
 
-**What's happening here:** The `--depends-on my-factory-a1b2c3` flag tells Gas City: "don't let anyone sling this bead until `my-factory-a1b2c3` is closed." Since you just closed the Planner bead, this dependency is already satisfied. In the capstone (C1), you'll use dependencies to create automatic sequential pipelines.
+**What's happening here:** The `--deps blocks:my-factory-a1b2c3` flag tells Gas City: "this new bead is blocked by `my-factory-a1b2c3`". Since you just closed the Planner bead, the dependency is already satisfied. In the capstone (C1), you'll use dependencies to create automatic sequential pipelines. (Flag syntax note: `--deps <type>:<id>`, not `--deps blocks:`.)
 
 Verify:
 
@@ -1057,7 +1057,7 @@ bd close my-factory-a1b2c3 --comment "Work package completed"
 
 # PART 4 — Run the Architect
 bd create "Architecture Review: Loyalty Points Storage" \
-  --description "..." --depends-on my-factory-a1b2c3
+  --description "..." --deps blocks:my-factory-a1b2c3
 gc sling architect my-factory-d4e5f6
 gc watch architect
 cat docs/adr/0001-loyalty-points-storage.md      # review output
@@ -1117,7 +1117,7 @@ When you review your own output, check:
 | `actual adr-bot` hangs or errors | Check that your Claude Code runner is authenticated: `claude auth login`. Or switch runner: `actual config set runner anthropic-api`. |
 | `actual adr-bot` produces irrelevant ADRs | Scope it: `actual adr-bot --dry-run` to preview, then re-run with language/framework filters if available. Or just delete irrelevant sections from `CLAUDE.md`. |
 | Planner hallucinates project features that don't exist | Add to planner prompt: "Only reference files, APIs, and features documented in `docs/PROJECT_MANIFEST.md` or visible in the repo. Never assume infrastructure that isn't committed." |
-| Bead `--depends-on` blocks but the dependency is already closed | Run `bd show <bead-id>` to check dependency status. If it shows "satisfied," the bead is ready to sling. If still "blocked," verify you closed the prerequisite bead. |
+| Bead `--deps blocks:` blocks but the dependency is already closed | Run `bd show <bead-id>` to check dependency status. If it shows "satisfied," the bead is ready to sling. If still "blocked," verify you closed the prerequisite bead. |
 | Agent produces output but doesn't commit | Check `git status` in the repo. The agent may have written files but failed to commit. Add to the prompt's Process section: "Always `git add` and `git commit` your output before marking the bead ready." |
 
 ---

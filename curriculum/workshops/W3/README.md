@@ -126,10 +126,10 @@ exec = "bd jira sync || true"
 
 ### Step 2: Review the Bead Dependency Primitive
 
-Gas City's `bd` CLI has a `--depends-on` flag:
+Gas City's `bd` CLI has a `--deps blocks:` flag:
 
 ```bash
-bd create "Architect decision" --depends-on plan-123 --id arch-456
+bd create "Architect decision" --deps blocks:plan-123 --id arch-456
 ```
 
 **What's happening here:** The dependent bead stays in `blocked` state until `plan-123` closes. This is the coordination primitive for **sequential pipelines**. Orchestrator `depends_on` entries compile to exactly this — a chain of blocked beads that unblock in order.
@@ -170,7 +170,7 @@ Your `orchestrator.yaml` will compose three coordination concepts, each mapped t
 
 **When:** Stage B cannot start until Stage A has produced its artifact. Order matters; output of Stage N is the input of Stage N+1.
 
-**Primitive used:** `bd create --depends-on`
+**Primitive used:** `bd create --deps blocks:`
 
 **Fired Up Pizza example:**
 
@@ -209,7 +209,7 @@ pipeline:
       produces: src/**
 ```
 
-**What's happening here:** `needs: [plan]` means this stage's bead is created with `--depends-on <plan-bead-id>`. The orchestrator won't sling this stage's bead to its agent until the prerequisite bead closes. `produces:` is a glob that documents what artifact this stage creates — the orchestrator uses it to verify the agent actually wrote something before marking the stage complete.
+**What's happening here:** `needs: [plan]` means this stage's bead is created with `--deps blocks:<plan-bead-id>`. The orchestrator won't sling this stage's bead to its agent until the prerequisite bead closes. `produces:` is a glob that documents what artifact this stage creates — the orchestrator uses it to verify the agent actually wrote something before marking the stage complete.
 
 **Use sequential chaining when:**
 
@@ -572,7 +572,7 @@ gates:
 - `version: 1` is the schema version. Keep it at 1 for the duration of the curriculum.
 - `pipeline.name` is the identifier the orchestrator uses when logging. One pipeline per file is the simplest shape; you can have multiple (e.g., a `hotfix-pipeline`) but don't in W3.
 - `trigger.bead_label` is the label on a bead that kicks the pipeline off. When you create a bead with `bd create "..." --label feature-request`, the orchestrator picks it up and starts at the `plan` stage.
-- Each `stage` has: a name, an agent (matches the `[[agent]].name` in a pack's `pack.toml`), a `needs` list (compiles to `--depends-on`), a `produces` glob, an optional `gate`, and a `bead_template`.
+- Each `stage` has: a name, an agent (matches the `[[agent]].name` in a pack's `pack.toml`), a `needs` list (compiles to `--deps blocks:`), a `produces` glob, an optional `gate`, and a `bead_template`.
 - `on_reject: code` in the `review` stage is the **remediation loop**: if the Reviewer's verdict is `request_changes`, the orchestrator opens a new `code` bead pointing back to the same feature. This is how the pipeline self-corrects without human intervention.
 - `gates:` at the bottom declares approval metadata that the `gate: human` stages reference. Keep a justification doc per gate — empty justification = theatrical gate.
 
@@ -754,7 +754,7 @@ Your `orchestrator.yaml` isn't aspirational — every field in it compiles to Ga
 | Orchestrator field | Gas City primitive | File or command |
 |---|---|---|
 | `agent: planner` | `[[agent]]` block in a pack | [`packs/planner/pack.toml`](../../../packs/planner/pack.toml) — the `name = "planner"` line |
-| `needs: [plan]` | `bd create --depends-on` | Applied at runtime by the orchestrator when it creates the stage's bead |
+| `needs: [plan]` | `bd create --deps blocks:` | Applied at runtime by the orchestrator when it creates the stage's bead |
 | `gate: human` + `approvers:` | `bd create --requires-approval --assignee` | Applied at runtime; the bead enters `needs-approval` state |
 | `on_reject: code` | Auto-creation of a new bead for the named stage when a verdict bead closes with `request_changes` | Applied at runtime by the orchestrator loop |
 | `trigger.bead_label` | Label filter on incoming beads (e.g., from `bd jira sync`) | Matches the label set by issue-tracker sync orders |

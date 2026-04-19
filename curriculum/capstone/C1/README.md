@@ -43,7 +43,7 @@ If you skipped an earlier lab, add the shipped path for that pack — the capsto
    ┌───────────────────────────┐   ┌──────────────────┐
    │  orchestrator.yaml         │──▶│   PLANNER AGENT   │──▶ work-packages/<slug>.md
    │  (W3 coordination)         │   └────────┬─────────┘
-   │                            │            │ handoff: bead --depends-on
+   │                            │            │ handoff: bead --deps blocks:
    │  pipeline:                 │            ▼
    │    - planner               │   ┌──────────────────┐
    │    - architect             │──▶│ ARCHITECT AGENT   │──▶ docs/adr/NNNN-<slug>.md
@@ -304,7 +304,7 @@ Read CLAUDE.md for tailored-ADR baselines.
 Produce docs/adr/NNNN-order-history-lookup.md using MADR.
 EOF
 )" \
-  --depends-on my-factory-c1a2p3
+  --deps blocks:my-factory-c1a2p3
 
 gc sling architect <architect-bead-id>
 gc watch architect
@@ -339,7 +339,7 @@ Close the Architect bead when the ADR passes its Quality Gate.
 ```bash
 bd create "Design: Order history page + lookup endpoint" \
   --description "Produce design/order-history-spec.md from work-packages/order-history.md and docs/adr/NNNN-order-history-lookup.md. Include component tree, props, API contract, test plan." \
-  --depends-on <architect-bead-id>
+  --deps blocks:<architect-bead-id>
 
 gc sling designer <designer-bead-id>
 gc watch designer
@@ -371,7 +371,7 @@ Close the Designer bead.
 ```bash
 bd create "Implement: Order history page + lookup endpoint" \
   --description "Implement design/order-history-spec.md. Follow the component tree exactly. All tests from the spec's test plan must pass before marking ready." \
-  --depends-on <designer-bead-id>
+  --deps blocks:<designer-bead-id>
 
 gc sling builder <coder-bead-id>
 gc watch coder
@@ -411,7 +411,7 @@ gc workshop sync-all
 
 bd create "Review: Order history PR" \
   --description "Review the feat/order-history PR. Use the review checklist in the reviewer prompt and the Review Standards in docs/PROJECT_MANIFEST.md. Post review as a PR comment. Also write review-reports/order-history-review.md." \
-  --depends-on <coder-bead-id>
+  --deps blocks:<coder-bead-id>
 
 gc sling reviewer <reviewer-bead-id>
 gc watch reviewer
@@ -447,7 +447,7 @@ Close the Reviewer bead.
 ```bash
 bd create "Deploy: Order history feature" \
   --description "Evaluate release-gates for order-history. Use Release Criteria in docs/PROJECT_MANIFEST.md. Write release-gates/order-history-gate.md. If all required gates PASS, proceed with the deploy pipeline defined in the deployer prompt." \
-  --depends-on <reviewer-bead-id>
+  --deps blocks:<reviewer-bead-id>
 
 gc sling devops <deployer-bead-id>
 gc watch devops
@@ -863,7 +863,7 @@ This is the signal a W4 feedback rule should be catching. If no rule exists, wri
 
 ### 3. Wrong stage runs before its dependency
 
-Check `bd show <bead-id>` for the `depends_on` chain. If the chain is missing, the bead was created without `--depends-on`. Close the wrong-ordered work, recreate the bead with the dependency, re-sling from the correct stage.
+Check `bd show <bead-id>` for the `depends_on` chain. If the chain is missing, the bead was created without `--deps blocks:`. Close the wrong-ordered work, recreate the bead with the dependency, re-sling from the correct stage.
 
 ### 4. Orchestrator fails to advance to next stage
 
@@ -1063,7 +1063,7 @@ bd list                                   # everything
 bd list --status open                     # active work
 bd list --status needs-approval           # pending human gates
 bd show <bead-id>                         # one bead's detail + dependency chain
-bd create "..." --depends-on <bead-id>    # dependent bead
+bd create "..." --deps blocks:<bead-id>    # dependent bead
 bd close <bead-id> --comment "..."        # mark done
 bd approve <bead-id> --comment "..."      # release human gate
 bd reject <bead-id> --comment "..."       # reject, send back upstream

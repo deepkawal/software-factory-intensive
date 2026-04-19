@@ -91,7 +91,7 @@ Before starting this lab, verify each of these:
 | `gc rig add <repo> --include packs/builder` | Register the Coder pack | Part 1 |
 | `gc restart` | Reload city configuration after pack additions | Part 1, Part 2 |
 | `gc status` | Confirm which agents are live | Part 1, Part 2 |
-| `bd create --depends-on <bead>` | Chain the Designer bead after L2 outputs | Part 3 |
+| `bd create --deps blocks:<bead>` | Chain the Designer bead after L2 outputs | Part 3 |
 | `gc sling designer <bead>` | Dispatch the Designer | Part 3 |
 | `gc sling builder <bead>` | Dispatch the Coder (longer-running) | Part 4 |
 | `gc watch <agent>` | Attach to the agent's live tmux session | Parts 3, 4 |
@@ -488,7 +488,7 @@ Requirements:
 Output: design/loyalty-points-badge-spec.md
 EOF
 )" \
-  --depends-on my-factory-d4e5f6
+  --deps blocks:my-factory-d4e5f6
 ```
 
 Replace `my-factory-d4e5f6` with your L2 Architect bead ID (from `bd list`).
@@ -501,7 +501,7 @@ Created bead: my-factory-design123
 
 Note this bead ID — you'll sling it next.
 
-**What's happening here:** `--depends-on` is optional here (the Architect bead is already closed), but including it preserves the dependency chain in your bead graph. Later, when you look at the provenance of `design/loyalty-points-badge-spec.md`, you can walk backward from this bead to the Architect bead to the Planner bead and see the full history of who decided what.
+**What's happening here:** `--deps blocks:` is optional here (the Architect bead is already closed), but including it preserves the dependency chain in your bead graph. Later, when you look at the provenance of `design/loyalty-points-badge-spec.md`, you can walk backward from this bead to the Architect bead to the Planner bead and see the full history of who decided what.
 
 ### Step 2: Sling the Bead to the Designer
 
@@ -682,7 +682,7 @@ Commit on the existing feature branch. Use conventional-commit messages
 per the tailored ADR baselines.
 EOF
 )" \
-  --depends-on my-factory-design123
+  --deps blocks:my-factory-design123
 ```
 
 You should see:
@@ -1036,7 +1036,7 @@ git add -A && git commit -m "chore(coder): customize coder prompt"
 # PART 3 — Run the Designer
 cd my-factory
 bd create "Design: Loyalty Points Badge Component" \
-  --description "..." --depends-on my-factory-d4e5f6
+  --description "..." --deps blocks:my-factory-d4e5f6
 gc sling designer my-factory-design123
 gc watch designer                                # Ctrl+b d to detach
 cat design/loyalty-points-badge-spec.md          # review output
@@ -1045,7 +1045,7 @@ bd close my-factory-design123 --comment "Component spec committed"
 
 # PART 4 — Run the Coder
 bd create "Implement: Loyalty Points Badge Component" \
-  --description "..." --depends-on my-factory-design123
+  --description "..." --deps blocks:my-factory-design123
 gc sling builder my-factory-impl456
 gc watch coder                                   # longer run — 10–25 min
 cd ~/path/to/your-repo

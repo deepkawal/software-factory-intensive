@@ -13,6 +13,22 @@ Run them in that order for an incremental signal from "the files are correct" to
 
 ---
 
+## Governing principle: scripts and student-facing READMEs must stay in sync
+
+The walkthrough scripts (`test-harness/walkthroughs/<lesson>.sh`) are not private automation that can take shortcuts a student wouldn't take. They are the **live correctness check on what we tell students to type**. Every shell command the script runs should be something a student following `activities/<track>/<lesson>/README.md` would type. When they diverge, we have a bug — either in the script, in the README, or in Gas City itself.
+
+The iteration loop:
+
+1. **The script is the experimental vehicle.** Get it running end-to-end against a real factory. Iterate on the commands, budgets, and handoff sequencing until it produces the lesson's deliverables reliably.
+2. **The README is the destination.** Once the script reliably works, the student-facing activity README **must say exactly what the script runs** — same command shapes, same order, same bead/label conventions. If the README asks students to do X but the script had to do Y to succeed, the README is wrong and needs updating.
+3. **A script "cheat" is a bug report.** If the script has to invoke a helper that bypasses what a student would type, that's a signal — either Gas City is missing a documented path, or the README is incomplete. File it as a WORKSHOP_AUTHOR_NOTES entry (see §13-§14 for examples) and fix the root cause rather than papering over it in the script.
+
+Concretely: if the L3 activity README tells a student `bd create --label needs-architecture --depends-on <planner-bead>` + `gc sling`, then `L3.sh` runs exactly that. If during iteration we discover the README's instructions don't actually produce the deliverable (because the shipped pack's behavior differs, or gc has an unexpected constraint), we update the README to match what works — we don't leave the student with instructions that don't work.
+
+The goal of a successful harness run is **both** a green lesson script *and* a high-confidence README. A green script on its own doesn't ship — it has to produce an instruction set a student can follow and succeed with.
+
+---
+
 ## 1. `migration-check.sh` — static structural invariants
 
 Asserts 10 invariants across every `pack.toml` in `packs/` and in the `activites/` checkpoint trees:

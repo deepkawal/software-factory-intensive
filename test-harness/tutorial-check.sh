@@ -27,7 +27,11 @@
 set -uo pipefail   # not -e; we handle errors per-lesson
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
-TUTORIAL_SCRATCH_ROOT="/tmp/sfi-tutorial-check"
+# Canonical path (resolve /tmp → /private/tmp on macOS). gc rig add's
+# server-reuse check compares process args as strings, so a symlinked
+# cwd breaks verify_our_server and rig-add collides on the dolt start
+# lock. See WORKSHOP_AUTHOR_NOTES §13.
+TUTORIAL_SCRATCH_ROOT="$(mkdir -p /tmp/sfi-tutorial-check && cd /tmp/sfi-tutorial-check && pwd -P)"
 # Alias kept so local references in lesson bodies still work.
 scratch_root="$TUTORIAL_SCRATCH_ROOT"
 

@@ -27,7 +27,13 @@ set -uo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 WALK_REPO_ROOT="$repo_root"
-TUTORIAL_SCRATCH_ROOT="/tmp/sfi-tutorial-walkthrough"
+# Canonical path (resolve /tmp → /private/tmp on macOS). gc rig add's
+# server-reuse check compares process args as strings, so if gc register
+# canonicalizes the cwd to /private/tmp/... and we then invoke gc rig add
+# from /tmp/..., verify_our_server fails and rig-add tries to spawn a
+# second dolt that collides on the start lock. Using the canonical path
+# everywhere sidesteps that mismatch.
+TUTORIAL_SCRATCH_ROOT="$(cd "$(mkdir -p /tmp/sfi-tutorial-walkthrough && echo /tmp/sfi-tutorial-walkthrough)" && pwd -P)"
 
 # The library (run_id + cleanup + divergence/pass/fail + asserts). The
 # library's cleanup handles unregister-by-path for everything in
@@ -40,8 +46,9 @@ source "$repo_root/test-harness/lib/tutorial-common.sh"
 # Chaining order matches a real student's path through the curriculum:
 # my-factory sets up the factory; each lab builds on the prior lab's
 # state (work-package → ADR → design → code → review → release-gate).
-ALL_LESSONS=(my-factory L2)
-# Future: (my-factory W1 L1 W2 L2 W3 L3 W4 L4 C1)
+ALL_LESSONS=(my-factory L2 L3 L4 C1)
+# W1/L1/W2/W3/W4 intentionally skipped — see WORKSHOP_AUTHOR_NOTES.md
+# §10 (L1) and §12 (workshops).
 
 # --- state -------------------------------------------------------------
 

@@ -37,10 +37,36 @@ source = "../activities/labs/L3/packs/builder"   # your customised builder, for 
 ## Running the capstone
 
 1. Pick a new feature from your backlog (not one used during the labs).
-2. File the root bead: `bd create --title "Feature: <name>" --label needs-plan`.
-3. Sling the Planner and follow the pipeline through to the Release-Gate. Log every sling, every prompt edit, and every ad-hoc chat correction.
-4. At the end, draft `factory-run-report.md` using the reference report as the template.
-5. Write `retrospective-card.md` — one Keep, one Change, one Question.
+2. File the root bead and sling the Planner. After each upstream agent's artifact appears in the rig, create the next stage's bead and sling:
+
+   ```bash
+   bd create --title "Feature: <name>" --labels needs-plan
+   gc sling --nudge your-project--planner <bead-id>
+
+   bd create --title "Architecture: <name>" --labels needs-architecture
+   gc sling --nudge your-project--architect <bead-id>
+
+   bd create --title "Design: <name>" --labels needs-design
+   gc sling --nudge your-project--designer <bead-id>
+
+   bd create --title "Build: <name>" --labels ready-to-build
+   gc sling --nudge your-project--builder <bead-id>
+
+   bd create --title "Review: <name>" --labels needs-review
+   gc sling --nudge your-project--reviewer <bead-id>
+
+   bd create --title "Ship: <name>" --labels ready-to-ship
+   gc sling --nudge your-project--release-gate <bead-id>
+   ```
+
+   Log every sling, every prompt edit, and every ad-hoc chat correction.
+3. At the end, draft `factory-run-report.md` using the reference report as the template.
+4. Write `retrospective-card.md` — one Keep, one Change, one Question.
+
+**Flag notes:**
+- `--labels` (plural), not `--label`.
+- `--nudge` on every `gc sling`.
+- Each stage is a new bead. If you want explicit dep edges for audit, add them after the fact with `bd link <new> <upstream>`.
 
 ## Exit criteria
 

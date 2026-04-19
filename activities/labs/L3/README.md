@@ -52,12 +52,19 @@ gc doctor
 From your project rig:
 
 ```bash
-bd create --title "Design: <feature>" --label needs-design --depends-on <L2-architect-bead>
-gc sling your-project--designer <bead-id>
-# ...wait, then hand off to the builder
-bd create --title "Build: <feature>" --label ready-to-build --depends-on <designer-bead>
-gc sling your-project--builder <bead-id>
+# After L2's Architect has written its ADR:
+bd create --title "Design: <feature>" --labels needs-design
+gc sling --nudge your-project--designer <bead-id>
+
+# Once you see docs/design/<slug>.md, hand off to the Builder:
+bd create --title "Build: <feature>" --labels ready-to-build
+gc sling --nudge your-project--builder <bead-id>
 ```
+
+**Flag notes:**
+- `--labels` (plural). `--label` (singular) is not a valid flag.
+- `--nudge` on `gc sling` kicks the agent into processing.
+- Each pipeline stage gets its own new bead. If you want an explicit dep edge for audit, add it after the fact with `bd link <new> <upstream>`.
 
 ## Exit criteria
 

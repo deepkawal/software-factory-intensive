@@ -54,12 +54,20 @@ gc doctor      # should be green for all eight agents
 From your project rig:
 
 ```bash
-bd create --title "Review: <feature>" --label needs-review --depends-on <L3-builder-bead>
-gc sling your-project--reviewer <bead-id>
-# ...address findings via Builder prompt edits, then
-bd create --title "Ship: <feature>" --label ready-to-ship --depends-on <reviewer-bead>
-gc sling your-project--release-gate <bead-id>
+# After L3's Builder has committed to the feature branch:
+bd create --title "Review: <feature>" --labels needs-review
+gc sling --nudge your-project--reviewer <bead-id>
+
+# Once you see review-reports/<slug>-review.md (and have addressed findings
+# via Builder-pack prompt edits if needed), hand off to the Release-Gate:
+bd create --title "Ship: <feature>" --labels ready-to-ship
+gc sling --nudge your-project--release-gate <bead-id>
 ```
+
+**Flag notes:**
+- `--labels` (plural). `--label` (singular) is not a valid flag.
+- `--nudge` on `gc sling` kicks the agent into processing.
+- Each pipeline stage gets its own new bead. If you want an explicit dep edge for audit, add it after the fact with `bd link <new> <upstream>`.
 
 ## Exit criteria
 

@@ -131,11 +131,11 @@ lesson_run() {
   local bead_out
   bead_out="$(cd "$WALK_L2_RIG" && bd create \
     --title "Add memory feature: store, recall, and clear operations to the calculator" \
-    --label needs-plan 2>&1)"
+    --labels needs-plan 2>&1)"
   log "bd create output:"
   echo "$bead_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
 
-  WALK_L2_BEAD_ID="$(echo "$bead_out" | grep -oE '[a-z]+-[a-zA-Z0-9.]+' | head -1)"
+  WALK_L2_BEAD_ID="$(echo "$bead_out" | grep -oE 'rig-[a-zA-Z0-9.]+' | head -1)"
   if [ -z "$WALK_L2_BEAD_ID" ]; then
     step_fail "could not extract bead id"
     stop_event_stream
@@ -146,20 +146,16 @@ lesson_run() {
 
   echo
   echo "[8/9] gc sling planner + wait for work-package"
-  # Explicit sling — matches what L2 README tells students to type.
-  # Condition-gated auto-wake for Planner is unreliable per the gc 0.15
-  # behavior we mapped earlier.
-  local sling_out
-  sling_out="$(cd "$WALK_L2_FACTORY" && gc sling rig/planner.planner "$WALK_L2_BEAD_ID" 2>&1)"
-  log "gc sling planner output:"
-  echo "$sling_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
-  if echo "$sling_out" | grep -qiE 'Slung|already routed|dispatched'; then
-    step_pass "Planner slung $WALK_L2_BEAD_ID"
-  else
-    step_fail "gc sling rig/planner.planner did not emit expected success marker"
-    stop_event_stream
-    fail "sling to planner failed — see $WALK_LOG"
+  if ! wait_for_agent_ready "$WALK_L2_FACTORY" rig/planner.planner 180 5; then
+    step_fail "Planner session tmux never came live"
+    stop_event_stream; fail "Planner session not ready"
   fi
+  sling_and_nudge "$WALK_L2_FACTORY" rig/planner.planner "$WALK_L2_BEAD_ID"
+  if [ "$SLING_RC" -ne 0 ]; then
+    step_fail "sling to Planner produced no success marker"
+    stop_event_stream; fail "sling to planner failed — see $WALK_LOG"
+  fi
+  step_pass "Planner slung $WALK_L2_BEAD_ID"
 
   # Wait for Planner to produce a work-package file. Match any .md file
   # in work-packages/ (Planner may use any slug naming scheme).
@@ -170,10 +166,6 @@ lesson_run() {
   if ! wait_for "Planner to write work-packages/*.md" "$wp_check" 600 15; then
     log "debugging — planner session state:"
     (cd "$WALK_L2_FACTORY" && gc session list 2>/dev/null | head -12 | sed 's/^/    /') | tee -a "$WALK_LOG"
-    log "  rig tree now:"
-    (cd "$WALK_L2_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort | sed 's/^/    /') | tee -a "$WALK_LOG"
-    log "  gc-events.log tail:"
-    tail -15 "$WALK_SCRATCH/gc-events.log" 2>/dev/null | sed 's/^/    /' | tee -a "$WALK_LOG"
     step_fail "Planner did not produce a work package within 10min"
     stop_event_stream
     fail "Planner failed to produce work-package"
@@ -182,25 +174,22 @@ lesson_run() {
   step_pass "Planner produced work-package: $WALK_L2_WORK_PACKAGE"
 
   echo
-  echo "[9/9] gc sling architect + wait for ADR"
-  # Find the bead now labeled needs-architecture — may be the original
-  # (if Planner relabeled) OR a new child bead (if Planner decomposed).
-  # Any bead with needs-architecture label is fine to sling to Architect.
+  echo "[9/9] Architect stage — fresh bead chained to Planner"
+  # Per-stage bead pattern (validated in L3): fresh bead with
+  # `--deps blocks:<upstream>` then sling --nudge to the target.
   local arch_bead
-  arch_bead="$(cd "$WALK_L2_RIG" && bd ready --label=needs-architecture --limit=1 --json 2>/dev/null \
-    | jq -r '.[0].id // empty' 2>/dev/null)"
-  if [ -z "$arch_bead" ]; then
-    # Fall back: just re-sling the original bead (Planner may have left
-    # its status/label ambiguous).
-    arch_bead="$WALK_L2_BEAD_ID"
-    divergence "$WALK_LESSON_NAME" "no bead labelled needs-architecture after Planner — slinging the original L2 bead to Architect"
+  arch_bead="$(stage_bead_create "$WALK_L2_RIG" "Architecture: memory feature" needs-architecture "$WALK_L2_BEAD_ID")" || {
+    step_fail "bd create for Architect failed"
+    stop_event_stream; fail "Architect bead creation failed"
+  }
+  log "[Architect] → $arch_bead"
+  if ! wait_for_agent_ready "$WALK_L2_FACTORY" rig/architect.architect 180 5; then
+    step_fail "Architect session tmux never came live"
+    stop_event_stream; fail "Architect session not ready"
   fi
-
-  sling_out="$(cd "$WALK_L2_FACTORY" && gc sling rig/architect.architect "$arch_bead" 2>&1)"
-  log "gc sling architect output:"
-  echo "$sling_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
-  if ! echo "$sling_out" | grep -qiE 'Slung|already routed|dispatched'; then
-    step_fail "gc sling rig/architect.architect did not emit expected success marker"
+  sling_and_nudge "$WALK_L2_FACTORY" rig/architect.architect "$arch_bead"
+  if [ "$SLING_RC" -ne 0 ]; then
+    step_fail "sling to Architect produced no success marker"
     stop_event_stream
     fail "sling to architect failed"
   fi

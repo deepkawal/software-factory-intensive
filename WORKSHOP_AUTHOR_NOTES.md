@@ -165,3 +165,106 @@ bash test-harness/migration-check.sh
 bash test-harness/behavioral-smoke.sh
 bash test-harness/tutorial-check.sh
 ```
+
+---
+
+## 12. Walkthrough harness: W1/W2/W3/W4 intentionally skipped
+
+The walkthrough harness (`test-harness/walkthroughs/`) targets labs, not workshops. Workshops W1–W4 are author-led teaching sessions whose exit criteria are knowledge/comprehension, not runnable artifacts that a harness can check:
+
+- **W1 (Workflow Cards):** exit criterion is the student internalising the 8 card shapes. Artifact-wise it produces a filled-in workflow card per agent — prose authored by the student, not by the factory. A harness would only be able to file-existence-check those cards, which is near-zero value.
+- **W2 (Factory Wiring):** exit criterion is reading + discussing `activities/workshops/W2/README.md`. No factory state changes; `gc status` would be unchanged pre/post.
+- **W3 (Conventions):** author-led doc walk-through of `packs/workshop/` conventions. No bead flow; nothing new to assert that `migration-check.sh` doesn't already cover.
+- **W4 (Improver + Release-Gate):** teaches the improver loop and release-gate wiring; the live dynamics belong to C1, where they actually run end-to-end against a feature.
+
+The labs (L1–L4 + C1 capstone) are where agent behavior can be observed empirically, so that's where walkthrough coverage lives. L1 is also skipped for the reasons in section 10 above. L2, L3, L4, and C1 are the live-LLM harness targets.
+
+If a workshop later grows a runnable exercise (e.g. "W3 asks students to add a pack and verify `gc status` reports it"), a workshop walkthrough becomes worthwhile. Until then the skip is the honest choice.
+
+---
+
+## 13. Walkthrough harness: gc 0.15.2 `gc rig add` path-canonicalization bug
+
+On gc 0.15.2, running `gc rig add` right after `gc register` from a working directory under `/tmp/...` fails deterministically:
+
+```
+gc rig add: bead store: exec beads start: could not acquire dolt start lock
+  (.../my-factory/.gc/runtime/packs/dolt/dolt.lock)
+```
+
+**Root cause (not what it looks like):** The error message blames the lock file, but the real culprit is path canonicalization. On macOS `/tmp` is a symlink to `/private/tmp`. `gc register` canonicalizes its cwd to `/private/tmp/...` before starting dolt, so the running `dolt sql-server` process has `--config /private/tmp/.../dolt-config.yaml` in its argv. When `gc rig add` runs next, it re-derives `CONFIG_FILE` from the un-canonicalized cwd (`/tmp/...`) and calls `verify_our_server` in `gc-beads-bd.sh`, which string-matches the process argv. The two paths don't match as strings, gc concludes "that dolt is not ours", falls through to start-a-new-dolt — which collides on `flock` with the real one — and dies blaming the lock.
+
+Verified by running `gc dolt-state probe-managed --city /tmp/X --port <running-port>`: it correctly sees the dolt process but reports `port_holder_owned false` purely because of the `/tmp` vs `/private/tmp` prefix. Using the canonical `/private/tmp/...` cwd throughout makes `gc rig add` succeed with the existing dolt still running and serving beads (which is what we want — dolt *is* beads storage).
+
+**Fix applied in the harness:** `tutorial-walkthrough.sh` resolves `TUTORIAL_SCRATCH_ROOT` through `pwd -P` so every per-lesson scratch path is canonical before `gc register` or `gc rig add` ever see it. No dolt killing, no respawn dance. Dolt stays up across the whole run.
+
+**Student-facing impact:** Any student whose `my-factory/` lives under a symlinked path (`/tmp/...`, or a project checkout under a `~` that resolves through a symlink) will hit this during L2 onward. The lab READMEs should either tell students to `cd "$(pwd -P)"` before `gc register`, or the upstream gc fix should canonicalize in `verify_our_server` / the dolt-state probe. Track at `workshop:gc-rig-add-path-canonicalization`.
+
+Attempts that did **not** work (recorded so nobody re-tries them):
+- 15s delay between register and rig-add — same failure; this is not a race.
+- `gc stop` between them — dolt survives, lock persists.
+- Killing dolt before rig-add — fixes the lock collision at the cost of leaving beads storage down; the supervisor respawns dolt but now there's a fresh race.
+
+Remove this section once gc's rig-add canonicalizes paths before the ownership check.
+
+---
+
+## 14. Pipeline handoff: one fresh bead per stage (validated empirically)
+
+Each pipeline stage gets its own fresh bead. Beads are not meant to be re-slung — each one represents a discrete unit of work for a specific agent, and handoff happens by creating a new bead for the next agent.
+
+Validated live end-to-end via `test-harness/walkthroughs/L3.sh` on gc 0.15.2, Planner→Architect→Designer→Builder with tests green:
+
+```bash
+# Root bead starts the pipeline.
+bd create --title "Feature: <name>" --labels needs-plan
+gc sling --nudge your-project--planner <root-bead>
+
+# Each subsequent stage creates a fresh bead. Once the upstream agent
+# has produced its artifact, file the next bead and sling.
+bd create --title "Architecture: <name>" --labels needs-architecture
+gc sling --nudge your-project--architect <new-bead>
+
+bd create --title "Design: <name>" --labels needs-design
+gc sling --nudge your-project--designer <new-bead>
+
+bd create --title "Build: <name>" --labels ready-to-build
+gc sling --nudge your-project--builder <new-bead>
+```
+
+The target agent's `scale_check` filters on the stage label plus `gc.routed_to` metadata (set by `gc sling`). It doesn't read the dep graph — so `--deps` is **optional audit metadata**, not a mechanical requirement. Students can add `bd link <new-bead> <upstream-bead>` later if they want the audit trail.
+
+`--nudge` ensures the target session submits the prompt even if the tmux Enter keystroke races with Claude Code's welcome-screen animation (see §15).
+
+### Flag corrections (upstream bug in curriculum READMEs)
+
+The canonical `bd create` flag name is NOT what several curriculum READMEs currently say. Correct name, verified against `bd create --help`:
+
+| Wrong (in several READMEs) | Correct                       | Notes |
+|----------------------------|-------------------------------|-------|
+| `--label <name>`           | `--labels <name>` (plural)    | Errors out otherwise. |
+| `--depends-on <id>`        | `--deps blocks:<id>` (optional) | Only if you want the dep edge for audit. |
+
+Files that still use the wrong flag and need follow-up edits: `curriculum/labs/L{3,4}/README.md`, `curriculum/capstone/C1/README.md`, `curriculum/workshops/W3/README.md`. The activity-side READMEs under `activities/labs/L{2,3,4}/` and `activities/capstone/C1/` and `curriculum/labs/L2/README.md` were fixed as part of this pass.
+
+### Harness reuses student commands verbatim
+
+The walkthrough harness calls `stage_bead_create` (in `test-harness/walkthroughs/_common.sh`) which wraps exactly `bd create --title "..." --labels <label>` — no `--deps`. The harness and the READMEs run the same command shape — when the harness passes, the student can copy the same command sequence into their factory and succeed.
+
+---
+
+## 15. gc sling race with Claude Code welcome-screen animation
+
+Observed via `gc session peek <id>` on a stuck Planner session:
+
+```
+❯ Run 'gc prime', then check bd ready --label=needs-plan for work.
+```
+
+The prompt text was in the session's input buffer, but never submitted. "LAST ACTIVE" kept climbing with no session output. `gc sling` had been issued minutes earlier, reported `Slung <bead> → rig/planner.planner`, and everything looked healthy from the outside.
+
+Root cause appears to be a race between the Enter keystroke `gc sling` injects via tmux and Claude Code's welcome-screen animation — if Enter arrives before the input area is ready to accept it, it gets dropped, and the session sits forever with a typed-but-not-submitted prompt.
+
+**Workaround in the harness:** `sling_and_nudge` in `test-harness/walkthroughs/_common.sh` calls `gc sling` then fires a backgrounded `gc session nudge <target>` 30 seconds later. If Enter made it through, the nudge queues a redundant system-reminder (harmless). If Enter didn't, the nudge drives the session from the runtime provider side, bypassing the broken tmux keystroke path and the session starts processing.
+
+**Student-facing guidance:** when a student slings and the agent seems idle for more than a minute, they should `gc session peek <id>` to check for a stuck prompt, and `gc session nudge <id> proceed` to unstick it. The recovery command belongs in each lab README under "when the agent seems stuck". Track upstream fix at `workshop:gc-sling-enter-race`.

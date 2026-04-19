@@ -413,7 +413,7 @@ If REQUEST_CHANGES: for each finding, specify which Coder prompt change
 would prevent the issue going forward.
 EOF
 )" \
-  --depends-on [coder-bead-id]
+  --deps blocks:[coder-bead-id]
 ```
 
 Replace `[coder-bead-id]` with the bead ID you closed at the end of L3. You should see:
@@ -737,7 +737,7 @@ If PASS: mark this bead closed. The feature is deployment-ready.
 If FAIL: list which criteria failed and what would have to change.
 EOF
 )" \
-  --depends-on my-factory-r1r2r3
+  --deps blocks:my-factory-r1r2r3
 ```
 
 You should see:
@@ -939,7 +939,7 @@ This is also why **every PASS must carry evidence**. The automation layer (or a 
 
 The exit criteria require that `orchestrator.yaml` drive both the Reviewer and the Deployer. That means:
 
-- When the Coder closes its bead, the orchestrator automatically creates the Reviewer bead with `--depends-on` satisfied, and slings it.
+- When the Coder closes its bead, the orchestrator automatically creates the Reviewer bead with `--deps blocks:` satisfied, and slings it.
 - When the Reviewer produces a report with Recommendation `APPROVE`, the orchestrator automatically creates the Deployer bead and slings it.
 - When the Reviewer produces `REQUEST_CHANGES`, the orchestrator does **not** advance — it either re-routes to the Coder (if the finding is a Coder gap) or surfaces to the human (if the finding is a spec gap).
 
@@ -1011,7 +1011,7 @@ Re-sling the Reviewer. Specific standards produce specific findings.
 ```bash
 bd create "Spec gap: refundOrder path in loyalty points" \
   --description "Reviewer finding: design/loyalty-points-system-spec.md does not include the refundOrder code path required by ADR-0001. Update the spec to include refund handling as a negative ledger entry." \
-  --depends-on my-factory-r1r2r3
+  --deps blocks:my-factory-r1r2r3
 gc sling designer <new-bead-id>
 ```
 
@@ -1107,7 +1107,7 @@ gc status
 git -C my-factory add city.toml && git -C my-factory commit -m "chore(city): declare reviewer + release-gate agents"
 
 # PART 3 — Sling to Reviewer
-bd create "Review: Loyalty Points PR" --description "..." --depends-on [coder-bead]
+bd create "Review: Loyalty Points PR" --description "..." --deps blocks:[coder-bead]
 gc sling reviewer my-factory-r1r2r3
 gc watch reviewer                        # Ctrl+b d to detach
 cat review-reports/loyalty-points-system-review.md
@@ -1123,7 +1123,7 @@ gc watch reviewer
 # repeat until review report is APPROVE
 
 # PART 5 — Sling to Deployer
-bd create "Release Gate: Loyalty Points" --description "..." --depends-on my-factory-r1r2r3
+bd create "Release Gate: Loyalty Points" --description "..." --deps blocks:my-factory-r1r2r3
 gc sling release-gate my-factory-d1d2d3
 gc watch deployer
 cat release-gates/loyalty-points-system-gate.md

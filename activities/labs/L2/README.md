@@ -51,11 +51,19 @@ source = "../activities/labs/L2/packs/architect"
 From your project rig:
 
 ```bash
-bd create --title "Feature: <your feature>" --label needs-plan
-gc sling your-project--planner <bead-id>
-# ...wait for the Planner to close the bead with label needs-architecture
-gc sling your-project--architect <bead-id>
+# Start the Planner on the feature:
+bd create --title "Feature: <your feature>" --labels needs-plan
+gc sling --nudge your-project--planner <bead-id>
+
+# Once you see work-packages/<slug>.md, hand off to the Architect:
+bd create --title "Architecture: <your feature>" --labels needs-architecture
+gc sling --nudge your-project--architect <bead-id>
 ```
+
+**Flag notes:**
+- `--labels` (plural). `--label` (singular) is not a valid flag.
+- `--nudge` on `gc sling` kicks the agent into processing.
+- Each pipeline stage gets its own new bead. If you want an explicit dep edge for audit, add it after the fact with `bd link <new> <upstream>`.
 
 ## Exit criteria
 
