@@ -54,7 +54,7 @@ ls -al ~/Projects/factory/workshop_w1/w1-project/docs/
 #### Stop and Start Gascity
 
 ```bash
-pushd ~/Projects/factory/workshop_w3/w3-gc-factory
+pushd ~/Projects/factory/workshop_w1/w1-gc-factory
 gc stop
 gc start
 ```
