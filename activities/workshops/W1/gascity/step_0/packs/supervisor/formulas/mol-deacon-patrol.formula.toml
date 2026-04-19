@@ -1,0 +1,99 @@
+name = "mol-deacon-patrol"
+description = "Deacon patrol: route labelled beads, check health, loop."
+
+[[steps]]
+id = "route-needs-plan"
+description = "Dispatch needs-plan beads to planner"
+prompt = """
+Find all open unassigned beads with label needs-plan:
+  bd list --label=needs-plan --status=open --json
+For each, sling to the planner:
+  gc sling "$RIG/planner" "Pick up bead <id>: <title>"
+Log how many were dispatched.
+"""
+
+[[steps]]
+id = "route-needs-architecture"
+description = "Dispatch needs-architecture beads to architect"
+prompt = """
+Find all open unassigned beads with label needs-architecture:
+  bd list --label=needs-architecture --status=open --json
+For each, sling to the architect:
+  gc sling "$RIG/architect" "Pick up bead <id>: <title>"
+Log how many were dispatched.
+"""
+
+[[steps]]
+id = "route-needs-pm"
+description = "Dispatch needs-pm beads to pm"
+prompt = """
+Find all open unassigned beads with label needs-pm:
+  bd list --label=needs-pm --status=open --json
+For each, sling to the pm:
+  gc sling "$RIG/pm" "Pick up bead <id>: <title>"
+Log how many were dispatched.
+"""
+
+[[steps]]
+id = "route-needs-design"
+description = "Dispatch needs-design beads to designer"
+prompt = """
+Find all open unassigned beads with label needs-design:
+  bd list --label=needs-design --status=open --json
+For each, sling to the designer:
+  gc sling "$RIG/designer" "Pick up bead <id>: <title>"
+Log how many were dispatched.
+"""
+
+[[steps]]
+id = "route-needs-tests"
+description = "Dispatch needs-tests beads to validator"
+prompt = """
+Find all open unassigned beads with label needs-tests:
+  bd list --label=needs-tests --status=open --json
+For each, sling to the validator:
+  gc sling "$RIG/validator" "Pick up bead <id>: <title>"
+Log how many were dispatched.
+"""
+
+[[steps]]
+id = "route-ready-to-build"
+description = "Dispatch ready-to-build beads to builder"
+prompt = """
+Find all open unassigned beads with label ready-to-build:
+  bd list --label=ready-to-build --status=open --json
+For each, sling to the builder:
+  gc sling "$RIG/builder" "Pick up bead <id>: <title>"
+Log how many were dispatched.
+"""
+
+[[steps]]
+id = "route-needs-review"
+description = "Dispatch needs-review beads to reviewer"
+prompt = """
+Find all open unassigned beads with label needs-review:
+  bd list --label=needs-review --status=open --json
+For each, sling to the reviewer:
+  gc sling "$RIG/reviewer" "Pick up bead <id>: <title>"
+Log how many were dispatched.
+"""
+
+[[steps]]
+id = "health-check"
+description = "Check factory agent status"
+prompt = """
+Run gc status and report:
+- Which agents are running vs idle vs stopped
+- Any agents in an error state
+If an agent has in_progress beads but no active session, log a warning.
+"""
+
+[[steps]]
+id = "loop"
+description = "Pour next patrol iteration"
+prompt = """
+Patrol complete. If any beads were dispatched or health issues found, log a summary.
+Pour next patrol iteration:
+  bd mol pour mol-deacon-patrol
+Then sleep — do not spin immediately.
+"""
