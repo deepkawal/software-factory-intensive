@@ -40,3 +40,8 @@ overlay_dir = "overlays/default"
 idle_timeout = "2h"
 min_active_sessions = 0
 max_active_sessions = 1
+
+[[named_session]]
+template = "designer"
+scope = "rig"
+mode = "on_demand"

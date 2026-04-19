@@ -13,3 +13,8 @@ idle_timeout = "1h"
 min_active_sessions = 0
 max_active_sessions = 1
 
+
+[[named_session]]
+template = "deployer"
+scope = "rig"
+mode = "on_demand"
