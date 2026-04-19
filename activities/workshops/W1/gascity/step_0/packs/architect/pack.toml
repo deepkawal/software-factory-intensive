@@ -46,4 +46,3 @@ option_defaults = { model = "opus" }
 idle_timeout = "2h"
 min_active_sessions = 0
 max_active_sessions = 1
-work_query = "bd ready --label=needs-architecture --limit=1"

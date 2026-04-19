@@ -21,15 +21,22 @@ check agent health, sleep, repeat.
 
 ## Routing Table
 
-| Label | Agent to sling | Sling target |
-|-------|---------------|--------------|
-| `needs-plan` | planner | `{{.RigName}}/planner` |
-| `needs-architecture` | architect | `{{.RigName}}/architect` |
-| `needs-pm` | pm | `{{.RigName}}/pm` |
-| `needs-design` | designer | `{{.RigName}}/designer` |
-| `needs-tests` | validator | `{{.RigName}}/validator` |
-| `ready-to-build` | builder | `{{.RigName}}/builder` |
-| `needs-review` | reviewer | `{{.RigName}}/reviewer` |
+First, discover the rig name:
+```bash
+RIG=$(gc config --json | jq -r '.rigs[0].name')
+```
+
+Then dispatch by label:
+
+| Label | Sling target |
+|-------|-------------|
+| `needs-plan` | `$RIG/planner` |
+| `needs-architecture` | `$RIG/architect` |
+| `needs-pm` | `$RIG/pm` |
+| `needs-design` | `$RIG/designer` |
+| `needs-tests` | `$RIG/validator` |
+| `ready-to-build` | `$RIG/builder` |
+| `needs-review` | `$RIG/reviewer` |
 
 ## Startup Protocol
 
@@ -51,12 +58,14 @@ bd update "$NEW_WISP" --assignee="$GC_ALIAS"
 For each label in the routing table, find open unassigned beads and sling them:
 
 ```bash
+# Discover rig name
+RIG=$(gc config --json | jq -r '.rigs[0].name')
+
 # Find beads needing routing
-BEADS=$(bd list --label=needs-architecture --status=open --json | jq -r '.[].id')
+BEADS=$(gc bd --rig "$RIG" list --label=needs-architecture --status=open --json | jq -r '.[].id')
 for BEAD in $BEADS; do
-    INFO=$(bd show "$BEAD" --json)
-    TITLE=$(echo "$INFO" | jq -r '.title')
-    gc sling "{{.RigName}}/architect" "Pick up bead $BEAD: $TITLE"
+    INFO=$(gc bd --rig "$RIG" show "$BEAD" --json | jq -r '.[0].title')
+    gc sling "$RIG/architect" "Pick up bead $BEAD: $INFO"
 done
 ```
 
