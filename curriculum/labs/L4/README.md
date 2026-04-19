@@ -12,14 +12,14 @@
 
 ## Session workspace note
 
-Pack renames since this README was first written: **Coder → `builder`** and **Deployer → `release-gate`** (same roles, same outputs, new pack directories). Prompt template paths are `packs/builder/agents/builder/prompt.template.md` and `packs/release-gate/agents/release-gate/prompt.template.md`. Commands `gc sling builder` and `gc sling release-gate` replace their `coder` / `deployer` equivalents.
+The two agents for this lab are the `builder` pack (`packs/builder/agents/builder/prompt.template.md`) and the `release-gate` pack (`packs/release-gate/agents/release-gate/prompt.template.md`). Some curriculum narrative uses "Coder" and "Deployer" as role names — they refer to the same `builder` and `release-gate` agents.
 
 **Where your work goes this session:**
 * Session deliverables → `../../../activities/labs/L4/` (the activity folder for L4)
 * Customised pack copies → `../../../activities/labs/L4/packs/<agent>/`
-* Wire packs into `../../../my-factory/city.toml` — `includes = [..., "../packs/reviewer", "../packs/release-gate"]` (shipped) or `../activities/labs/L4/packs/<agent>` (customised). See [`activities/labs/L4/README.md`](../../../activities/labs/L4/README.md) for exact lines.
+* Both packs are already composed into every rig via `default_rig_includes = ["../packs/all"]` in `my-factory/city.toml.template`. To swap in customised copies, add rig-scoped imports to `my-factory/city.toml`. See [`activities/labs/L4/README.md`](../../../activities/labs/L4/README.md) for exact lines.
 
-If a prompt edit breaks the pack, swap `includes` back to the shipped `../packs/<name>` path and `gc service restart` — the shipped pack always passes `gc doctor`.
+If a prompt edit breaks the pack, remove any `[rigs.imports.<name>]` block pointing at your customised copy from `my-factory/city.toml` and run `gc restart` — the rig falls back to the shipped pack via `default_rig_includes = ["../packs/all"]`, which always passes `gc doctor`.
 
 ---
 
@@ -84,13 +84,13 @@ Before starting this lab, verify each of these:
 | Prerequisite | How to verify | If it's missing |
 |-------------|---------------|-----------------|
 | L3 complete | `ls ~/path/to/your-repo/design/` and `ls ~/path/to/your-repo/src/` show the loyalty-points feature files | Go back and complete L3. The Reviewer needs a spec and implementation to review. |
-| Designer + Coder agents working | `gc status` shows `designer` and `coder` as `idle` | Re-run the L3 installs with `gc rig add --include packs/designer` and `gc rig add --include packs/builder`. |
-| All 4 prior packs installed | `gc rig list` shows `planner`, `architect`, `designer`, `coder` on your rig | Re-run `gc rig add --include` for each missing pack from L2 and L3. |
+| Designer + Builder agents visible | `gc status` shows `your-repo/designer.designer` and `your-repo/builder.builder` | `gc restart`; if still missing, confirm `default_rig_includes = ["../packs/all"]` is in `my-factory/city.toml`. |
+| Pipeline packs composed | All 8 agents from `packs/all` appear in `gc status` for your rig | Check `my-factory/city.toml` for `default_rig_includes` and `gc restart`. |
 | Feature branch present | `git branch --show-current` in your repo shows `l3-designer-coder` (or your L3 branch) with the Coder's commits on it | Check out the branch produced in L3 before slinging the Reviewer. |
 | Work package + spec exist | `ls work-packages/loyalty-points-system.md design/loyalty-points-system-spec.md` → both exist | Complete the Planner and Designer steps from L2 and L3 first. |
 | PROJECT_MANIFEST has Review + Release sections | `grep -E "Review Standards\|Release Criteria" docs/PROJECT_MANIFEST.md` → both headings present | Copy the templates from [`curriculum/PROJECT_MANIFEST_TEMPLATE.md`](../../PROJECT_MANIFEST_TEMPLATE.md) and fill them in before slinging. |
 
-If any row fails, stop and fix it. L4 is the thinnest lab in terms of new Gas City mechanics (you already know `gc rig add --include`, `gc sling`, and `bd create`), but it is the most demanding in terms of upstream artifact quality. A vague Review Standards section produces vague review findings. A vague Release Criteria section produces meaningless gate records.
+If any row fails, stop and fix it. L4 is the thinnest lab in terms of new Gas City mechanics (you already know `gc sling` and `bd create`), but it is the most demanding in terms of upstream artifact quality. A vague Review Standards section produces vague review findings. A vague Release Criteria section produces meaningless gate records.
 
 ---
 
@@ -237,123 +237,111 @@ Identical shape to the Reviewer pack, differing only in `name`, `work_dir`, and 
 
 ---
 
-## Part 1: Install the Packs (~10 min)
+## Part 1: Verify the Packs Are Composed (~10 min)
 
-### Step 1: Add the Reviewer Pack to Your Rig
+### Step 1: Confirm the Reviewer and Release-Gate Are Available
 
 ```bash
 cd my-factory
-gc rig add ~/path/to/your-repo \
-  --include /path/to/software-factory-intensive/packs/reviewer
-```
-
-You should see:
-
-```
-rig "your-repo" updated — added pack "reviewer"
-```
-
-### Step 2: Add the Deployer Pack to Your Rig
-
-```bash
-gc rig add ~/path/to/your-repo \
-  --include /path/to/software-factory-intensive/packs/release-gate
-```
-
-You should see:
-
-```
-rig "your-repo" updated — added pack "deployer"
-```
-
-### Step 3: Restart and Verify
-
-```bash
-gc restart
 gc status
 ```
 
-You should see all 6 agents:
+The Reviewer (`packs/reviewer`) and Release-Gate (`packs/release-gate`) are composed into every rig by `default_rig_includes = ["../packs/all"]` in `my-factory/city.toml.template`. You should see:
 
 ```
-NAME        STATE   LAST ACTIVITY   BEAD
-dev-agent   idle    2h ago          --
-planner     idle    1h ago          --
-architect   idle    1h ago          --
-designer    idle    30m ago         --
-coder       idle    10m ago         --
-reviewer    idle    --              --
-deployer    idle    --              --
+my-factory  /Users/you/.../my-factory
+  Controller: standalone (PID <pid>)
+
+Agents:
+  claude                                pool (min=0, max=unlimited)
+  your-repo/claude                      pool (min=0, max=unlimited)
+  your-repo/architect.architect         stopped
+  your-repo/builder.builder             stopped
+  your-repo/designer.designer           stopped
+  your-repo/improver.improver           stopped
+  your-repo/planner.planner             stopped
+  your-repo/release-gate.release-gate   stopped
+  your-repo/reviewer.reviewer           stopped
+  your-repo/validator.validator         stopped
 ```
 
-(Seven rows counting `dev-agent`. The factory agents are the last six: `planner`, `architect`, `designer`, `coder`, `reviewer`, `deployer`. If your project uses a different name in `city.toml` for the deployer — e.g. `devops` — keep using whatever name is in your file; the pack declaration is what matters.)
+All 8 pipeline agents appear as `stopped` until their first sling. For this lab you'll sling `your-repo/reviewer.reviewer` and `your-repo/release-gate.release-gate`.
 
-### Step 4: Run the Doctor
+### Step 2: Run the Doctor
 
 ```bash
 gc doctor
 ```
 
-You should see something like:
+You should see the doctor checks from every composed pack pass, including `actual-reviewer:check-reviewer` and `actual-release-gate:check-release-gate`.
 
-```
-Checking tmux ................... OK
-Checking rig paths .............. OK
-Checking pack configs ........... OK (6 packs loaded)
-Checking GitHub credentials ..... OK
-Checking hooks .................. OK
-```
+### Step 3 (Optional): Customise One or Both Packs
 
-If `pack configs` is below 6, re-run the `gc rig add --include` commands — one of them silently no-op'd on a wrong path. Absolute paths only.
-
-### Step 5: List the Rig's Packs
+To tune Reviewer behavior for this rig, copy the pack and override via a rig-scoped import:
 
 ```bash
-gc rig list
+cp -r ../packs/reviewer ../activities/labs/L4/packs/reviewer
+# Edit ../activities/labs/L4/packs/reviewer/agents/reviewer/prompt.template.md
+# (or agents/reviewer/agent.toml for idle_timeout, max_active_sessions, etc.)
 ```
 
-You should see all six factory packs plus any workshop/integration packs you installed earlier:
+Then add to `my-factory/city.toml`:
 
-```
-RIG                  PACKS
-your-repo            planner, architect, designer, coder, reviewer, deployer
+```toml
+[[rigs]]
+name = "your-repo"
+
+[rigs.imports.reviewer]
+source = "../activities/labs/L4/packs/reviewer"
 ```
 
-If you don't see `reviewer` or `deployer` here, the pack didn't register. Check that `pack.toml` is present in the pack directory and that you passed the directory path (not the `pack.toml` path) to `--include`.
+Same pattern for `release-gate` if you want to customise it.
+```
+
+If you don't see all 8 agents from `packs/all`, confirm `default_rig_includes = ["../packs/all"]` is present in `my-factory/city.toml` and run `gc restart`.
 
 ---
 
-## Part 2: Declare Agents in city.toml (~5 min)
+## Part 2: Tune Agent Config (Optional, ~5 min)
 
-`gc rig add --include` registers the pack's `[[agent]]` block for you automatically, but many participants prefer to also declare the agents explicitly in their city's `city.toml` so they can tune `idle_timeout` and override the role name per project. If you skip this step the pack defaults apply — still fine for the lab.
+The Reviewer and Release-Gate are defined by their pack directories (`packs/reviewer/agents/reviewer/` and `packs/release-gate/agents/release-gate/`) and composed into every rig via `packs/all`. If the shipped defaults are fine, skip this section.
 
-### Step 1: Add the Reviewer Agent Block
+To tune an agent's `idle_timeout` or other fields for this rig, copy the pack and override:
 
-Open `my-factory/city.toml` and add:
+### Step 1: Customise the Reviewer Config
 
-```toml
-[[agent]]
-name = "reviewer"
-dir = "your-repo-name"
-provider = "claude"          # other providers (codex, cursor, gemini, etc.) are also supported
-idle_timeout = "1h"
-role = "reviewer"
+```bash
+cp -r ../packs/reviewer ../activities/labs/L4/packs/reviewer
+# Edit ../activities/labs/L4/packs/reviewer/agents/reviewer/agent.toml:
+#   idle_timeout = "1h"   # or whatever you want
 ```
 
-### Step 2: Add the Deployer Agent Block
-
-Below that, add:
+Then add a rig-scoped import to `my-factory/city.toml`:
 
 ```toml
-[[agent]]
-name = "deployer"
-dir = "your-repo-name"
-provider = "claude"          # other providers (codex, cursor, gemini, etc.) are also supported
-idle_timeout = "2h"
-role = "deployer"
+[[rigs]]
+name = "your-repo"
+
+[rigs.imports.reviewer]
+source = "../activities/labs/L4/packs/reviewer"
 ```
 
-The Deployer gets a longer `idle_timeout` because gate evaluation plus release-note generation can run longer than review on a large change.
+### Step 2: Customise the Release-Gate (Deployer) Config
+
+```bash
+cp -r ../packs/release-gate ../activities/labs/L4/packs/release-gate
+# Edit ../activities/labs/L4/packs/release-gate/agents/release-gate/agent.toml:
+#   idle_timeout = "2h"   # longer than Reviewer — gate evaluation + release notes take time
+```
+
+Add another rig-scoped import:
+
+```toml
+[rigs.imports.release-gate]
+source = "../activities/labs/L4/packs/release-gate"
+```
+
+The Release-Gate gets a longer `idle_timeout` because gate evaluation plus release-note generation can run longer than review on a large change.
 
 ### Step 3: Restart and Verify Again
 
@@ -362,17 +350,20 @@ gc restart
 gc status
 ```
 
-All six factory agents should still be listed and idle:
+All pipeline agents should still be listed:
 
 ```
-NAME        STATE   LAST ACTIVITY   BEAD
-dev-agent   idle    2h ago          --
-planner     idle    1h ago          --
-architect   idle    1h ago          --
-designer    idle    30m ago         --
-coder       idle    10m ago         --
-reviewer    idle    --              --
-deployer    idle    --              --
+Agents:
+  claude                                pool (min=0, max=unlimited)
+  your-repo/claude                      pool (min=0, max=unlimited)
+  your-repo/architect.architect         stopped
+  your-repo/builder.builder             stopped
+  your-repo/designer.designer           stopped
+  your-repo/improver.improver           stopped
+  your-repo/planner.planner             stopped
+  your-repo/release-gate.release-gate   stopped
+  your-repo/reviewer.reviewer           stopped
+  your-repo/validator.validator         stopped
 ```
 
 ### Step 4: Commit the city.toml Change
@@ -427,7 +418,7 @@ Note this ID — you will use it in the next few steps.
 ### Step 2: Sling the Bead to the Reviewer
 
 ```bash
-gc sling reviewer my-factory-r1r2r3
+gc sling --nudge your-repo/reviewer.reviewer my-factory-r1r2r3
 ```
 
 You should see:
@@ -442,7 +433,7 @@ Session started: reviewer-r1r2r3 (tmux)
 ### Step 3: Watch the Reviewer Work
 
 ```bash
-gc watch reviewer
+gc session peek your-repo/reviewer.reviewer
 ```
 
 The Reviewer should:
@@ -625,7 +616,7 @@ git commit -m "chore(coder): require transaction wrapping for balance mutations"
 ```bash
 cd my-factory
 gc sling builder [coder-bead-id-from-L3]
-gc watch coder
+gc session peek your-repo/builder.builder
 ```
 
 The Coder rereads its updated prompt, sees the new Quality Gate rule, and updates `src/services/loyaltyPoints.ts` to wrap the redeem path in `db.transaction(...)`. It also adds a concurrency test case to `tests/loyalty.test.ts`. Wait until the Coder returns to `idle`.
@@ -633,8 +624,8 @@ The Coder rereads its updated prompt, sees the new Quality Gate rule, and update
 #### Step 5: Re-Sling the Reviewer
 
 ```bash
-gc sling reviewer my-factory-r1r2r3
-gc watch reviewer
+gc sling --nudge your-repo/reviewer.reviewer my-factory-r1r2r3
+gc session peek your-repo/reviewer.reviewer
 ```
 
 The Reviewer regenerates the review report. The transaction-wrapping finding should no longer appear in Security Findings, and the new concurrency test case should now appear in Test Coverage with a PASS.
@@ -694,10 +685,10 @@ git commit -m "chore(coder): require auth check on userId endpoints"
 
 cd my-factory
 gc sling builder [coder-bead-id]
-gc watch coder
+gc session peek your-repo/builder.builder
 
-gc sling reviewer my-factory-r1r2r3
-gc watch reviewer
+gc sling --nudge your-repo/reviewer.reviewer my-factory-r1r2r3
+gc session peek your-repo/reviewer.reviewer
 ```
 
 After the re-sling, `src/api/loyalty.ts` contains an explicit `if (req.user.id !== req.body.userId) return res.status(403)` check and the Reviewer's Security Findings no longer contains the bypass finding.
@@ -749,7 +740,7 @@ Created bead: my-factory-d1d2d3
 ### Step 2: Sling the Bead to the Deployer
 
 ```bash
-gc sling release-gate my-factory-d1d2d3
+gc sling --nudge your-repo/release-gate.release-gate my-factory-d1d2d3
 ```
 
 (If you renamed the agent to something else in `city.toml` — e.g. `devops` or `deployer` — use `gc sling <your-name> my-factory-d1d2d3`. The shipped pack in this lab declares the agent as `release-gate`; the agent name in your city is whatever you declared.)
@@ -764,7 +755,7 @@ Session started: deployer-d1d2d3 (tmux)
 ### Step 3: Watch the Deployer Work
 
 ```bash
-gc watch deployer
+gc session peek your-repo/release-gate.release-gate
 ```
 
 The Deployer should:
@@ -1025,9 +1016,9 @@ After the Designer updates the spec, re-sling the Coder and Reviewer.
 
 ### Issue 10: gc sling reviewer fails with "no such agent"
 
-**Cause:** The pack registered but the agent didn't load into `city.toml`'s runtime. Usually a restart was skipped.
+**Cause:** The pipeline packs aren't composed into your rig. Usually `default_rig_includes = ["../packs/all"]` is missing from `my-factory/city.toml`, or a rig-scoped import is pointing at a path that doesn't exist.
 
-**Fix:** Run `gc restart`, then `gc status` to verify the agent appears. If still missing, inspect `my-factory/city.toml` to see whether the `[[agent]]` block was merged. If not, add it manually (see Part 2, Step 1).
+**Fix:** Run `gc restart`, then `gc status` to verify `your-repo/reviewer.reviewer` appears. If it doesn't, open `my-factory/city.toml` and confirm `default_rig_includes = ["../packs/all"]` is present. Also remember the sling target is the qualified form (`your-repo/reviewer.reviewer`), not the bare name.
 
 ### Issue 11: Reviewer and Deployer keep running concurrently and collide
 
@@ -1091,41 +1082,44 @@ Every command you ran during this lab, in order:
 ```bash
 # PART 0 — Read the packs (no commands — just read the files)
 
-# PART 1 — Install Reviewer and Deployer
+# PART 1 — Verify Reviewer + Release-Gate are composed
 cd my-factory
-gc rig add ~/path/to/your-repo --include /path/to/packs/reviewer
-gc rig add ~/path/to/your-repo --include /path/to/packs/release-gate
-gc restart
-gc status
-gc doctor
-gc rig list
+gc status                          # confirms both agents appear under your rig
+gc doctor                          # all pack doctor checks pass
 
-# PART 2 — Declare agents in city.toml
-$EDITOR my-factory/city.toml             # add [[agent]] blocks
+# PART 2 — (Optional) Customise a pack
+cp -r ../packs/reviewer ../activities/labs/L4/packs/reviewer
+$EDITOR ../activities/labs/L4/packs/reviewer/agents/reviewer/prompt.template.md
+$EDITOR my-factory/city.toml       # add [rigs.imports.reviewer] source = "../activities/labs/L4/packs/reviewer"
 gc restart
-gc status
-git -C my-factory add city.toml && git -C my-factory commit -m "chore(city): declare reviewer + release-gate agents"
 
 # PART 3 — Sling to Reviewer
-bd create "Review: Loyalty Points PR" --description "..." --deps blocks:[coder-bead]
-gc sling reviewer my-factory-r1r2r3
-gc watch reviewer                        # Ctrl+b d to detach
+bd create \
+  --title "Review: Loyalty Points PR" \
+  --labels needs-review \
+  --description "..."
+gc sling --nudge your-repo/reviewer.reviewer <review-bead-id>
+gc session peek your-repo/reviewer.reviewer
 cat review-reports/loyalty-points-system-review.md
 
 # PART 4 — Fix via config
 $EDITOR packs/builder/agents/builder/prompt.template.md    # add Quality Gate / Rules entries
 git -C ~/path/to/your-repo add packs/builder/agents/builder/prompt.template.md
-git -C ~/path/to/your-repo commit -m "chore(coder): <what rule you added>"
-gc sling builder [coder-bead-id]          # re-sling after prompt edit
-gc watch coder
-gc sling reviewer my-factory-r1r2r3        # re-verify
-gc watch reviewer
+git -C ~/path/to/your-repo commit -m "chore(builder): <what rule you added>"
+bd create \
+  --title "Build: Loyalty Points (v2)" \
+  --labels ready-to-build \
+  --description "..."
+gc sling --nudge your-repo/builder.builder <new-build-bead>
+gc session peek your-repo/builder.builder
+gc sling --nudge your-repo/reviewer.reviewer my-factory-r1r2r3        # re-verify
+gc session peek your-repo/reviewer.reviewer
 # repeat until review report is APPROVE
 
 # PART 5 — Sling to Deployer
 bd create "Release Gate: Loyalty Points" --description "..." --deps blocks:my-factory-r1r2r3
-gc sling release-gate my-factory-d1d2d3
-gc watch deployer
+gc sling --nudge your-repo/release-gate.release-gate my-factory-d1d2d3
+gc session peek your-repo/release-gate.release-gate
 cat release-gates/loyalty-points-system-gate.md
 bd close my-factory-d1d2d3 --comment "Release gate PASS"
 

@@ -1022,7 +1022,7 @@ After W2, your design doc should answer every row in this table. Fill it in now 
 
 In **L2**, you'll:
 
-- Install the Planner and Architect packs (`gc rig add --include`)
+- Verify the Planner and Architect are composed into your rig (they ship in `packs/all`, already wired via `default_rig_includes`)
 - Customize `packs/planner/agents/planner/prompt.template.md` and `packs/architect/agents/architect/prompt.template.md` with the handoff contracts you wrote here
 - Create your first bead, sling it to the Planner, review the work package against the Quality Gate
 - Optionally seed tailored ADRs via `actual adr-bot` before running the Architect

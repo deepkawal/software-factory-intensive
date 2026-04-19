@@ -90,36 +90,19 @@ Before starting the capstone, verify each row. If any row fails, fix it *before*
 | Prerequisite | How to verify | If it's missing |
 |-------------|---------------|-----------------|
 | L1 complete | `ls ~/path/to/your-repo/CLAUDE.md` → file exists with project context | Go back and complete L1 |
-| L2 complete | `gc status` shows `planner` and `architect` as idle agents | Complete L2 (Part 1 + Part 2 install flow) |
-| L3 complete | `gc status` also shows `designer` and `coder`; prior work package + ADR committed | Complete L3 |
-| L4 complete | `gc status` also shows `reviewer` and `devops`; prior PR has a review report | Complete L4 |
-| All 6 agents declared in `city.toml` | `grep -c '^\[\[agent\]\]' my-factory/city.toml` → returns 6 (or more if you kept `dev-agent`) | Re-run `gc rig add --include` for any missing pack |
+| L2 complete | `gc status` shows `your-repo/planner.planner` and `your-repo/architect.architect` | Complete L2 |
+| L3 complete | `gc status` also shows `your-repo/designer.designer` and `your-repo/builder.builder`; prior work package + ADR committed | Complete L3 |
+| L4 complete | `gc status` also shows `your-repo/reviewer.reviewer` and `your-repo/release-gate.release-gate`; prior PR has a review report | Complete L4 |
+| All 6 agents composed into your rig | `gc status` shows each of `planner`, `architect`, `designer`, `builder`, `reviewer`, `release-gate` qualified to your rig | Confirm `default_rig_includes = ["../packs/all"]` in `my-factory/city.toml` and run `gc restart` |
 | Project manifest is tight | `cat ~/path/to/your-repo/docs/PROJECT_MANIFEST.md` — Review Standards and Release Criteria sections have explicit, testable rules (not "code should be clean") | Tighten before starting — vague manifests produce vague agent output |
-| Orchestrator present (optional but recommended) | `cat my-factory/orchestrator.yaml` shows the 6-stage pipeline from W3 | You can run manually (slinging each stage by hand); note this in the report's "Config Discipline" row |
 | At least one feedback loop encoded | `ls ~/path/to/your-repo/feedback-loops/rules/` → at least one `*.sh` rule | Go back to W4 Part 2 and write one rule |
 | `CLAUDE.md` has tailored industry ADRs (optional) | `grep -i "tailored" ~/path/to/your-repo/CLAUDE.md` returns results | Run `actual adr-bot` (see L2 Part 2 Step 1) |
-| `packs/workshop/` integrations installed (optional) | `gc rig list` shows the workshop pack | L1 walkthrough covers install — without it, ticket sync and observability signals are absent but the run still works |
+| `packs/workshop/` integrations installed (optional) | Workshop pack composed via `[rigs.imports.workshop]` in `my-factory/city.toml` | L1 walkthrough covers install — without it, ticket sync and observability signals are absent but the run still works |
 | Clean working tree | `git status` in your project repo is clean | Commit or stash before starting |
 
-**What "all six agents declared" means in practice.** Your `city.toml` should have a block for each agent like this (the exact shape doesn't matter, but every agent must resolve from an installed pack):
+**What "all six agents composed" means in practice.** `my-factory/city.toml.template` ships with `default_rig_includes = ["../packs/all"]`, which composes the composition pack `packs/all` into every rig. `packs/all` imports each of the 8 pipeline packs (planner, architect, designer, builder, validator, reviewer, release-gate, improver), so by the time you run `gc status` every rig automatically has all of them available at `<your-rig>/<pack-binding>.<agent-name>`.
 
-```toml
-[[agent]]
-name = "planner"
-dir = "your-repo-name"
-provider = "claude"          # other providers (codex, cursor, gemini, etc.) are also supported
-idle_timeout = "1h"
-role = "planner"
-
-[[agent]]
-name = "architect"
-dir = "your-repo-name"
-provider = "claude"          # other providers (codex, cursor, gemini, etc.) are also supported
-idle_timeout = "1h"
-role = "architect"
-
-# ... and so on for designer, coder, reviewer, devops
-```
+To customise any single agent's config or prompt for this rig only, copy the pack and add a rig-scoped import (see L2/L3/L4 Part 2 for the exact pattern).
 
 ---
 
@@ -163,7 +146,7 @@ If an agent produces wrong output — missing sections, wrong directory, vague r
 
 **Rationale.** The factory you're running today needs to run tomorrow without you present. If a fix lives only in a chat message, it evaporates the moment the session ends. A prompt-file diff is permanent, diffable, and reviewable. That's the only form of fix that scales.
 
-**Example violation.** The Planner's work package omits the Scope Boundary section. You notice, and in the same `gc watch planner` tmux you type "please add a Scope Boundary section." The section gets added — and the next time the Planner runs on a different bead, the scope boundary is missing again. The fix didn't stick.
+**Example violation.** The Planner's work package omits the Scope Boundary section. You notice, and in the same `gc session attach your-repo/planner.planner` tmux you type "please add a Scope Boundary section." The section gets added — and the next time the Planner runs on a different bead, the scope boundary is missing again. The fix didn't stick.
 
 **Correct move.** Open `packs/planner/agents/planner/prompt.template.md`, sharpen the Output Format or Quality Gate to require Scope Boundary explicitly, commit the change, delete the half-finished work package, re-sling the Planner.
 
@@ -234,15 +217,9 @@ Note the bead ID returned (e.g., `my-factory-c1a2p3`). This is the anchor for ev
 
 Open the Factory Run Report template (further down in this document) in a split-pane editor. Add the feature name, date, and bead ID to the header. You will fill in the rest as the run proceeds.
 
-If you have `orchestrator.yaml` from W3 fully wired:
+The pipeline is driven stage-by-stage: for each of the six agent stages you create a fresh bead with the right label and `gc sling --nudge` it to the target agent. Each agent's order gate matches on the stage label, so the downstream agent's reconciler picks up the bead and spawns a session automatically. See the step-by-step commands below.
 
-```bash
-gc orchestrate --pipeline feature-pipeline --bead my-factory-c1a2p3
-```
-
-This will sequentially sling each stage. You still monitor and still handle human gates. **If orchestrator is not wired, sling each stage manually below.** Note which path you took in the Config Discipline section of your report.
-
-Also open two observability panes:
+Open two observability panes:
 
 ```bash
 # Pane A — every city event
@@ -257,8 +234,11 @@ gc session list         # refresh as needed
 **Command:**
 
 ```bash
-gc sling planner my-factory-c1a2p3
-gc watch planner          # Ctrl+b d to detach when you've seen it start
+# The root bead above was created without a stage label. First, label it
+# needs-plan so the Planner's order gate picks it up:
+bd update my-factory-c1a2p3 --add-label needs-plan
+gc sling --nudge your-repo/planner.planner my-factory-c1a2p3
+gc session peek your-repo/planner.planner
 ```
 
 **What to watch:**
@@ -290,8 +270,10 @@ bd close my-factory-c1a2p3 --comment "Work package: work-packages/order-history.
 **Command:**
 
 ```bash
-# Create the dependent bead
-bd create "ADR: Phone-number order lookup" \
+# Create a fresh bead labelled needs-architecture (each stage gets its own bead):
+bd create \
+  --title "ADR: Phone-number order lookup" \
+  --labels needs-architecture \
   --description "$(cat <<'EOF'
 Review work-packages/order-history.md. Make an architectural decision about:
 
@@ -303,11 +285,10 @@ Read docs/PROJECT_MANIFEST.md for tech stack constraints.
 Read CLAUDE.md for tailored-ADR baselines.
 Produce docs/adr/NNNN-order-history-lookup.md using MADR.
 EOF
-)" \
-  --deps blocks:my-factory-c1a2p3
+)"
 
-gc sling architect <architect-bead-id>
-gc watch architect
+gc sling --nudge your-repo/architect.architect <architect-bead-id>
+gc session peek your-repo/architect.architect
 ```
 
 **What to watch:**
@@ -319,7 +300,7 @@ gc watch architect
 
 **Expected artifact:** An MADR-format ADR with Status, Context, Options Considered (at least 2 with trade-offs), Decision, Consequences (including at least one risk), References. The References section must cite `work-packages/order-history.md` by path.
 
-**Human gate (if configured in `orchestrator.yaml`):** The ADR usually sits in `needs-approval` before the Designer runs. Review the decision. Approve or reject via `bd approve` / `bd reject`. Keep the approval time in the run report under Human Interventions.
+**Human gate:** The ADR typically needs a human review before the Designer runs. Read the ADR, decide approve/reject, and (if approving) move on to Step 3. Record the approval time in the run report under Human Interventions.
 
 **Common failure modes + config fix:**
 
@@ -337,12 +318,13 @@ Close the Architect bead when the ADR passes its Quality Gate.
 **Command:**
 
 ```bash
-bd create "Design: Order history page + lookup endpoint" \
-  --description "Produce design/order-history-spec.md from work-packages/order-history.md and docs/adr/NNNN-order-history-lookup.md. Include component tree, props, API contract, test plan." \
-  --deps blocks:<architect-bead-id>
+bd create \
+  --title "Design: Order history page + lookup endpoint" \
+  --labels needs-design \
+  --description "Produce design/order-history-spec.md from work-packages/order-history.md and docs/adr/NNNN-order-history-lookup.md. Include component tree, props, API contract, test plan."
 
-gc sling designer <designer-bead-id>
-gc watch designer
+gc sling --nudge your-repo/designer.designer <designer-bead-id>
+gc session peek your-repo/designer.designer
 ```
 
 **What to watch:**
@@ -369,12 +351,13 @@ Close the Designer bead.
 **Command:**
 
 ```bash
-bd create "Implement: Order history page + lookup endpoint" \
-  --description "Implement design/order-history-spec.md. Follow the component tree exactly. All tests from the spec's test plan must pass before marking ready." \
-  --deps blocks:<designer-bead-id>
+bd create \
+  --title "Build: Order history page + lookup endpoint" \
+  --labels ready-to-build \
+  --description "Implement design/order-history-spec.md. Follow the component tree exactly. All tests from the spec's test plan must pass before marking ready."
 
-gc sling builder <coder-bead-id>
-gc watch coder
+gc sling --nudge your-repo/builder.builder <builder-bead-id>
+gc session peek your-repo/builder.builder
 ```
 
 **What to watch:**
@@ -409,12 +392,13 @@ Close the Coder bead when its quality gates pass.
 # If packs/workshop installed, pull latest PR state first
 gc workshop sync-all
 
-bd create "Review: Order history PR" \
-  --description "Review the feat/order-history PR. Use the review checklist in the reviewer prompt and the Review Standards in docs/PROJECT_MANIFEST.md. Post review as a PR comment. Also write review-reports/order-history-review.md." \
-  --deps blocks:<coder-bead-id>
+bd create \
+  --title "Review: Order history PR" \
+  --labels needs-review \
+  --description "Review the feat/order-history PR. Use the review checklist in the reviewer prompt and the Review Standards in docs/PROJECT_MANIFEST.md. Post review as a PR comment. Also write review-reports/order-history-review.md."
 
-gc sling reviewer <reviewer-bead-id>
-gc watch reviewer
+gc sling --nudge your-repo/reviewer.reviewer <reviewer-bead-id>
+gc session peek your-repo/reviewer.reviewer
 ```
 
 **What to watch:**
@@ -445,12 +429,13 @@ Close the Reviewer bead.
 **Command:**
 
 ```bash
-bd create "Deploy: Order history feature" \
-  --description "Evaluate release-gates for order-history. Use Release Criteria in docs/PROJECT_MANIFEST.md. Write release-gates/order-history-gate.md. If all required gates PASS, proceed with the deploy pipeline defined in the deployer prompt." \
-  --deps blocks:<reviewer-bead-id>
+bd create \
+  --title "Ship: Order history feature" \
+  --labels ready-to-ship \
+  --description "Evaluate release-gates for order-history. Use Release Criteria in docs/PROJECT_MANIFEST.md. Write release-gates/order-history-gate.md. If all required gates PASS, proceed with the deploy pipeline defined in the release-gate prompt."
 
-gc sling devops <deployer-bead-id>
-gc watch devops
+gc sling --nudge your-repo/release-gate.release-gate <gate-bead-id>
+gc session peek your-repo/release-gate.release-gate
 ```
 
 **What to watch:**
@@ -589,7 +574,7 @@ Every upstream artifact is referenced by every downstream artifact — verified 
 - Manual code edits: 0
 - Manual edits to agent-produced artifacts (work package, ADR, spec, etc.): 0
 - Config iterations (prompt/manifest/feedback-rule edits): 2
-- Orchestrator mode: `gc orchestrate --pipeline feature-pipeline` (not manual)
+- Coordination mode: stage-by-stage manual slings, each via a fresh bead with the correct label
 
 **Config changes committed during the run:**
 - `chore(architect): add CLAUDE.md to Inputs section` — commit abc123
@@ -720,22 +705,20 @@ You should see every artifact listed. If any directory has no reference to order
 
 ## Gas City Commands You'll Actually Use
 
-This is the first session where you exercise Gas City's full orchestration surface, not just `gc sling` one agent at a time.
+This is the first session where you drive the full pipeline end-to-end, staging each bead by hand.
 
 | Command | What it does | Used when |
 |---------|--------------|-----------|
-| `gc orchestrate --pipeline feature-pipeline --bead <id>` | Kick off the full pipeline from `orchestrator.yaml` | Start of run, if orchestrator is wired |
-| `gc sling <agent> <bead>` | Manually dispatch one stage | Manual mode, or re-slinging after config fix |
-| `bd list --status needs-approval` | Poll for human-gate beads | Between stages, to catch pending gates |
-| `bd approve <bead> --comment "..."` | Release a human gate | ADR approval, pre-deploy approval |
-| `bd reject <bead> --comment "..."` | Reject + send back upstream | When a gate artifact isn't good enough to approve |
+| `bd create --title "..." --labels <stage-label>` | File the bead for the next stage | Between stages — Planner, Architect, Designer, Builder, Reviewer, Release-Gate |
+| `gc sling --nudge <rig>/<agent>.<agent> <bead>` | Route a bead to the target agent and submit the prompt | Each stage kickoff |
 | `bd event list --since 1h` | Inspect feedback signals | During run, to see what's been logged |
 | `gc events --follow` | Stream every city-level event | Continuously in a side pane |
 | `gc session list` | See all running agent sessions | Spot stuck sessions |
-| `gc session peek <agent>` | Snapshot an agent's session without attaching | When you suspect a stall but don't want to Ctrl+C |
+| `gc session peek <rig>/<agent>.<agent>` | Snapshot an agent's session without attaching | When you suspect a stall |
+| `gc session attach <rig>/<agent>.<agent>` | Attach to the live tmux session (do not type into it) | Deep inspection; detach with `Ctrl+b d` |
 | `gc workshop sync-all` | Pull fresh tickets/PR state | Before Reviewer, if packs/workshop installed |
 
-If your orchestrator isn't wired, you can still run the capstone **manually sequenced** — sling each stage by hand after the previous bead closes. Note this choice in the Factory Run Report under "Config Discipline — Orchestrator mode."
+Each stage is a fresh bead labelled for that stage (`needs-plan`, `needs-architecture`, `needs-design`, `ready-to-build`, `needs-review`, `ready-to-ship`). The downstream agent's order gate matches on the label, so the reconciler spawns a session automatically; `--nudge` ensures the prompt is submitted even if the tmux Enter races with Claude Code's welcome-screen animation.
 
 ---
 
@@ -863,15 +846,15 @@ This is the signal a W4 feedback rule should be catching. If no rule exists, wri
 
 ### 3. Wrong stage runs before its dependency
 
-Check `bd show <bead-id>` for the `depends_on` chain. If the chain is missing, the bead was created without `--deps blocks:`. Close the wrong-ordered work, recreate the bead with the dependency, re-sling from the correct stage.
+Each stage bead should be created after the upstream stage's artifact is in place. If the Designer runs before the Architect has produced an ADR, you likely labelled the wrong bead `needs-design` too early. Close the mis-ordered work, re-label or recreate the bead only when the upstream artifact is ready.
 
-### 4. Orchestrator fails to advance to next stage
+### 4. Downstream agent doesn't wake after you sling
 
-`gc orchestrate` reads `orchestrator.yaml`. If a stage doesn't advance, one of: (a) previous stage's bead wasn't closed, (b) `orchestrator.yaml` has a typo in the agent name, (c) a human gate is pending. Run `bd list --status needs-approval` to check for pending gates.
+Check `bd show <bead-id>` — the bead should have the stage label (e.g., `needs-design`) AND `metadata.gc.routed_to` should reference the target agent (set by `gc sling`). If both are correct and no session appears, `gc session list` may show the session in `asleep` or `config-drift` state; kill it with `gc session kill <session-id>` and re-sling with `gc sling --nudge --force <target> <bead>` to overwrite the stale routing.
 
 ### 5. `gc sling` returns "agent not found"
 
-Agent isn't loaded. Run `gc rig list` to confirm the pack is installed. Re-run `gc rig add --include /absolute/path/to/pack` if missing. Run `gc restart`.
+Target name doesn't resolve. Use `gc status` to see available agents — the qualified form is `<rig>/<pack-binding>.<agent-name>`, e.g. `your-repo/reviewer.reviewer`. Confirm `default_rig_includes = ["../packs/all"]` is present in `my-factory/city.toml` and run `gc restart` if any pipeline agent is missing from `gc status`.
 
 ### 6. Artifact written to wrong path
 
@@ -1032,41 +1015,48 @@ Every command you might use during the capstone, grouped by purpose.
 
 ```bash
 # ----- Pre-run setup -----
-cd my-factory
-bd create "Order history page — customers view past orders by phone number" \
-  --label "capstone-feature" \
+cd ~/path/to/your-repo
+bd create \
+  --title "Order history page — customers view past orders by phone number" \
+  --labels needs-plan,capstone-feature \
   --description "$(cat <<'EOF'
 ...feature request with AC + constraints + success metrics...
 EOF
 )"
-# note the bead ID that comes back
+# note the bead ID that comes back; it's your root bead
 
-# ----- Orchestrator mode (if orchestrator.yaml is wired) -----
-gc orchestrate --pipeline feature-pipeline --bead <bead-id>
+# ----- Stage-by-stage pipeline drive -----
+cd my-factory
+gc sling --nudge your-repo/planner.planner       <root-bead-id>
 
-# ----- Manual mode (if running stage-by-stage) -----
-gc sling planner       <bead-id>
-gc sling architect     <architect-bead-id>
-gc sling designer      <designer-bead-id>
-gc sling builder       <builder-bead-id>
-gc sling reviewer      <reviewer-bead-id>
-gc sling release-gate  <release-gate-bead-id>
+# Between each stage, file a fresh bead with the right stage label:
+bd create --title "ADR: ..."      --labels needs-architecture --description "..."
+gc sling --nudge your-repo/architect.architect       <architect-bead-id>
+
+bd create --title "Design: ..."   --labels needs-design       --description "..."
+gc sling --nudge your-repo/designer.designer          <designer-bead-id>
+
+bd create --title "Build: ..."    --labels ready-to-build     --description "..."
+gc sling --nudge your-repo/builder.builder            <builder-bead-id>
+
+bd create --title "Review: ..."   --labels needs-review       --description "..."
+gc sling --nudge your-repo/reviewer.reviewer          <reviewer-bead-id>
+
+bd create --title "Ship: ..."     --labels ready-to-ship      --description "..."
+gc sling --nudge your-repo/release-gate.release-gate  <gate-bead-id>
 
 # ----- Each sling pairs with one of these to observe -----
-gc watch <agent>               # stream that agent's session
-gc session peek <agent>        # snapshot without attaching
-gc session list                # all active sessions
-gc events --follow             # every city event in real time
+gc session peek your-repo/<agent>.<agent>    # snapshot without attaching
+gc session attach your-repo/<agent>.<agent>  # attach to live tmux (Ctrl+b d to detach)
+gc session list                              # all active sessions
+gc events --follow                           # every city event in real time
 
 # ----- Bead management -----
 bd list                                   # everything
 bd list --status open                     # active work
-bd list --status needs-approval           # pending human gates
 bd show <bead-id>                         # one bead's detail + dependency chain
-bd create "..." --deps blocks:<bead-id>    # dependent bead
-bd close <bead-id> --comment "..."        # mark done
-bd approve <bead-id> --comment "..."      # release human gate
-bd reject <bead-id> --comment "..."       # reject, send back upstream
+bd link <new-bead> <upstream-bead>        # optional: add a dep edge for audit
+bd close <bead-id> --note "..."           # mark done
 bd event list --since 1h                  # feedback-signal audit
 
 # ----- Workshop pack (if installed) -----
@@ -1145,7 +1135,7 @@ One-line fixes for the top issues you're likely to hit during the run. These are
 
 | Symptom | One-line fix |
 |---------|-------------|
-| `gc sling` "agent not found" | `gc rig list`; re-run `gc rig add --include /abs/path/to/pack`; `gc restart` |
+| `gc sling` "agent not found" | Use the qualified form `your-repo/<agent>.<agent>`; confirm `default_rig_includes = ["../packs/all"]` is in `my-factory/city.toml`; `gc restart` |
 | Planner produces output with vague language | Add forbidden-words list to `packs/planner/agents/planner/prompt.template.md` Quality Gate; re-sling |
 | Architect writes 1-option ADR | Add "minimum 3 options" rule to `packs/architect/agents/architect/prompt.template.md`; re-sling |
 | Designer spec has no types | Convert Output Format to literal template with `### Types` required; re-sling |

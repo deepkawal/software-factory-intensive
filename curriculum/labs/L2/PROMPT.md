@@ -25,13 +25,18 @@ The rest of this file provides supplementary guidance — discovery questions, p
 Walk the participant through:
 
 ```bash
-# From the workspace directory (my-factory/), add the Planner + Architect
-# packs to city.toml:
-#   includes = [..., "../packs/planner", "../packs/architect"]
-# Either shipped paths as-is, or copies under
-# ../activities/labs/L2/packs/<agent>/ if customising.
+# The Planner + Architect are already shipped via packs/all, which is
+# composed into every rig through `default_rig_includes` in
+# my-factory/city.toml.template. Only extra wiring is needed if the
+# participant wants to override the shipped prompts with customised
+# copies — then they add rig-scoped imports to my-factory/city.toml:
+#
+#   [rigs.imports.planner]
+#   source = "../activities/labs/L2/packs/planner"
+#   [rigs.imports.architect]
+#   source = "../activities/labs/L2/packs/architect"
 cd my-factory
-gc service restart
+gc restart
 
 # Import tickets if using Fired Up Pizza
 bash ../packs/fired-up-pizza/scripts/import-tickets.sh ../../path/to/project/tickets.md
@@ -49,17 +54,18 @@ gc status
 ## What to Build
 
 ### Planner Run
-1. Create a bead for the feature request: `bd create "Loyalty points system"`
-2. Sling to the planner: `gc sling <rig>/planner <bead-id>`
+1. Create a bead for the feature request: `bd create --title "Loyalty points system" --labels needs-plan`
+2. Sling to the planner: `gc sling --nudge <rig>/planner <bead-id>`
 3. Watch the agent work: `gc session peek <rig>/planner`
 4. Verify output: `cat work-packages/loyalty-points.md`
 5. If output is incomplete, update the planner prompt (`packs/planner/agents/planner/prompt.template.md`) and re-run — NOT re-prompt
 
 ### Architect Run
-1. Sling the same bead to the architect: `gc sling <rig>/architect <bead-id>`
-2. Watch: `gc session peek <rig>/architect`
-3. Verify output: the ADR must reference the work package by path
-4. If output is incomplete, update the architect prompt and re-run
+1. Create a fresh bead for the architect (beads aren't re-slung — each stage gets its own bead): `bd create --title "Architecture: loyalty points" --labels needs-architecture`
+2. Sling to the architect: `gc sling --nudge <rig>/architect <new-bead-id>`
+3. Watch: `gc session peek <rig>/architect`
+4. Verify output: the ADR must reference the work package by path
+5. If output is incomplete, update the architect prompt and re-run
 
 ## Suggestions Based on Project Type
 

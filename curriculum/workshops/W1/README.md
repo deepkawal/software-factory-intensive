@@ -62,7 +62,7 @@ Before you write your own card, skim the finished equivalent in the reference pr
 
 - [`reference-project/fired-up-pizza/workflow-card.md`](../../../reference-project/fired-up-pizza/workflow-card.md) — a completed `workflow-card.md` for the Fired Up Pizza project
 
-That card is exactly what this session asks you to produce for your own project — same four sections, project-specific content. Your `workflow-card.md` lives in your *project* repo (not the city). In L1 you'll evolve it into agent instructions (`CLAUDE.md` / `AGENTS.md`) that target the `dev-agent` Gas City configuration.
+That card is exactly what this session asks you to produce for your own project — same four sections, project-specific content. Your `workflow-card.md` lives in your *project* repo (not the city). In L1 you'll evolve it into agent instructions (`CLAUDE.md` / `AGENTS.md`) that target the built-in `claude` agent.
 
 Notice a few things as you read the reference:
 
@@ -526,7 +526,7 @@ Skim [`packs/planner/agents/planner/prompt.template.md`](../../../packs/planner/
 The progression you'll see across the curriculum is:
 
 - **W1 (now):** one card, one project, one human in the loop.
-- **L1:** the same card, split into `CLAUDE.md` (role, rules, pipeline) for a single `dev-agent`.
+- **L1:** the same card, split into `CLAUDE.md` (role, rules, pipeline) for a single `claude` agent.
 - **L2–L4:** six agent packs, each with its own six-section prompt — but each pack's prompt is structurally the same as your card's four sections, scaled up.
 - **W3 / W4:** the orchestrator and feedback loops — which are just *the card's Iteration Loop*, promoted from "a thing you do manually" to "a thing the factory does automatically."
 
@@ -806,7 +806,7 @@ No `gc` commands this session. No `bd` commands. No agent slinging. The only cer
 In **L1** (next), you'll:
 
 1. Install Gas City and add your project as a rig.
-2. Convert `workflow-card.md` into agent instructions (`CLAUDE.md` / `AGENTS.md`) tailored for a `dev-agent`.
+2. Convert `workflow-card.md` into agent instructions (`CLAUDE.md` / `AGENTS.md`) tailored for the `claude` agent.
 3. Pick a small ticket, sling it to the agent, and watch the iteration loop run.
 4. Update the instructions file when output is wrong — never touch the chat.
 

@@ -26,13 +26,15 @@
                                   │
                                   ▼
                     ┌───────────────────────────┐
-                    │    gc sling dev-agent       │
+                    │  gc sling --nudge           │
+                    │  your-project/claude        │
                     │       <bead-id>             │
                     └─────────────┬─────────────┘
                                   │
                                   ▼
                     ┌───────────────────────────┐
-                    │       DEV-AGENT             │
+                    │       CLAUDE AGENT          │
+                    │  (implicit, built into gc)  │
                     │                             │
                     │  Reads:                     │
                     │    • bead description       │
@@ -104,21 +106,22 @@ If you're working against Fired Up Pizza (the reference project), this maps clos
 
 | Command | What it does | Used in step |
 |---------|--------------|--------------|
-| `gc init <dir>` | Create a new city (a workspace where agents + beads live) | Step 1 |
+| `gc register .` | Register the pre-configured `my-factory/` workspace as a city | Step 1 |
 | `gc rig add <path>` | Register a project repo as a "rig" — a place agents can work | Step 1 |
 | `gc rig list` | Show all rigs registered with the city | Step 1 |
 | `gc status` | Show all agents, their state, and last activity | Step 3, 7 |
 | `gc doctor` | Validate tools, auth, and pack config | Step 2 (optional) |
-| `gc restart` | Re-read `city.toml` and restart agents | Step 3 |
-| `bd create` | Create a work item ("bead") that agents can pick up | Step 6 |
+| `gc restart` | Re-read `pack.toml` / `city.toml` and restart agents | Step 3 |
+| `bd create --title ... --labels ...` | Create a work item ("bead") that agents can pick up | Step 6 |
 | `bd list` | Show beads and their status | Step 6 |
 | `bd show <bead>` | Show a single bead's full description and status | Step 7 |
-| `gc sling <agent> <bead>` | Assign a bead to an agent and start the session | Step 7 |
-| `gc watch <agent>` | Attach to the tmux session and see the agent working | Step 7 |
+| `gc sling --nudge <agent> <bead>` | Route a bead to an agent and wake the session | Step 7 |
+| `gc session peek <id-or-alias>` | View the agent's current output without attaching | Step 7 |
+| `gc session attach <id-or-alias>` | Attach to the running session (tmux) | Step 7 |
 | `gc events --follow` | Stream city-wide event log | Step 7 |
 | `bd close <bead>` | Mark a bead complete with a comment | Step 9 |
 
-You will *not* install an agent pack in this lab — the `dev-agent` is a single vanilla agent controlled entirely by `CLAUDE.md`. Agent packs arrive in L2.
+You will *not* install an agent pack in this lab — you'll use gc's built-in `claude` implicit agent, controlled entirely by `CLAUDE.md` in your rig. Agent packs arrive in L2.
 
 ---
 
@@ -160,7 +163,6 @@ Installed launchd service: /Users/you/Library/LaunchAgents/com.gascity.superviso
 
 **What's happening here:** `gc register` tells the long-running Gas City supervisor that this directory is a city it should manage. The shipped `my-factory/city.toml` is used as-is (no pack includes yet — those come in L2). The supervisor keeps agents alive between terminal sessions. You can inspect and edit `my-factory/city.toml` directly.
 
-> **Earlier-draft note:** old versions of this README said to `gc init ~/my-city`. The curriculum now ships a pre-configured workspace at `my-factory/` — mentally replace any lingering `~/my-city` reference with `my-factory/`.
 
 ### Step 1.2: Register Your Project Repo as a Rig
 
@@ -181,7 +183,7 @@ Re-initializing rig 'your-repo'...
 Rig re-initialized.
 ```
 
-**What's happening here:** The rig registration does three things: it records the rig's path in `city.toml`, it initializes a per-rig beads database so work items in this rig have stable IDs, and it generates routing metadata so agents in one rig can refer to artifacts in another. The two-letter `Prefix` (`yr` here) is how bead IDs are namespaced — you'll see bead IDs like `my-factory-abc123` shortly.
+**What's happening here:** The rig registration does three things: it records the rig's path in `city.toml`, it initializes a per-rig beads database so work items in this rig have stable IDs, and it generates routing metadata so agents in one rig can refer to artifacts in another. The two-letter `Prefix` (`yr` here) is how bead IDs are namespaced — you'll see bead IDs like `yr-abc` shortly.
 
 ### Step 1.3: Verify the Rig Is Registered
 
@@ -230,12 +232,27 @@ If your project uses Jira, Linear, GitHub Issues, GitLab, Sentry, DataDog, etc.,
 
 ### Step 2.1: Attach the Workshop Pack to the Rig
 
-```bash
-cd my-factory
-gc rig add ~/path/to/your-repo --include /path/to/software-factory-intensive/packs/workshop
+Edit `my-factory/city.toml` and add a rig-scoped import to your `[[rigs]]` block:
+
+```toml
+[[rigs]]
+name = "your-repo"
+# ...existing fields generated by gc rig add...
+
+[rigs.imports.workshop]
+source = "../packs/workshop"
 ```
 
-**What's happening here:** `--include` tells Gas City to merge this pack's configuration into the rig's effective config. The workshop pack brings service-integration scaffolding — it does not add agents (those come from `packs/planner`, `packs/architect`, etc. starting in L2).
+Then apply:
+
+```bash
+cd my-factory
+gc restart
+```
+
+**What's happening here:** `[rigs.imports.workshop]` binds the `workshop` pack into this specific rig. The workshop pack brings service-integration scaffolding — it does not add agents (those come from `packs/planner`, `packs/architect`, etc. starting in L2).
+
+> **Note:** `my-factory/city.toml.template` already contains `default_rig_includes = ["../packs/all"]`, which composes the pipeline agents shipped in `packs/all` into every rig. `workshop` is a separate pack for service integrations; adding it via `[rigs.imports.workshop]` layers it on top without disturbing `packs/all`.
 
 ### Step 2.2: Copy the Credential Template
 
@@ -283,27 +300,14 @@ The full map of what the pack configures is in [`packs/workshop/README.md`](../.
 
 ---
 
-## Step 3: Declare a `dev-agent` in `city.toml` (~5 min)
+## Step 3: Verify Your `claude` Agent Is Ready (~5 min)
 
-The `dev-agent` is a single vanilla Claude agent that reads `CLAUDE.md` and nothing else. No pack, no prompt file, no overlay — it's the minimum viable agent, which is exactly what L1 needs.
+Gas City ships a built-in **`claude` agent** available in every rig. It reads `CLAUDE.md` from the rig's root as its behavior file, which is exactly what L1 needs.
 
-### Step 3.1: Edit `city.toml`
-
-Open `my-factory/city.toml` and add:
-
-```toml
-[[agent]]
-name = "dev-agent"
-dir = "your-repo"            # must match the name shown by `gc rig list`
-provider = "claude"          # other providers (e.g. "codex", "cursor", "gemini") are also supported
-idle_timeout = "2h"
-```
-
-**What's happening here:** `name` is what you'll type after `gc sling`. `dir` tells the agent which rig's working directory to open — this must exactly match the rig name in `gc rig list` or the agent won't start. `provider` picks the LLM backend. `idle_timeout` kills the tmux session after 2 hours of no bead activity, freeing resources. There's no `prompt_template` field because this agent uses `CLAUDE.md` in the rig root as its prompt (that's the default for `provider = "claude"`).
-
-### Step 3.2: Apply the Change
+### Step 3.1: Confirm the `claude` Agent Is Available
 
 ```bash
+cd my-factory
 gc restart
 gc status
 ```
@@ -311,47 +315,50 @@ gc status
 Expected output (truncated):
 
 ```
-my-city  /Users/you/my-city
-  Controller: supervisor (PID <pid>)
+my-factory  /Users/you/.../my-factory
+  Controller: standalone (PID <pid>)
   Suspended:  no
+
 Agents:
-  mayor                   running
-  your-repo/dev-agent     running
   claude                  pool (min=0, max=unlimited)
   your-repo/claude        pool (min=0, max=unlimited)
-2/2 agents running
+
 Rigs:
   your-repo  /Users/you/path/to/your-repo
 ```
 
-**What's happening here:** `gc restart` tells the supervisor to re-read `city.toml` and bring agents into their declared state. `gc status` shows the current state. `dev-agent` should show `running` under Agents. If it doesn't, re-check the `dir` field in your `[[agent]]` block against the name shown by `gc rig list` — 90% of "my agent didn't come up" problems are a typo in `dir`.
+**What's happening here:** `gc restart` tells the supervisor to re-read `pack.toml` and `city.toml` and bring the city to its declared state. `gc status` shows the result. The two `claude` entries are both the built-in agent — the city-scoped one (`claude`) for city-wide work, and the rig-scoped one (`your-repo/claude`) that opens your project repo's working directory. You'll use the rig-scoped form throughout the lab because the feature lives in your project repo, not the city.
 
-### Step 3.3: Sanity-Check the Agent Can Open the Rig
+### Step 3.2: (Optional) Choose a Different Provider
 
-`gc status` says `running` but hasn't yet proved the agent can actually start a Claude session. You'll know it can when the first `gc sling` in Step 7 succeeds. If anything is wrong with auth or provider config, that's when you'll see it — not now.
+If you want `codex`, `gemini`, or another provider instead of Claude, edit `my-factory/city.toml` and set the workspace provider:
 
-### Step 3.4: Understand What Each Field Does
+```toml
+[workspace]
+provider = "codex"
+```
 
-The `[[agent]]` block is minimal on purpose. Each field has a specific job:
+Then `gc restart`. Each supported provider has its own built-in agent (`codex`, `gemini`, etc.), and gc's agent resolution will route your slings to the matching provider's session. The rest of this lab uses Claude; if you pick a different provider, read `AGENTS.md` for `CLAUDE.md` throughout.
 
-| Field | Purpose | Common values |
-|-------|---------|---------------|
-| `name` | How you refer to the agent (`gc sling <name> ...`) | `dev-agent`, `planner`, `reviewer` |
-| `dir` | Which rig's working directory the agent opens | The rig name from `gc rig list` |
-| `provider` | Which LLM backend powers the agent | `claude`, `codex`, `cursor`, `gemini` |
-| `idle_timeout` | How long a tmux session persists without activity before shutdown | `30m`, `1h`, `2h`, `4h` |
+### Step 3.3: How the `claude` Agent Finds Its Instructions
 
-Fields you'll add in later labs:
+The built-in `claude` agent has no prompt file of its own. When you sling a bead to it, it opens a Claude Code session in your rig's working directory. Claude Code then looks for `CLAUDE.md` in that directory on startup and loads it as part of its system prompt. So the agent's entire personality comes from the `CLAUDE.md` you're about to write in Step 4 — single-source-of-truth, editable via a diff.
 
-| Field | Introduced in | Purpose |
-|-------|---------------|---------|
-| `prompt_template` | L2 | Path to a pack's prompt file (replaces the rig's `CLAUDE.md` for that agent) |
-| `overlay_dir` | L2 | Directory of environment overrides merged into the agent's context |
-| `nudge` | L2 | A short reminder posted into the session at idle — "check for new work" |
-| `max_active_sessions` | L2 | How many beads this agent can work on simultaneously (almost always `1`) |
-| `scope` | L2 | `rig` or `city` — where the agent lives |
+### Step 3.4: When You'd Customise the Agent
 
-For L1, you don't need any of those. The four fields you have are enough.
+Later labs ship custom agents as **packs** — directories containing `agents/<name>/agent.toml` (per-agent config) and `agents/<name>/prompt.template.md` (system prompt). A pack that defines `agents/claude/` overrides the built-in `claude` agent for the rigs that import that pack.
+
+The shape you'll see in L2 looks like:
+
+```
+packs/planner/
+└── agents/
+    └── planner/
+        ├── agent.toml        # scope, idle_timeout, wake behavior, etc.
+        └── prompt.template.md
+```
+
+For L1, you don't need any of that — the built-in `claude` reading your `CLAUDE.md` is the complete single-agent loop.
 
 ---
 
@@ -459,7 +466,7 @@ When you iterate on CLAUDE.md to fix an issue, add an entry to
 cd ~/path/to/your-repo
 git checkout -b claude-md-setup
 git add CLAUDE.md
-git commit -m "chore: add CLAUDE.md for dev-agent (L1)"
+git commit -m "chore: add CLAUDE.md for claude agent (L1)"
 ```
 
 **What's happening here:** Committing `CLAUDE.md` on a branch (not main) means your first sling runs against a known agent configuration — one you can roll back if it turns out to be wrong. Treating the agent config as a PR-worthy artifact is the same discipline you applied to `workflow-card.md` in W1.
@@ -530,8 +537,10 @@ A bead is a work item in Gas City. It has a title, a markdown description, a sta
 ### Step 6.1: Create the Bead
 
 ```bash
-cd my-factory
-bd create "Implement: Show Order Total in Cart" \
+cd ~/path/to/your-repo
+bd create \
+  --title "Implement: Show Order Total in Cart" \
+  --labels ready-to-build \
   --description "$(cat <<'EOF'
 # User Story: Show Order Total in Cart
 
@@ -551,7 +560,7 @@ EOF
 )"
 ```
 
-This returns a bead ID like `my-factory-abc123`. **Note the ID** — you'll use it for the next several steps.
+This returns a bead ID like `yr-abc`. **Note the ID** — you'll use it for the next several steps. The prefix is your rig's 2–3 letter code from `gc rig list` (e.g. `yr` for a rig named `your-repo`).
 
 ### Step 6.2: Verify the Bead
 
@@ -562,11 +571,10 @@ bd list
 You should see:
 
 ```
-ID              TITLE                                 STATUS   AGENT    CREATED
-my-factory-abc123  Implement: Show Order Total in Cart   open     --       just now
+○ yr-abc ● P2 Implement: Show Order Total in Cart
 ```
 
-**What's happening here:** The `HEREDOC` syntax (`<<'EOF'`) lets you pass a multi-line markdown description without escaping newlines or quotes. The quoted `'EOF'` disables shell variable expansion inside the description, so `$VAR` stays literal. `STATUS` is `open`; `AGENT` is empty because we haven't slung it yet.
+**What's happening here:** The `HEREDOC` syntax (`<<'EOF'`) lets you pass a multi-line markdown description without escaping newlines or quotes. The quoted `'EOF'` disables shell variable expansion inside the description, so `$VAR` stays literal. `○` means the bead is open. `--labels ready-to-build` tags the bead for agents whose work queue filters on that label (in L1 it's mostly annotation for your own records — you'll dispatch via `gc sling` directly).
 
 ### Step 6.3: Anatomy of a Bead Description
 
@@ -582,30 +590,34 @@ The description you just passed has five subtle properties worth naming:
 
 ## Step 7: Sling the Bead and Watch (~15 min)
 
-"Slinging" dispatches a bead to an agent and starts the session. This is the moment the agent starts actually working.
+"Slinging" routes a bead to an agent and wakes the session. This is the moment the agent starts actually working.
 
 ### Step 7.1: Sling
 
 ```bash
-gc sling dev-agent my-factory-abc123
+gc sling --nudge your-project/claude yr-abc
 ```
+
+(Substitute `your-project` with your actual rig name from `gc rig list`, and `yr-abc` with your bead's id.)
 
 Expected output:
 
 ```
-Slinging my-factory-abc123 → dev-agent
-Session started: dev-agent-abc123 (tmux)
+Auto-convoy yr-<convoy-id>
+Slung yr-abc → your-project/claude
+Session "your-project/claude" is asleep — poked controller for wake
+Queued nudge for your-project/claude
 ```
 
-**What's happening here:** Gas City starts a tmux session, launches Claude Code inside your rig's working directory, loads `CLAUDE.md` as the system prompt, and hands the bead's description as the task. The agent is now autonomous — it will read, plan, implement, run quality gates, and commit without any further input from you.
+**What's happening here:** `gc sling` sets the bead's routing metadata (`gc.routed_to = your-project/claude`), creates an auto-convoy to track the work, and tells the supervisor to wake the target agent. The `--nudge` flag also submits the prompt to the session once it's up — without it, the session can sit idle waiting for input that never arrived. Gas City starts a tmux session, launches Claude Code inside your rig's working directory, loads `CLAUDE.md` as the system prompt, and hands the bead's description as the task. The agent is now autonomous — it will read, plan, implement, run quality gates, and commit without any further input from you.
 
 ### Step 7.2: Watch the Agent Work
 
 ```bash
-gc watch dev-agent
+gc session peek your-project/claude
 ```
 
-**What's happening here:** `gc watch` attaches to the tmux session so you can see tokens stream in real time. You should see the agent read `CLAUDE.md`, then `docs/PROJECT_MANIFEST.md`, then the bead description, then begin writing a plan. Press `Ctrl+b d` to detach from tmux — the agent keeps running in the background. **Do not type into the watch window.** Anything you type goes into the agent's chat context and violates config discipline.
+**What's happening here:** `gc session peek` shows a snapshot of the agent's current terminal output without attaching to the session. You should see the agent read `CLAUDE.md`, then `docs/PROJECT_MANIFEST.md`, then the bead description, then begin writing a plan. Peek is safe to run repeatedly — it doesn't send any input. To actually attach and watch output stream (and be able to type into the session — **don't**), use `gc session attach your-project/claude`. Press `Ctrl+b d` to detach from tmux without killing the session. **Do not type into the attach window.** Anything you type goes into the agent's chat context and violates config discipline.
 
 ### Step 7.3: Monitor From Another Terminal
 
@@ -614,14 +626,14 @@ In a second terminal, watch the event stream and status:
 ```bash
 gc events --follow       # Everything happening city-wide
 gc status                # Agent states
-bd show my-factory-abc123   # Bead progress
+bd show yr-abc           # Bead progress
 ```
 
-**What's happening here:** `gc events --follow` is a city-wide event log — every file the agent reads, every command it runs, every tool call. `gc status` polls the agent state (`running` → `idle` when done). `bd show` shows the bead's description plus any comments the agent has posted (including, if your Iteration Rule works, the 3-line plan).
+**What's happening here:** `gc events --follow` is a city-wide event log — every file the agent reads, every command it runs, every tool call. `gc status` shows agent state (`active` while working, `asleep` when idle). `bd show` shows the bead's description plus any comments the agent has posted (including, if your Iteration Rule works, the 3-line plan).
 
 ### Step 7.4: Wait for Completion
 
-Wait until the agent finishes (state returns to `idle` in `gc status`). For the running example, this typically takes 3–8 minutes depending on project size and quality-gate time.
+Wait until the bead status reaches closed (`✓`) in `bd show`, or the session disappears from `gc session list`. For the running example, this typically takes 3–8 minutes depending on project size and quality-gate time.
 
 ### Step 7.5: What You Should See in the Event Stream
 
@@ -670,7 +682,14 @@ Proceed to Step 9.
 1. **Identify the missing rule.** Be specific: "The agent used inline styles — that's not forbidden in `CLAUDE.md`." "The agent skipped tests — the Quality Gates section doesn't require them explicitly enough." "The agent forgot the empty-cart AC — the Iteration Rule doesn't enumerate ACs as tests."
 2. **Edit `CLAUDE.md`** to add the missing rule in exact, testable terms. Imperatives only: "NEVER X" or "Before Y, do Z."
 3. **Reset the branch:** `git reset --hard HEAD~1`
-4. **Re-sling:** `gc sling dev-agent my-factory-abc123`
+4. **File a fresh bead and re-sling.** Beads in Gas City aren't re-slung — each iteration creates a new bead so the downstream routing metadata stays clean:
+   ```bash
+   bd create --title "Implement: Show Order Total in Cart (v2)" --labels ready-to-build --description "$(cat <<'EOF'
+   <paste the same user story, unchanged>
+   EOF
+   )"
+   gc sling --nudge your-project/claude <new-bead-id>
+   ```
 5. **Log the iteration** in `DECISIONS.md` (see Step 9).
 
 **What's happening here:** Each re-sling runs against a *new* `CLAUDE.md`, which means it's a new, cleaner agent configuration. `git reset --hard HEAD~1` wipes the agent's previous attempt so the re-slung agent starts from the same state it started from the first time. If you don't reset, the second sling has to figure out what to do with the first sling's half-finished work, which confuses it.
@@ -688,15 +707,15 @@ Proceed to Step 9.
 ```markdown
 # Decisions
 
-## 2026-04-21 · my-factory-abc123 · Show Order Total in Cart
+## 2026-04-21 · yr-abc, yr-def, yr-ghi · Show Order Total in Cart
 
 ### Context
-First L1 sling. dev-agent with baseline CLAUDE.md.
+First L1 sling. Implicit `claude` agent with baseline CLAUDE.md.
 
 ### What Happened
-- Sling 1: agent forgot to run quality gates before committing
-- Sling 2: agent used inline styles in the cart component
-- Sling 3: passed all gates, committed cleanly
+- Sling 1 (yr-abc): agent forgot to run quality gates before committing
+- Sling 2 (yr-def): agent used inline styles in the cart component
+- Sling 3 (yr-ghi): passed all gates, committed cleanly
 
 ### CLAUDE.md Changes
 - Added explicit "Run all Quality Gates before every commit. If any fails, stop." to Iteration Rule step 4.
@@ -720,10 +739,12 @@ git push -u origin claude-md-setup
 ### Step 9.3: Close the Bead
 
 ```bash
-bd close my-factory-abc123 --comment "Feature shipped. CLAUDE.md updated with 2 new rules."
+bd close yr-ghi --note "Feature shipped. CLAUDE.md updated with 2 new rules."
 ```
 
-**What's happening here:** Closing the bead with a descriptive comment leaves a breadcrumb. When you (or an orchestrator agent in the capstone) later look at bead history, the comment tells you what actually shipped, not just that something did.
+(Use the id of the bead that actually produced the shipping commit.)
+
+**What's happening here:** Closing the bead with a descriptive note leaves a breadcrumb. When you (or an orchestrator agent in the capstone) later look at bead history, the note tells you what actually shipped, not just that something did. The earlier beads (from re-slings) should also be closed with notes explaining what the rule-gap was — that history is what the capstone's retrospective mines.
 
 ---
 
@@ -825,22 +846,26 @@ Once you've completed the base lab, try these variations to stress-test your `CL
 Create a bead with a weakly-specified story:
 
 ```bash
-bd create "Feature: Improve the cart UX" \
+bd create \
+  --title "Feature: Improve the cart UX" \
+  --labels ready-to-build \
   --description "Make the cart page feel nicer and more professional."
 ```
 
-Sling to `dev-agent`. **Expected behavior:** The agent either refuses (if your Iteration Rule says "if acceptance criteria are missing, post a comment and stop") or produces something arbitrary. This tests whether your rules force specificity out of the bead before coding starts. If the agent plowed ahead, add to the Iteration Rule: "Before writing any code, confirm the bead has at least two concrete acceptance criteria. If not, post a comment listing what's missing and stop."
+Sling it to `your-project/claude`. **Expected behavior:** The agent either refuses (if your Iteration Rule says "if acceptance criteria are missing, post a comment and stop") or produces something arbitrary. This tests whether your rules force specificity out of the bead before coding starts. If the agent plowed ahead, add to the Iteration Rule: "Before writing any code, confirm the bead has at least two concrete acceptance criteria. If not, post a comment listing what's missing and stop."
 
 ### Scenario 2: A Story That Crosses Convention Lines
 
 Create a bead that tempts convention violations:
 
 ```bash
-bd create "Feature: Inline-style cart total for quick prototype" \
+bd create \
+  --title "Feature: Inline-style cart total for quick prototype" \
+  --labels ready-to-build \
   --description "Add the cart total to src/components/Cart.tsx using inline styles for speed. We'll refactor later."
 ```
 
-Sling to `dev-agent`. **Expected behavior:** The agent ignores the "use inline styles" hint in the bead and uses your project's actual styling convention (Tailwind, CSS modules, etc.), because your `CLAUDE.md` Project Context forbids inline styles. This tests whether `CLAUDE.md` rules override per-bead instructions. If the agent complied with the bead, strengthen your Project Context rule to explicitly outrank bead-level overrides.
+Sling it to `your-project/claude`. **Expected behavior:** The agent ignores the "use inline styles" hint in the bead and uses your project's actual styling convention (Tailwind, CSS modules, etc.), because your `CLAUDE.md` Project Context forbids inline styles. This tests whether `CLAUDE.md` rules override per-bead instructions. If the agent complied with the bead, strengthen your Project Context rule to explicitly outrank bead-level overrides.
 
 ### Scenario 3: Consecutive Small Stories (Pipeline Durability)
 
@@ -851,19 +876,19 @@ Create three small beads in sequence, sling each, close each. You're testing tha
 ## Common Issues & Solutions
 
 ### Issue 1: Agent ignores `CLAUDE.md` entirely
-**Solution:** Confirm `CLAUDE.md` is in the repo root, not a subdirectory. Check with `gc watch dev-agent` — the first thing the agent reads should be `CLAUDE.md`. If not, your provider config in `city.toml` may not be set to `claude`, or the agent may be running in the wrong `dir`.
+**Solution:** Confirm `CLAUDE.md` is in the rig root (your project repo's root), not a subdirectory. Check with `gc session peek your-project/claude` — the first thing the agent reads should be `CLAUDE.md`. If it isn't, either the rig's working directory is wrong (`gc rig list` to confirm) or the `CLAUDE.md` file is somewhere else.
 
 ### Issue 2: Quality gates fail with the same error twice
 **Solution:** Your rule is too vague. Move from principle → imperative: "Tests must pass" → "Run `npm test`. If any test fails, do not commit. Read the error, fix the cause, re-run." The agent follows imperatives; it treats suggestions as optional.
 
 ### Issue 3: Agent takes 40+ minutes on a simple story
-**Solution:** Your story is too big, or your `CLAUDE.md` is under-specified. Kill the session (`tmux kill-session -t dev-agent`), tighten the story scope to one component, tighten `CLAUDE.md`'s Iteration Rule to explicitly limit scope ("Only modify files named in Technical Notes"), re-sling.
+**Solution:** Your story is too big, or your `CLAUDE.md` is under-specified. Kill the session (`gc session kill <session-id>` — find the id via `gc session list`), tighten the story scope to one component, tighten `CLAUDE.md`'s Iteration Rule to explicitly limit scope ("Only modify files named in Technical Notes"), file a fresh bead, re-sling.
 
-### Issue 4: `gc status` shows `dev-agent` missing
-**Solution:** Your `city.toml` `[[agent]]` block's `dir` field doesn't match the name in `gc rig list`. Fix the mismatch, run `gc restart`. Typos here account for more "missing agent" reports than any other cause.
+### Issue 4: `gc status` shows no `claude` agent
+**Solution:** `gc status` should show at least `claude` (pool) and `your-project/claude` (pool). If not, check that you ran `gc restart` after `gc rig add`, and that `my-factory/city.toml` has `provider = "claude"` under `[workspace]`. The implicit agent is derived from the workspace provider — if the provider is unset or mismatched, no implicit agent appears.
 
 ### Issue 5: You caught yourself typing into Claude chat
-**Solution:** Stop immediately. That correction is invisible to your next sling. Undo the agent's current work, translate your chat correction into a `CLAUDE.md` rule, re-sling. The point of L1 is to feel how obvious this mistake is once you're watching for it.
+**Solution:** Stop immediately. That correction is invisible to your next sling. Undo the agent's current work, translate your chat correction into a `CLAUDE.md` rule, re-sling with a fresh bead. The point of L1 is to feel how obvious this mistake is once you're watching for it.
 
 ### Issue 6: Agent commits code that fails tests it didn't run
 **Solution:** Add an explicit "After implementing, run every command in Quality Gates in order, before committing. If any command fails, do not commit — fix and re-run" step to the Iteration Rule. Some agents optimize for shipping quickly and skip the gates unless forced.
@@ -875,16 +900,16 @@ Create three small beads in sequence, sling each, close each. You're testing tha
 **Solution:** Add to Project Context: "Only reference files, functions, and dependencies that currently exist in the repo. Before using an import, verify the target file contains that export. Never assume a utility exists — search for it first." Claude defaults to "helpful completion" over "literal truth" unless reined in.
 
 ### Issue 9: `gc sling` returns "agent not found"
-**Solution:** The agent name in the command doesn't match `name = "..."` in `city.toml`. Copy-paste from `gc status`, don't retype. Also check you're running `gc sling` against the same city the agent is declared in — if you ran `gc init` twice in different directories, you may have two cities.
+**Solution:** The agent name in the command doesn't match any registered or implicit agent. Use `gc status` to see what's available — `claude`, `codex`, etc. (implicit), plus anything from imported packs. The rig-scoped form is `<rig-name>/<agent>` — the slash matters, and the rig name must match `gc rig list` output.
 
-### Issue 10: Tmux session won't close after sling ends
-**Solution:** `tmux kill-session -t dev-agent` force-kills it. Or `gc session stop dev-agent` does it through the supervisor. If sessions leak every time, check `idle_timeout` in your `[[agent]]` block — setting it to something smaller than 2h (e.g., `30m`) bounds the damage.
+### Issue 10: Session won't close after sling ends
+**Solution:** `gc session list` shows all active sessions. Pick the stuck one and close it: `gc session close <session-id>` (permanent close) or `gc session kill <session-id>` (force-kill; reconciler will restart on next sling). If sessions leak every time, the implicit agent's `idle_timeout` default may be longer than you want; override by shipping a pack-based `claude` agent in L2+ with a tighter timeout.
 
 ### Issue 11: Agent posts a plan but doesn't follow it
 **Solution:** The Iteration Rule needs a self-check step: "After posting the plan, implement each step in order. Before moving to the next step, verify the previous step's output passes its tests." Plans without enforcement are decoration.
 
 ### Issue 12: `gc events --follow` shows nothing
-**Solution:** Events are only emitted during active sessions. If no agent is running, the stream is silent — not broken. Sling a bead, then watch events. If events still don't appear, check `my-factory/events.jsonl` directly with `tail -f`.
+**Solution:** Events are only emitted during active sessions. If no agent is running, the stream is silent — not broken. Sling a bead, then watch events. If events still don't appear, check that the api server is up (`gc status` should show `api: <host>:<port>`); events require the api server.
 
 ---
 
@@ -901,36 +926,41 @@ gc rig list
 # (Bootstrap your rig's output directories — see Step 1.4)
 
 # OPTIONAL INTEGRATIONS (Step 2)
-# Edit my-factory/city.toml and add "../packs/workshop" to includes
+# Add the workshop pack to the rig via rig-scoped import in my-factory/city.toml:
+#   [rigs.imports.workshop]
+#   source = "../packs/workshop"
 cp ../packs/workshop/env.example ../../path/to/your-repo/.env
-gc service restart
+gc restart
 gc doctor
 
-# AGENT DECLARATION (Step 3)
-# Edit my-factory/city.toml
+# VERIFY IMPLICIT CLAUDE AGENT (Step 3)
 gc restart
-gc status
+gc status     # should list `claude` and `your-project/claude`
 
 # WRITE CLAUDE.MD (Step 4)
 # Edit ~/path/to/your-repo/CLAUDE.md
 git checkout -b claude-md-setup
 git add CLAUDE.md
-git commit -m "chore: add CLAUDE.md for dev-agent (L1)"
+git commit -m "chore: add CLAUDE.md for claude agent (L1)"
 
 # CREATE BEAD (Step 6)
-bd create "Implement: Show Order Total in Cart" --description "$(cat <<EOF
+cd ~/path/to/your-repo
+bd create \
+  --title "Implement: Show Order Total in Cart" \
+  --labels ready-to-build \
+  --description "$(cat <<'EOF'
 ... your story ...
 EOF
 )"
 bd list
 
 # SLING + WATCH (Step 7)
-gc sling dev-agent my-factory-abc123
-gc watch dev-agent
+gc sling --nudge your-project/claude yr-abc
 # In parallel terminals:
+gc session peek your-project/claude
 gc events --follow
 gc status
-bd show my-factory-abc123
+bd show yr-abc
 
 # VERIFY (Step 8)
 git log -5 --oneline
@@ -940,13 +970,20 @@ git diff HEAD~1
 # ITERATE on CLAUDE.md if gates fail (no code edits!)
 # Edit CLAUDE.md
 git reset --hard HEAD~1
-gc sling dev-agent my-factory-abc123
+bd create \
+  --title "Implement: Show Order Total in Cart (v2)" \
+  --labels ready-to-build \
+  --description "$(cat <<'EOF'
+... same user story ...
+EOF
+)"
+gc sling --nudge your-project/claude <new-bead-id>
 
 # CLOSE (Step 9)
 git add CLAUDE.md DECISIONS.md
 git commit -m "docs: update agent rules after first sling (L1)"
 git push -u origin claude-md-setup
-bd close my-factory-abc123 --comment "Feature shipped. CLAUDE.md updated."
+bd close <final-bead-id> --note "Feature shipped. CLAUDE.md updated."
 ```
 
 ---
@@ -956,18 +993,19 @@ bd close my-factory-abc123 --comment "Feature shipped. CLAUDE.md updated."
 | Component | Location | What It Does |
 |-----------|----------|--------------|
 | City | `my-factory/` | The workspace where agents and beads live. Registered via `gc register`. |
-| `city.toml` | `my-factory/city.toml` | The city's configuration file. Agent declarations live here. |
+| `pack.toml` | `my-factory/pack.toml` | The portable pack definition — imports, providers, agent defaults |
+| `city.toml` | `my-factory/city.toml` | Deployment config — rigs, workspace provider, substrate choices |
 | Supervisor | Background launchd service | Keeps agents alive between terminal sessions |
 | Rig | Registered via `gc rig add` | Your project repo, registered with the city. One city can have many rigs. |
-| `dev-agent` | `[[agent]]` block in `my-factory/city.toml` | A single Claude-backed agent, controlled by `CLAUDE.md` |
+| Implicit `claude` agent | Built into gc | Gas City ships with `claude`, `codex`, `gemini` etc. as built-in agents. Reads `CLAUDE.md` / `AGENTS.md` from the rig's root. |
 | `CLAUDE.md` | `your-repo/CLAUDE.md` | The *only* place agent behavior is defined. Edit this, never the chat. |
 | `AGENTS.md` | `your-repo/AGENTS.md` (alternative name) | Identical to `CLAUDE.md` in structure. Use this name for Codex, Cursor, Gemini. |
 | `docs/PROJECT_MANIFEST.md` | `your-repo/docs/PROJECT_MANIFEST.md` | Tech stack, conventions, domain model. Read by every agent before every task. |
 | `DECISIONS.md` | `your-repo/DECISIONS.md` | Running log of what you changed in `CLAUDE.md` and why |
-| Bead | Created via `bd create` | A unit of work an agent can pick up and close. Has title, description, status. |
-| Bead database | `my-factory/.../beads/` | Per-rig storage for all beads. Managed by `bd`. |
-| Sling | `gc sling dev-agent <bead>` | Dispatches a bead to an agent, starts a tmux session |
-| Tmux session | `dev-agent-<bead-prefix>` | Where the agent actually runs. Attach with `gc watch` or `tmux attach -t ...`. |
+| Bead | Created via `bd create --title ... --labels ...` | A unit of work an agent can pick up and close. Has title, description, status, labels. |
+| Bead database | `.beads/` in each rig | Per-rig storage for all beads. Managed by `bd`. |
+| Sling | `gc sling --nudge your-project/claude <bead>` | Routes a bead to an agent and wakes the session |
+| Session | `gc session list` shows active sessions | Where the agent actually runs. Peek with `gc session peek`, attach with `gc session attach`. |
 | Quality gates | Defined in `CLAUDE.md` Quality Gates section | Binary pass/fail per run; the agent's exit criteria |
 | Event stream | `gc events --follow` | Real-time city-wide log of agent activity |
 
@@ -977,16 +1015,16 @@ bd close my-factory-abc123 --comment "Feature shipped. CLAUDE.md updated."
 
 | Problem | Fix |
 |---------|-----|
-| `gc status` doesn't list `dev-agent` | Your `[[agent]]` block's `dir` field doesn't match the name shown by `gc rig list`. Align them, `gc restart`. |
-| `gc sling` returns "agent not found" | Agent name in the command doesn't match `name = "..."` in `city.toml`. Copy-paste, don't retype. |
-| `gc sling` returns "bead not found" | Bead ID typo, or you're running `gc sling` against the wrong city. Run `bd list` to confirm the ID. |
-| Agent runs but never reads `CLAUDE.md` | File is in a subdirectory, not the repo root. `ls ~/path/to/your-repo/CLAUDE.md` must succeed. |
+| `gc status` doesn't list a `claude` agent | `my-factory/city.toml` `[workspace]` section is missing `provider = "claude"`, or you haven't run `gc restart` since `gc rig add`. Set the provider, restart, check `gc status` again. |
+| `gc sling` returns "agent not found" | The agent name in the command doesn't match an implicit agent or a pack-defined agent. Use `gc status` to see what's available. Remember the rig-scoped form is `<rig-name>/claude` (slash, not dash). |
+| `gc sling` returns "bead not found" | Bead ID typo, or you're running `gc sling` against the wrong rig. `bd list` shows beads in the current rig. |
+| Agent runs but never reads `CLAUDE.md` | File is in a subdirectory, not the rig root. `ls ~/path/to/your-repo/CLAUDE.md` must succeed. |
 | Agent makes the same mistake after re-sling | Your rule is a suggestion ("Prefer X"), not an imperative ("NEVER do Y"). Rewrite as imperative. |
 | Quality gates pass but feature is wrong | Acceptance criteria were too loose. Strengthen the ACs in the bead description, not the prompt. |
 | `gc doctor` warns about missing `LINEAR_API_KEY` etc. | Expected — only core tool checks are required. Other checks only fire if you fill in env vars for that service. |
-| You caught yourself typing into chat | Stop, undo the agent's work, translate your chat correction into a `CLAUDE.md` rule, re-sling. This *is* the lesson. |
-| Agent takes 40+ minutes on a simple story | Story too big or rules too loose. Kill the tmux session, tighten scope in `CLAUDE.md` and in the bead, re-sling. |
-| Tmux session won't close | `tmux kill-session -t dev-agent` or `gc session stop dev-agent`. |
+| You caught yourself typing into chat | Stop, undo the agent's work, translate your chat correction into a `CLAUDE.md` rule, file a fresh bead, re-sling. This *is* the lesson. |
+| Agent takes 40+ minutes on a simple story | Story too big or rules too loose. Kill the session (`gc session kill <session-id>`), tighten scope in `CLAUDE.md` and in the bead, file a fresh bead, re-sling. |
+| Session won't close | `gc session close <session-id>` (permanent) or `gc session kill <session-id>` (force; reconciler will restart). |
 | `gc restart` hangs | Check the supervisor process: `ps aux \| grep gascity`. If stuck, `launchctl unload ~/Library/LaunchAgents/com.gascity.supervisor.plist` then `gc register my-factory` again. |
 | Agent commits to main instead of a feature branch | Add to CLAUDE.md: "Before making any code changes, ensure you are on a feature branch. If on main, run `git checkout -b <bead-slug>` first." |
 | Agent's commit message isn't conventional-commits | Output Format in CLAUDE.md needs an example. Add: "Commit format: `feat(scope): short description`. Example: `feat(cart): show order total in cart view`." |

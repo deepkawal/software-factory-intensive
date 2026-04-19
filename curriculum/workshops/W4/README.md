@@ -349,7 +349,7 @@ The next time you sling the Coder on any feature, it should now produce code wit
 ```bash
 # pick any closed bead whose review report flagged the async issue
 gc sling builder my-factory-<bead-id>
-gc watch coder
+gc session peek your-repo/builder.builder
 ```
 
 When the Coder finishes, grep the output:
@@ -885,7 +885,7 @@ git commit -m "feedback(coder): encode async error-handling rule from review pat
 
 # Verify it took effect on next sling
 gc sling builder my-factory-<bead-id>
-gc watch coder
+gc session peek your-repo/builder.builder
 grep -c "try {" src/api/*.ts
 
 # PART 3 — Aggregate loop

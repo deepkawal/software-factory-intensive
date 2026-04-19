@@ -12,16 +12,24 @@
 
 ## Session workspace note
 
-* **Pack locations (shipped):** `../../../packs/planner/` and `../../../packs/architect/`. Prompt templates are `packs/<agent>/prompts/<agent>.md.tmpl` (the `.tmpl` suffix is the Gas City template extension).
-* **Gas City workspace:** `../../../my-factory/` — this is where `city.toml` lives. Earlier drafts of this README used `~/my-city/`; treat any remaining `~/my-city` reference as pointing at `my-factory/`.
+* **Pack locations (shipped):** `../../../packs/planner/` and `../../../packs/architect/`. Each pack uses the Pack v2 layout: `agents/<name>/agent.toml` holds per-agent config and `agents/<name>/prompt.template.md` is the prompt (the `.template.` infix means Go template expansion; plain `.md` prompts are inert).
+* **Gas City workspace:** `../../../my-factory/` — where `pack.toml` (portable definition) and `city.toml` (deployment) live.
 * **Your deliverables this session:** `notes.md` + any customised pack copies go in `../../../activities/labs/L2/`. The work package + ADR themselves are produced by the agents into your project rig, not this folder.
-* **Wiring the packs:** at the end of the session, add the following to `includes` in `../../../my-factory/city.toml`:
+* **Wiring the packs:** the shipped Planner + Architect are already composed into every rig via `default_rig_includes = ["../packs/all"]` in `my-factory/city.toml.template` — `packs/all` imports all 8 pipeline agents, so no wiring is needed to use the shipped versions. To override with customised copies, add rig-scoped imports to `../../../my-factory/city.toml`:
   ```toml
-  includes = ["../packs/planner", "../packs/architect"]
-  ```
-  or use `../activities/labs/L2/packs/<agent>` if you're running customised copies. See [`activities/labs/L2/README.md`](../../../activities/labs/L2/README.md) for the full pattern.
+  [[rigs]]
+  name = "your-project"
+  # ...existing fields...
 
-If a pack edit breaks your factory, swap back to the shipped `../packs/<name>` path in `city.toml` and `gc service restart` to continue.
+  [rigs.imports.planner]
+  source = "../activities/labs/L2/packs/planner"
+
+  [rigs.imports.architect]
+  source = "../activities/labs/L2/packs/architect"
+  ```
+  See [`activities/labs/L2/README.md`](../../../activities/labs/L2/README.md) for the full pattern.
+
+If a pack edit breaks your factory, remove the `[rigs.imports.*]` blocks from `city.toml` and `gc restart` — you fall back to the shipped packs from `packs/all`.
 
 ---
 
@@ -72,7 +80,7 @@ Before starting this lab, verify each of these:
 |-------------|---------------|-----------------|
 | L1 complete | `ls ~/path/to/your-repo/CLAUDE.md` → file exists | Go back and complete L1. This lab cannot work without it. |
 | W2 complete | You have a factory design doc with 6 agent roles mapped to your project | Skim the [W2 README](../../workshops/W2/) and sketch the roles — 10 min max |
-| Gas City running | `gc status` → shows at least `dev-agent` from L1 | From `my-factory/`: `gc register .` then `gc rig add ../../path/to/your-repo` |
+| Gas City running | `gc status` → shows `your-repo/claude` from L1 plus the pipeline agents from `packs/all` | From `my-factory/`: `gc register .` then `gc rig add ../../path/to/your-repo` |
 | Project Manifest | `cat ~/path/to/your-repo/docs/PROJECT_MANIFEST.md` → filled in | Copy from [`curriculum/PROJECT_MANIFEST_TEMPLATE.md`](../../PROJECT_MANIFEST_TEMPLATE.md) and fill in tech stack, conventions, domain model |
 | Skeleton scaffold | `ls ~/path/to/your-repo/work-packages/` → directory exists | `# (the participant's repo already lives under a `my-factory/` workspace — skeleton lives there)` |
 
@@ -120,7 +128,7 @@ You should see six sections:
                         re-prompting"
 ```
 
-**What's happening here:** This prompt file is the Planner's entire personality. When you `gc sling planner <bead>`, Gas City starts a Claude session, loads this prompt as the system message, and hands the bead's description as the user message. Everything the Planner does comes from this file and `docs/PROJECT_MANIFEST.md`. Nothing else.
+**What's happening here:** This prompt file is the Planner's entire personality. When you `gc sling --nudge your-project/planner.planner <bead>`, Gas City starts a Claude session, loads this prompt as the system message, and hands the bead's description as the user message. Everything the Planner does comes from this file and `docs/PROJECT_MANIFEST.md`. Nothing else.
 
 ### Step 2: Open the Planner Pack Metadata
 
@@ -200,42 +208,34 @@ You're done reading. Now install.
 
 ---
 
-## Part 1: Install the Planner Agent (~10 min)
+## Part 1: Verify the Planner Agent Is Ready (~10 min)
 
-### Step 1: Add the Planner Pack to Your Rig
+### Step 1: Confirm the Planner Is Composed Into Your Rig
 
 ```bash
 cd my-factory
-gc rig add ~/path/to/your-repo \
-  --include /path/to/software-factory-intensive/packs/planner
-```
-
-You should see output like:
-
-```
-rig "your-repo" updated — added pack "planner"
-```
-
-**What's happening here:** `gc rig add --include` tells Gas City: "for this rig, also load the agent definition and prompt from the specified pack directory." The contents of `packs/planner/agents/planner/agent.toml` are merged into your city's effective configuration. The prompt file at `packs/planner/agents/planner/prompt.template.md` becomes the system prompt for any session started by this agent.
-
-> **Note:** In the canonical `my-factory/` setup, all 8 agent packs compose automatically via `default_rig_includes` in `my-factory/city.toml` — you don't need `--include` per-pack. The explicit `--include` here is for teaching: it shows exactly which pack is being wired up.
-
-### Step 2: Restart Gas City and Verify
-
-```bash
-gc restart
 gc status
 ```
 
-You should see:
+The Planner is defined at `packs/planner/agents/planner/` and composed into every rig via `default_rig_includes = ["../packs/all"]` in `my-factory/city.toml.template`. You should see it in the agent list:
 
 ```
-NAME        STATE   LAST ACTIVITY   BEAD
-dev-agent   idle    12m ago         --
-planner     idle    --              --
+Agents:
+  claude                          pool (min=0, max=unlimited)
+  your-repo/claude                pool (min=0, max=unlimited)
+  your-repo/planner.planner       stopped
+  ...the other 7 pipeline agents all stopped...
 ```
 
-If `planner` doesn't appear, check that the `--include` path was correct (absolute path, not relative). Run `gc rig list` to see what packs are registered.
+The `stopped` state means "no active session" — the agent is ready to sling. `gc status | grep planner` is a quick filter.
+
+### Step 2: How the Planner Got Here
+
+Agents are discovered by filesystem convention: the directory `packs/planner/agents/planner/` contains `agent.toml` (per-agent config) and `prompt.template.md` (system prompt). Any directory under `agents/` with either `prompt.md` or `prompt.template.md` IS an agent.
+
+`packs/planner` is imported into the composition pack `packs/all` with binding name `planner`. `packs/all` is then imported by `my-factory/pack.toml` and composed into every rig via `default_rig_includes`. The rig-scoped qualified name `your-repo/planner.planner` reads as `<rig>/<pack-binding>.<agent-name>`.
+
+To customise the Planner for this project, copy the pack and add a rig-scoped import (see Step 3 below).
 
 ### Step 3: Customize the Planner Prompt for Your Project
 
@@ -349,37 +349,20 @@ git commit -m "chore: seed tailored industry ADRs via actual adr-bot"
 
 **Skipping this step is fine.** Your Architect will just write every ADR from scratch. But seeding baselines means higher-quality first-run output.
 
-### Step 2: Add the Architect Pack to Your Rig
+### Step 2: Verify the Architect Is Composed Into Your Rig
 
 ```bash
 cd my-factory
-gc rig add ~/path/to/your-repo \
-  --include /path/to/software-factory-intensive/packs/architect
+gc status | grep architect
 ```
 
 You should see:
 
 ```
-rig "your-repo" updated — added pack "architect"
+  your-repo/architect.architect   stopped
 ```
 
-### Step 3: Restart and Verify
-
-```bash
-gc restart
-gc status
-```
-
-You should see:
-
-```
-NAME        STATE   LAST ACTIVITY   BEAD
-dev-agent   idle    25m ago         --
-planner     idle    --              --
-architect   idle    --              --
-```
-
-Three agents. The first two stages of your factory pipeline are installed.
+The Architect lives at `packs/architect/agents/architect/` and reaches your rig via the same `default_rig_includes` → `packs/all` → `packs/architect` chain as the Planner. No install step required.
 
 ### Step 4: Customize the Architect Prompt
 
@@ -522,7 +505,7 @@ my-factory-a1b2c3  Feature: Loyalty Points System  open     --       just now
 ### Step 3: Sling the Bead to the Planner
 
 ```bash
-gc sling planner my-factory-a1b2c3
+gc sling --nudge your-project/planner.planner my-factory-a1b2c3
 ```
 
 You should see:
@@ -537,7 +520,7 @@ Session started: planner-a1b2c3 (tmux)
 ### Step 4: Watch the Planner Work
 
 ```bash
-gc watch planner
+gc session peek your-project/planner.planner
 ```
 
 You'll see the Claude Code session streaming in real-time. The Planner should:
@@ -631,8 +614,8 @@ Open `packs/planner/agents/planner/prompt.template.md` and read the Quality Gate
 
 ```bash
 rm work-packages/loyalty-points-system.md
-gc sling planner my-factory-a1b2c3
-gc watch planner
+gc sling --nudge your-project/planner.planner my-factory-a1b2c3
+gc session peek your-project/planner.planner
 ```
 
 4. Review the new output. Repeat until all quality gate rules pass.
@@ -704,7 +687,7 @@ You should see status `open` and the dependency marked as satisfied.
 ### Step 2: Sling to the Architect
 
 ```bash
-gc sling architect my-factory-d4e5f6
+gc sling --nudge your-project/architect.architect my-factory-d4e5f6
 ```
 
 You should see:
@@ -717,7 +700,7 @@ Session started: architect-d4e5f6 (tmux)
 ### Step 3: Watch the Architect Work
 
 ```bash
-gc watch architect
+gc session peek your-project/architect.architect
 ```
 
 The Architect should:
@@ -815,8 +798,8 @@ Open `packs/architect/agents/architect/prompt.template.md` and check each Qualit
 
 ```bash
 rm docs/adr/0001-loyalty-points-storage.md
-gc sling architect my-factory-d4e5f6
-gc watch architect
+gc sling --nudge your-project/architect.architect my-factory-d4e5f6
+gc session peek your-project/architect.architect
 ```
 
 3. Review the new output. Repeat until all rules pass.
@@ -1025,23 +1008,33 @@ Every command you ran during this lab, in order:
 ```bash
 # PART 0 — Read the packs (no commands — just read the files)
 
-# PART 1 — Install Planner
-gc rig add ~/path/to/your-repo --include /path/to/packs/planner
-gc restart
-gc status
-# (edit packs/planner/agents/planner/prompt.template.md — add project-specific Quality Gate rule)
+# PART 1 — Verify Planner (already composed via packs/all)
+cd my-factory
+gc status | grep planner    # your-repo/planner.planner stopped (expected)
+# OPTIONAL: customise the Planner prompt for this project
+# cp -r ../packs/planner ../activities/labs/L2/packs/planner
+# # edit ../activities/labs/L2/packs/planner/agents/planner/prompt.template.md
+# # add rig-scoped import to my-factory/city.toml:
+# #   [rigs.imports.planner]
+# #   source = "../activities/labs/L2/packs/planner"
+# gc restart
 git checkout -b l2-planner-architect
 git add -A && git commit -m "chore(planner): customize planner prompt"
 
-# PART 2 — Install Architect
+# PART 2 — Seed ADRs + verify Architect
 brew install actual-software/actual/actual       # one-time install
 actual adr-bot --dry-run                         # preview tailored ADRs
 actual adr-bot                                   # write to CLAUDE.md
 git add CLAUDE.md && git commit -m "chore: seed tailored industry ADRs"
-gc rig add ~/path/to/your-repo --include /path/to/packs/architect
-gc restart
-gc status
-# (edit packs/architect/agents/architect/prompt.template.md — add CLAUDE.md as input)
+gc status | grep architect   # your-repo/architect.architect stopped (expected)
+# OPTIONAL: customise the Architect prompt for this project
+# cp -r ../packs/architect ../activities/labs/L2/packs/architect
+# # edit ../activities/labs/L2/packs/architect/agents/architect/prompt.template.md
+# # add rig-scoped import to my-factory/city.toml:
+# #   [rigs.imports.architect]
+# #   source = "../activities/labs/L2/packs/architect"
+# gc restart
+# git add -A && git commit -m "chore(architect): customize architect prompt"
 git add -A && git commit -m "chore(architect): customize architect prompt"
 
 # PART 3 — Run the Planner
@@ -1049,8 +1042,8 @@ bd create "Feature: Loyalty Points System" --description "$(cat <<'EOF'
 ...feature request...
 EOF
 )"
-gc sling planner my-factory-a1b2c3
-gc watch planner                                 # Ctrl+b d to detach
+gc sling --nudge your-project/planner.planner my-factory-a1b2c3
+gc session peek your-project/planner.planner                                 # Ctrl+b d to detach
 cat work-packages/loyalty-points-system.md       # review output
 # (if quality gate fails: edit prompt, rm work package, re-sling)
 bd close my-factory-a1b2c3 --comment "Work package completed"
@@ -1058,8 +1051,8 @@ bd close my-factory-a1b2c3 --comment "Work package completed"
 # PART 4 — Run the Architect
 bd create "Architecture Review: Loyalty Points Storage" \
   --description "..." --deps blocks:my-factory-a1b2c3
-gc sling architect my-factory-d4e5f6
-gc watch architect
+gc sling --nudge your-project/architect.architect my-factory-d4e5f6
+gc session peek your-project/architect.architect
 cat docs/adr/0001-loyalty-points-storage.md      # review output
 grep -i "adr" work-packages/loyalty-points-system.md   # check cross-ref
 grep -i "work-package" docs/adr/0001-loyalty-points-storage.md
@@ -1108,8 +1101,8 @@ When you review your own output, check:
 
 | Problem | Fix |
 |---------|-----|
-| `gc rig add --include` says "pack not found" | Use the absolute path to the pack directory, not relative. Verify with `ls /path/to/packs/planner/pack.toml`. |
-| `gc status` doesn't show `planner` after restart | The `--include` may have failed silently. Run `gc rig list` and check the PACKS column. Re-run `gc rig add --include` with the correct path. |
+| `gc status` doesn't show `your-repo/planner.planner` | Confirm `default_rig_includes = ["../packs/all"]` is present in `my-factory/city.toml`, then `gc restart`. If you added a `[rigs.imports.planner]` block pointing at a customised copy, verify that path exists with `ls ../activities/labs/L2/packs/planner/pack.toml`. |
+| `gc sling` says "target not found" | The sling target uses the qualified name `your-repo/planner.planner` (slash separator, dot between pack binding and agent name). Copy from `gc status` output — don't retype. |
 | Planner writes to wrong directory (e.g., `plan/` instead of `work-packages/`) | Open `packs/planner/agents/planner/prompt.template.md` → Output Format section. Make the path explicit and add "never anywhere else." Re-sling. |
 | Architect writes ADR without reading the work package | The bead description didn't include the work package path. Edit the bead: `bd edit my-factory-d4e5f6` and add the path explicitly. Re-sling. |
 | Architect produces a 1-option ADR | Add to Quality Gate: "You MUST evaluate at least 3 options. List the naive approach and explain why it was rejected." Re-sling. |

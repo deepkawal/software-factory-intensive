@@ -56,12 +56,12 @@ From your project rig:
 ```bash
 # After L3's Builder has committed to the feature branch:
 bd create --title "Review: <feature>" --labels needs-review
-gc sling --nudge your-project--reviewer <bead-id>
+gc sling --nudge your-project/reviewer.reviewer <bead-id>
 
 # Once you see review-reports/<slug>-review.md (and have addressed findings
 # via Builder-pack prompt edits if needed), hand off to the Release-Gate:
 bd create --title "Ship: <feature>" --labels ready-to-ship
-gc sling --nudge your-project--release-gate <bead-id>
+gc sling --nudge your-project/release-gate.release-gate <bead-id>
 ```
 
 **Flag notes:**
@@ -86,7 +86,7 @@ If the Reviewer or Release-Gate session dies silently mid-task — `gc session l
 
 ```bash
 bd update <stuck-bead-id> --assignee ""
-gc sling --nudge --force your-project--<agent> <stuck-bead-id>
+gc sling --nudge --force your-project/<agent>.<agent> <stuck-bead-id>
 ```
 
 See L2's troubleshooting section for full symptoms and explanation. This is common enough on multi-minute LLM stages (Reviewer in particular) that you should expect to do it at least once during a real session.

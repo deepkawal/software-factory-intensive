@@ -53,11 +53,11 @@ From your project rig:
 ```bash
 # Start the Planner on the feature:
 bd create --title "Feature: <your feature>" --labels needs-plan
-gc sling --nudge your-project--planner <bead-id>
+gc sling --nudge your-project/planner.planner <bead-id>
 
 # Once you see work-packages/<slug>.md, hand off to the Architect:
 bd create --title "Architecture: <your feature>" --labels needs-architecture
-gc sling --nudge your-project--architect <bead-id>
+gc sling --nudge your-project/architect.architect <bead-id>
 ```
 
 **Flag notes:**
@@ -84,7 +84,7 @@ To unstick:
 
 ```bash
 bd update <stuck-bead-id> --assignee ""
-gc sling --nudge --force your-project--<agent> <stuck-bead-id>
+gc sling --nudge --force your-project/<agent>.<agent> <stuck-bead-id>
 ```
 
 `--force` overwrites the stale `gc.routed_to` metadata so the re-sling actually routes. You should see a new session spawn within one tick (~20s) and the agent pick up where it left off.

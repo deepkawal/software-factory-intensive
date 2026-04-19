@@ -23,14 +23,20 @@ The rest of this file provides supplementary guidance — discovery questions, p
 ## Setup Steps
 
 ```bash
-# Add the Designer + Builder (Coder) packs to ../my-factory/city.toml:
-#   includes = [..., "../packs/designer", "../packs/builder"]
-# Shipped packs as-is, or copies under
-# ../activities/labs/L3/packs/<agent>/ if customising.
+# The Designer + Builder are already shipped via packs/all, which is
+# composed into every rig through `default_rig_includes` in
+# my-factory/city.toml.template. No wiring needed unless the participant
+# wants to override the shipped prompts with customised copies — then
+# they add rig-scoped imports to my-factory/city.toml:
+#
+#   [rigs.imports.designer]
+#   source = "../activities/labs/L3/packs/designer"
+#   [rigs.imports.builder]
+#   source = "../activities/labs/L3/packs/builder"
 cd my-factory
-gc service restart
+gc restart
 
-gc status  # Should show 4 agents now: planner, architect, designer, builder
+gc status  # Should show all 8 agents from packs/all, including designer + builder
 ```
 
 ## Discovery Questions
@@ -42,18 +48,20 @@ gc status  # Should show 4 agents now: planner, architect, designer, builder
 ## What to Build
 
 ### Designer Run
-1. Sling the bead to the designer: `gc sling <rig>/designer <bead-id>`
-2. Watch: `gc session peek <rig>/designer`
-3. Verify: `design/<slug>-spec.md` has props, state, interactions, edge cases, and a Location path
-4. If the spec doesn't match your project's patterns, update `packs/designer/agents/designer/prompt.template.md`
+1. Create a fresh bead for the designer (each stage gets its own bead): `bd create --title "Design: <feature>" --labels needs-design`
+2. Sling to the designer: `gc sling --nudge <rig>/designer <bead-id>`
+3. Watch: `gc session peek <rig>/designer`
+4. Verify: `docs/design/<slug>.md` has props, state, interactions, edge cases, and a Location path
+5. If the spec doesn't match your project's patterns, update `packs/designer/agents/designer/prompt.template.md`
 
 ### Builder (Coder) Run
-1. Sling to the builder: `gc sling <rig>/builder <bead-id>`
-2. Watch: `gc session peek <rig>/builder`
-3. The builder should implement code at the Location from the spec
-4. Run tests: `npm test` (or equivalent)
-5. If tests fail, update `packs/builder/agents/builder/prompt.template.md` with more specific instructions — don't re-prompt
-6. Goal: at least 2 test cases from the work package passing
+1. Create a fresh bead for the builder: `bd create --title "Build: <feature>" --labels ready-to-build`
+2. Sling to the builder: `gc sling --nudge <rig>/builder <bead-id>`
+3. Watch: `gc session peek <rig>/builder`
+4. The builder should implement code at the Location from the spec
+5. Run tests: `npm test` (or equivalent)
+6. If tests fail, update `packs/builder/agents/builder/prompt.template.md` with more specific instructions — don't re-prompt
+7. Goal: at least 2 test cases from the work package passing
 
 ## Suggestions Based on Project Type
 

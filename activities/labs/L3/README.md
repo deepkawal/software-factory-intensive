@@ -54,11 +54,11 @@ From your project rig:
 ```bash
 # After L2's Architect has written its ADR:
 bd create --title "Design: <feature>" --labels needs-design
-gc sling --nudge your-project--designer <bead-id>
+gc sling --nudge your-project/designer.designer <bead-id>
 
 # Once you see docs/design/<slug>.md, hand off to the Builder:
 bd create --title "Build: <feature>" --labels ready-to-build
-gc sling --nudge your-project--builder <bead-id>
+gc sling --nudge your-project/builder.builder <bead-id>
 ```
 
 **Flag notes:**
@@ -83,7 +83,7 @@ If an agent's session dies silently mid-task — `gc session list` shows no sess
 
 ```bash
 bd update <stuck-bead-id> --assignee ""
-gc sling --nudge --force your-project--<agent> <stuck-bead-id>
+gc sling --nudge --force your-project/<agent>.<agent> <stuck-bead-id>
 ```
 
 See L2's troubleshooting section for full symptoms and explanation.

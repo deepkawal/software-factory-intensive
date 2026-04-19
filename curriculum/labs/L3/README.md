@@ -12,14 +12,14 @@
 
 ## Session workspace note
 
-This README was first written when the shipped pack was named `coder`. The current repository renames it to **`builder`** (same role, same outputs) — wherever this file says *Coder*, the corresponding pack lives at `../../../packs/builder/` and the prompt template is `packs/builder/agents/builder/prompt.template.md`. Commands `gc sling builder <bead>` and `gc session peek <rig>/builder` replace their `coder` equivalents.
+The implementation agent is the `builder` pack at `../../../packs/builder/`, with its prompt at `packs/builder/agents/builder/prompt.template.md`. Some curriculum narrative uses the word "Coder" as the role name — it refers to the same agent.
 
 **Where your work goes this session:**
 * Session deliverables → `../../../activities/labs/L3/` (the activity folder for L3)
 * Customised pack copies (if you deviate from shipped defaults) → `../../../activities/labs/L3/packs/<agent>/`
-* Wire packs into `../../../my-factory/city.toml` at the end of the session — by adding `../packs/designer` and `../packs/builder` to `includes`, or the `../activities/labs/L3/packs/<agent>` path if you customised. See [`activities/labs/L3/README.md`](../../../activities/labs/L3/README.md) for exact lines.
+* The shipped Designer + Builder are already composed into every rig via `default_rig_includes = ["../packs/all"]` in `my-factory/city.toml.template`. To swap in your customised copies, add rig-scoped imports to `my-factory/city.toml` (e.g. `[rigs.imports.designer] source = "../activities/labs/L3/packs/designer"`). See [`activities/labs/L3/README.md`](../../../activities/labs/L3/README.md) for exact lines.
 
-If you skipped an earlier lab or a prompt edit breaks the pack, point `includes` at the shipped `../packs/<name>` path and `gc service restart` — the shipped pack always passes `gc doctor`.
+If you skipped an earlier lab or a prompt edit breaks the pack, remove any `[rigs.imports.<name>]` block pointing at your customised copy from `my-factory/city.toml` and run `gc restart` — the rig falls back to the shipped pack via `default_rig_includes = ["../packs/all"]`, which always passes `gc doctor`.
 
 ---
 
@@ -76,7 +76,7 @@ Before starting this lab, verify each of these:
 |-------------|---------------|-----------------|
 | L2 complete | `ls ~/path/to/your-repo/work-packages/` and `ls ~/path/to/your-repo/docs/adr/` both return files | Go back and complete L2. The Designer reads those artifacts as its primary input. |
 | Both L2 beads closed | `bd list --status closed` shows the Planner + Architect beads | Run `bd close <bead-id>` for any still open. |
-| Gas City running | `gc status` shows `planner` and `architect` agents | `gc restart`; if that doesn't work, re-run `gc rig add --include` for the missing packs. |
+| Gas City running | `gc status` shows `your-repo/planner.planner` and `your-repo/architect.architect` | `gc restart`; if that doesn't bring them back, confirm `default_rig_includes = ["../packs/all"]` is present in `my-factory/city.toml`. |
 | Feature branch checked out | `git branch --show-current` shows `l2-planner-architect` (or equivalent) | `git checkout l2-planner-architect`. You'll add Designer and Coder commits on the same branch. |
 | Project Manifest | `cat ~/path/to/your-repo/docs/PROJECT_MANIFEST.md` → filled in | This lab assumes L1 + L2 already populated it. If empty, fill it before continuing. |
 | (Recommended) Tailored ADRs | `grep -i "tailored" ~/path/to/your-repo/CLAUDE.md` finds content | If you skipped `actual adr-bot` in L2, run it now — the Coder reads `CLAUDE.md` too. |
@@ -87,14 +87,14 @@ Before starting this lab, verify each of these:
 
 | Command | What it does | Used in step |
 |---------|--------------|--------------|
-| `gc rig add <repo> --include packs/designer` | Register the Designer pack | Part 1 |
-| `gc rig add <repo> --include packs/builder` | Register the Coder pack | Part 1 |
-| `gc restart` | Reload city configuration after pack additions | Part 1, Part 2 |
+| `gc status` | Confirm the shipped Designer + Builder are already composed into your rig via `packs/all` | Part 1, Part 2 |
+| `gc restart` | Reload city configuration if you add a rig-scoped import for a customised pack copy | Part 1, Part 2 |
 | `gc status` | Confirm which agents are live | Part 1, Part 2 |
 | `bd create --deps blocks:<bead>` | Chain the Designer bead after L2 outputs | Part 3 |
-| `gc sling designer <bead>` | Dispatch the Designer | Part 3 |
-| `gc sling builder <bead>` | Dispatch the Coder (longer-running) | Part 4 |
-| `gc watch <agent>` | Attach to the agent's live tmux session | Parts 3, 4 |
+| `gc sling --nudge your-project/designer.designer <bead>` | Route a bead to the Designer and wake its session | Part 3 |
+| `gc sling --nudge your-project/builder.builder <bead>` | Route a bead to the Builder (longer-running) | Part 4 |
+| `gc session peek <target>` | Snapshot the agent's current output without attaching | Parts 3, 4 |
+| `gc session attach <target>` | Attach to the agent's live tmux session (don't type into it) | Parts 3, 4 |
 | `gc events --follow` | Stream all city events from another terminal | Part 4 |
 | `bd close <bead>` | Mark a bead done after its artifact is committed | Parts 3, 4 |
 
@@ -251,59 +251,77 @@ You're done reading. Now install.
 
 ---
 
-## Part 1: Install the Designer Agent (~10 min)
+## Part 1: Verify the Designer Agent Is Ready (~10 min)
 
-### Step 1: Add the Designer Pack to Your Rig
+### Step 1: Confirm the Designer Is Composed Into Your Rig
 
 ```bash
+# The Designer pack is already composed into every rig via
+# default_rig_includes = ["../packs/all"] in my-factory/city.toml.template.
+# For L3, there's no install step — just confirm it's there:
 cd my-factory
-gc rig add ~/path/to/your-repo \
-  --include /path/to/software-factory-intensive/packs/designer
-```
-
-You should see output like:
-
-```
-rig "your-repo" updated — added pack "designer"
-```
-
-**What's happening here:** Gas City merged the `[[agent]]` block from `packs/designer/pack.toml` into your rig's effective configuration. The Designer now exists as a declared agent — but it hasn't been started yet. That happens on `gc restart`.
-
-### Step 2: Declare the Designer Agent in city.toml
-
-The pack registration above created a declaration — but to make the agent live in your city, make sure your `city.toml` includes this block (add it if it's not auto-inserted):
-
-```toml
-[[agent]]
-name = "designer"
-dir = "your-repo-name"
-provider = "claude"          # other providers (codex, cursor, gemini, etc.) are also supported
-idle_timeout = "1h"
-role = "designer"
-```
-
-**What's happening here:** The `provider` comment is a deliberate reminder: Gas City treats the provider as swappable. Same prompt, same bead, different model backend. If a Designer run comes back weak on a specific tech stack, changing `provider = "claude"` to `provider = "codex"` (or any other supported provider) is a valid experiment — no prompt rewrite needed.
-
-### Step 3: Restart Gas City and Verify
-
-```bash
-gc restart
 gc status
 ```
 
-You should see:
+You should see the Designer among the 8 agents from `packs/all`:
 
 ```
-NAME        STATE   LAST ACTIVITY   BEAD
-dev-agent   idle    1h ago          --
-planner     idle    30m ago         --
-architect   idle    20m ago         --
-designer    idle    --              --
+my-factory  /Users/you/.../my-factory
+  Controller: standalone (PID <pid>)
+  Suspended:  no
+
+Agents:
+  claude                           pool (min=0, max=unlimited)
+  your-repo/claude                 pool (min=0, max=unlimited)
+  your-repo/architect.architect    stopped
+  your-repo/builder.builder        stopped
+  your-repo/designer.designer      stopped
+  your-repo/improver.improver      stopped
+  your-repo/planner.planner        stopped
+  your-repo/release-gate.release-gate  stopped
+  your-repo/reviewer.reviewer      stopped
+  your-repo/validator.validator    stopped
 ```
 
-Four agents. Half the pipeline.
+All 8 pipeline agents show as `stopped` until their first sling wakes them — `stopped` here means "no active session," not "broken." The Designer is ready to sling.
 
-If `designer` doesn't appear, run `gc rig list` to confirm the pack is registered. If the pack is registered but the agent is still missing, inspect your `city.toml` for a missing or malformed `[[agent]]` block.
+### Step 2: How the Designer Got Here (v2 Pack Discovery)
+
+The Designer is defined at `packs/designer/agents/designer/agent.toml` + `packs/designer/agents/designer/prompt.template.md`. Agents are discovered by convention — any directory under `agents/` with either `prompt.md` or `prompt.template.md` IS an agent. The filesystem declares it; no TOML table registers it.
+
+`packs/designer` is imported by the composition pack `packs/all` (binding name `designer`), which is imported by `my-factory/pack.toml` as `all`, which is composed into every rig via `default_rig_includes`. So by the time you run `gc status`, the Designer's agent.toml has been loaded, its prompt template discovered, and the rig-scoped instance `your-repo/designer.designer` is ready to sling.
+
+The qualified name `designer.designer` reads as `<pack-binding>.<agent-name>` — the pack `packs/designer` (bound as `designer` inside `packs/all`) defines the agent `designer` (inside `agents/designer/`). Shipped packs use the same name for both for clarity. `your-repo/designer` works as shorthand when there's no ambiguity.
+
+### Step 3 (Optional): Customise the Designer's Behavior
+
+To override the shipped prompt or config for this rig, copy the pack locally and add a rig-scoped import:
+
+```bash
+cp -r ../packs/designer ../activities/labs/L3/packs/designer
+# Edit ../activities/labs/L3/packs/designer/agents/designer/prompt.template.md
+# Or edit agent.toml to adjust idle_timeout / max_active_sessions / etc.
+```
+
+Then add to `my-factory/city.toml`:
+
+```toml
+[[rigs]]
+name = "your-repo"
+
+[rigs.imports.designer]
+source = "../activities/labs/L3/packs/designer"
+```
+
+And restart:
+
+```bash
+cd my-factory
+gc restart
+gc status     # the designer entry is now from your local copy
+```
+
+**What's happening here:** `[rigs.imports.designer]` binds YOUR pack copy as `designer` for this rig only. Other rigs in the city still use the shipped version. Rig-level imports override pack-level `default_rig_includes` bindings by name — a clean scoping rule that lets you iterate on one rig without affecting anyone else.
 
 ### Step 4: Customize the Designer Prompt for Your Project
 
@@ -356,56 +374,57 @@ git commit -m "chore(designer): customize designer prompt for project convention
 
 ---
 
-## Part 2: Install the Coder Agent (~10 min)
+## Part 2: Verify the Builder (Coder) Agent Is Ready (~10 min)
 
-### Step 1: Add the Coder Pack to Your Rig
+### Step 1: Confirm the Builder Is Composed Into Your Rig
 
 ```bash
 cd my-factory
-gc rig add ~/path/to/your-repo \
-  --include /path/to/software-factory-intensive/packs/builder
+gc status | grep builder
 ```
 
-You should see:
+The Builder (same role as the curriculum-level "Coder") is already shipped via `packs/all` and composed into every rig by `default_rig_includes`. You should see:
 
 ```
-rig "your-repo" updated — added pack "coder"
+  your-repo/builder.builder        stopped
 ```
 
-### Step 2: Declare the Coder Agent in city.toml
+No install step — the Builder comes from `packs/all`, which is already composed into every rig.
 
-Make sure your `city.toml` contains:
+### Step 2: How the Builder's Config Compares to Other Agents
+
+Open `packs/builder/agents/builder/agent.toml`:
 
 ```toml
-[[agent]]
-name = "coder"
-dir = "your-repo-name"
-provider = "claude"          # other providers (codex, cursor, gemini, etc.) are also supported
+scope = "rig"
+wake_mode = "fresh"
+work_dir = ".gc/agents/{{.Rig}}/builder"
+nudge = "Run 'gc prime', then check bd ready --label=ready-to-build for work."
 idle_timeout = "3h"
-role = "coder"
+min_active_sessions = 0
+max_active_sessions = 1
 ```
 
-**What's happening here:** `idle_timeout = "3h"` is longer than the other agents because real implementation — especially with a first-time install of npm dependencies, a typecheck, and a full test run — can take 15–45 minutes for a non-trivial component. The tmux session shouldn't evict itself while the agent is mid-build. If you're running against a fast project you can drop this to `"2h"`; keep `"3h"` for first-run confidence.
+**What's happening here:** `idle_timeout = "3h"` is longer than the other agents because real implementation — first-time install of npm dependencies, a typecheck, and a full test run — can take 15–45 minutes for a non-trivial component. The session shouldn't evict itself while the agent is mid-build.
 
-### Step 3: Restart Gas City and Verify
+To override agent config, ship a patch or a copy. If you want a different `idle_timeout` for Builder in this rig:
+
+- **Copy-and-override** (simplest — same shape as the Designer customisation in Part 1):
+  ```bash
+  cp -r ../packs/builder ../activities/labs/L3/packs/builder
+  # Edit ../activities/labs/L3/packs/builder/agents/builder/agent.toml
+  ```
+  Then add `[rigs.imports.builder] source = "../activities/labs/L3/packs/builder"` to `my-factory/city.toml` and `gc restart`.
+- **Rig-scoped patch** (`[[rigs.patches]]` in city.toml, qualified-name targeted): a lighter-touch alternative that overrides only the fields that differ. See the agent-patches reference for the full syntax.
+
+### Step 3: Restart and Verify
 
 ```bash
 gc restart
 gc status
 ```
 
-You should see:
-
-```
-NAME        STATE   LAST ACTIVITY   BEAD
-dev-agent   idle    1h ago          --
-planner     idle    30m ago         --
-architect   idle    20m ago         --
-designer    idle    5m ago          --
-coder       idle    --              --
-```
-
-All five agents (four from the factory pipeline plus the `dev-agent` from L1).
+You should see all 8 agents from `packs/all` — Planner, Architect, Designer, Builder, Reviewer, Validator, Release-Gate, Improver — plus the implicit `claude` and `codex`/`gemini` (if configured) at the city and rig scopes.
 
 ### Step 4: Customize the Coder Prompt for Your Project
 
@@ -506,7 +525,7 @@ Note this bead ID — you'll sling it next.
 ### Step 2: Sling the Bead to the Designer
 
 ```bash
-gc sling designer my-factory-design123
+gc sling --nudge your-repo/designer.designer my-factory-design123
 ```
 
 You should see:
@@ -521,7 +540,7 @@ Session started: designer-design123 (tmux)
 ### Step 3: Watch the Designer Work
 
 ```bash
-gc watch designer
+gc session peek your-repo/designer.designer
 ```
 
 You'll see the session streaming in real-time. The Designer should:
@@ -635,8 +654,8 @@ Open `packs/designer/agents/designer/prompt.template.md` and walk the Quality Ga
 
 ```bash
 rm design/loyalty-points-badge-spec.md
-gc sling designer my-factory-design123
-gc watch designer
+gc sling --nudge your-repo/designer.designer my-factory-design123
+gc session peek your-repo/designer.designer
 ```
 
 4. Review the new output. Repeat until all rules pass.
@@ -694,7 +713,7 @@ Created bead: my-factory-impl456
 ### Step 2: Sling the Bead to the Coder
 
 ```bash
-gc sling builder my-factory-impl456
+gc sling --nudge your-repo/builder.builder my-factory-impl456
 ```
 
 You should see:
@@ -707,7 +726,7 @@ Session started: coder-impl456 (tmux)
 ### Step 3: Watch the Coder Work
 
 ```bash
-gc watch coder
+gc session peek your-repo/builder.builder
 ```
 
 The Coder should:
@@ -825,8 +844,8 @@ git add packs/builder/agents/builder/prompt.template.md
 git commit -m "chore(coder): require explicit test-framework detection"
 
 rm -r src/features/loyalty-points/
-gc sling builder my-factory-impl456
-gc watch coder
+gc sling --nudge your-repo/builder.builder my-factory-impl456
+gc session peek your-repo/builder.builder
 ```
 
 **Why this works:** The fix lives in the Coder's system prompt, so every future bead inherits it. The next feature won't have to learn this lesson twice.
@@ -862,8 +881,8 @@ git commit -m "chore(coder): require literal adherence to spec Location paths"
 git reset --hard HEAD~1    # only if the Coder committed on a feature branch
 # OR: if the wrong files are unstaged, just `rm` them
 
-gc sling builder my-factory-impl456
-gc watch coder
+gc sling --nudge your-repo/builder.builder my-factory-impl456
+gc session peek your-repo/builder.builder
 ```
 
 ### Scenario 3 (bonus): Coder skips the empty-state edge case
@@ -945,11 +964,11 @@ When you fix a Coder issue in `packs/builder/agents/builder/prompt.template.md`,
 
 ### Issue 8: Coder stalls on `npm install`
 **Symptom:** The tmux session shows `npm install` running for 30+ minutes with no progress.
-**Fix:** This is usually a network or registry issue, not a prompt issue. In another terminal: `cd ~/path/to/your-repo && npm install` manually, then `gc sling builder my-factory-impl456` again — the Coder will skip install if `node_modules/` is already present.
+**Fix:** This is usually a network or registry issue, not a prompt issue. In another terminal: `cd ~/path/to/your-repo && npm install` manually, then `gc sling --nudge your-repo/builder.builder my-factory-impl456` again — the Coder will skip install if `node_modules/` is already present.
 
-### Issue 9: `gc status` doesn't show `designer` or `coder` after restart
-**Symptom:** Expected 5 agents, only see 3.
-**Fix:** The `--include` path may have been wrong. Run `gc rig list` to verify registration. Re-run `gc rig add --include` with an absolute path. Verify with `ls /absolute/path/to/packs/designer/pack.toml`.
+### Issue 9: `gc status` doesn't show `your-repo/designer.designer` or `your-repo/builder.builder` after restart
+**Symptom:** Expected 8 pipeline agents, seeing fewer.
+**Fix:** Confirm `default_rig_includes = ["../packs/all"]` is present in `my-factory/city.toml`, then `gc restart`. If you added a `[rigs.imports.designer]` or `[rigs.imports.builder]` block pointing at a customised copy, verify the path exists (`ls ../activities/labs/L3/packs/<agent>/pack.toml`).
 
 ### Issue 10: Coder produces code that passes tests but violates the spec
 **Symptom:** `npm test` is green but the component has different prop names than the spec declared.
@@ -1013,32 +1032,37 @@ Every command you ran during this lab, in order:
 ```bash
 # PART 0 — Read the packs (no commands — just read the files)
 
-# PART 1 — Install Designer
+# PART 1 — Verify Designer (already composed via packs/all)
 cd my-factory
-gc rig add ~/path/to/your-repo --include /path/to/packs/designer
-# (edit my-factory/city.toml — ensure [[agent]] block for designer exists)
-gc restart
-gc status
-# (edit packs/designer/agents/designer/prompt.template.md — project-specific Quality Gate rule)
-cd ~/path/to/your-repo
-git add -A && git commit -m "chore(designer): customize designer prompt"
+gc status | grep designer   # your-repo/designer.designer stopped (expected before first sling)
+# OPTIONAL: customise the Designer prompt for this project
+# cp -r ../packs/designer ../activities/labs/L3/packs/designer
+# # edit ../activities/labs/L3/packs/designer/agents/designer/prompt.template.md
+# # Add rig-scoped import to my-factory/city.toml:
+# #   [rigs.imports.designer]
+# #   source = "../activities/labs/L3/packs/designer"
+# gc restart
+# gc status
 
-# PART 2 — Install Coder
-cd my-factory
-gc rig add ~/path/to/your-repo --include /path/to/packs/builder
-# (edit my-factory/city.toml — ensure [[agent]] block for coder exists)
-gc restart
-gc status
-# (edit packs/builder/agents/builder/prompt.template.md — project-specific quality gates + manifest reading)
-cd ~/path/to/your-repo
-git add -A && git commit -m "chore(coder): customize coder prompt"
+# PART 2 — Verify Builder (already composed via packs/all)
+gc status | grep builder    # your-repo/builder.builder stopped (expected)
+# OPTIONAL: customise the Builder prompt for this project
+# cp -r ../packs/builder ../activities/labs/L3/packs/builder
+# # edit ../activities/labs/L3/packs/builder/agents/builder/prompt.template.md
+# # (or edit agents/builder/agent.toml if you need a different idle_timeout, etc.)
+# # Add rig-scoped import to my-factory/city.toml:
+# #   [rigs.imports.builder]
+# #   source = "../activities/labs/L3/packs/builder"
+# gc restart
+# cd ~/path/to/your-repo
+# git add -A && git commit -m "chore(builder): customize builder prompt"
 
 # PART 3 — Run the Designer
 cd my-factory
 bd create "Design: Loyalty Points Badge Component" \
   --description "..." --deps blocks:my-factory-d4e5f6
-gc sling designer my-factory-design123
-gc watch designer                                # Ctrl+b d to detach
+gc sling --nudge your-repo/designer.designer my-factory-design123
+gc session peek your-repo/designer.designer                                # Ctrl+b d to detach
 cat design/loyalty-points-badge-spec.md          # review output
 # (if quality gate fails: edit prompt, rm spec, re-sling)
 bd close my-factory-design123 --comment "Component spec committed"
@@ -1046,8 +1070,8 @@ bd close my-factory-design123 --comment "Component spec committed"
 # PART 4 — Run the Coder
 bd create "Implement: Loyalty Points Badge Component" \
   --description "..." --deps blocks:my-factory-design123
-gc sling builder my-factory-impl456
-gc watch coder                                   # longer run — 10–25 min
+gc sling --nudge your-repo/builder.builder my-factory-impl456
+gc session peek your-repo/builder.builder                                   # longer run — 10–25 min
 cd ~/path/to/your-repo
 git log --oneline | head -10                     # verify commits
 npm run typecheck && npm run lint && npm test    # quality gates
@@ -1112,7 +1136,7 @@ And your city:
 
 ```
 my-factory/
-├── city.toml                                         # Now has dev-agent + planner + architect + designer + coder
+├── city.toml                                         # Workspace provider + rigs; agents come from packs/all
 └── beads/
     ├── my-city-a1b2c3 (closed)                      # L2 Planner bead
     ├── my-factory-d4e5f6 (closed)                      # L2 Architect bead

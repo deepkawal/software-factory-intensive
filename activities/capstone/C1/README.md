@@ -41,22 +41,22 @@ source = "../activities/labs/L3/packs/builder"   # your customised builder, for 
 
    ```bash
    bd create --title "Feature: <name>" --labels needs-plan
-   gc sling --nudge your-project--planner <bead-id>
+   gc sling --nudge your-project/planner.planner <bead-id>
 
    bd create --title "Architecture: <name>" --labels needs-architecture
-   gc sling --nudge your-project--architect <bead-id>
+   gc sling --nudge your-project/architect.architect <bead-id>
 
    bd create --title "Design: <name>" --labels needs-design
-   gc sling --nudge your-project--designer <bead-id>
+   gc sling --nudge your-project/designer.designer <bead-id>
 
    bd create --title "Build: <name>" --labels ready-to-build
-   gc sling --nudge your-project--builder <bead-id>
+   gc sling --nudge your-project/builder.builder <bead-id>
 
    bd create --title "Review: <name>" --labels needs-review
-   gc sling --nudge your-project--reviewer <bead-id>
+   gc sling --nudge your-project/reviewer.reviewer <bead-id>
 
    bd create --title "Ship: <name>" --labels ready-to-ship
-   gc sling --nudge your-project--release-gate <bead-id>
+   gc sling --nudge your-project/release-gate.release-gate <bead-id>
    ```
 
    Log every sling, every prompt edit, and every ad-hoc chat correction.
@@ -85,7 +85,7 @@ Across a six-stage capstone you should expect at least one agent session to die 
 
 ```bash
 bd update <stuck-bead-id> --assignee ""
-gc sling --nudge --force your-project--<agent> <stuck-bead-id>
+gc sling --nudge --force your-project/<agent>.<agent> <stuck-bead-id>
 ```
 
 Record each rescue in the run report under "Ad-hoc operator interventions" — the capstone's target is zero ad-hoc corrections, and rescues count against that target. Fewer rescues = more stable run.

@@ -23,15 +23,20 @@ The rest of this file provides supplementary guidance — discovery questions, p
 ## Setup Steps
 
 ```bash
-# Add the Reviewer + Release-Gate (Deployer) packs to
-# ../my-factory/city.toml:
-#   includes = [..., "../packs/reviewer", "../packs/release-gate"]
-# Shipped packs as-is, or copies under
-# ../activities/labs/L4/packs/<agent>/ if customising.
+# The Reviewer + Release-Gate are already shipped via packs/all, which
+# is composed into every rig through `default_rig_includes` in
+# my-factory/city.toml.template. No wiring needed unless the participant
+# wants to override the shipped prompts with customised copies — then
+# they add rig-scoped imports to my-factory/city.toml:
+#
+#   [rigs.imports.reviewer]
+#   source = "../activities/labs/L4/packs/reviewer"
+#   [rigs.imports.release-gate]
+#   source = "../activities/labs/L4/packs/release-gate"
 cd my-factory
-gc service restart
+gc restart
 
-gc status  # Should show all 6 agents
+gc status  # Should show all 8 agents from packs/all, including reviewer + release-gate
 ```
 
 ## Discovery Questions
@@ -43,21 +48,23 @@ gc status  # Should show all 6 agents
 ## What to Build
 
 ### Reviewer Run
-1. Sling the bead to the reviewer: `gc sling <rig>/reviewer <bead-id>`
-2. Watch: `gc session peek <rig>/reviewer`
-3. Read the review report at `review-reports/<slug>-review.md`
-4. Identify the highest-severity finding
+1. Create a fresh bead for the reviewer (each stage gets its own bead): `bd create --title "Review: <feature>" --labels needs-review`
+2. Sling to the reviewer: `gc sling --nudge <rig>/reviewer <bead-id>`
+3. Watch: `gc session peek <rig>/reviewer`
+4. Read the review report at `review-reports/<slug>-review.md`
+5. Identify the highest-severity finding
 
 ### Fix Via Config (Critical Step)
 1. The finding must be fixed by updating `packs/builder/agents/builder/prompt.template.md` — NOT by manually editing code
-2. Re-run the builder: `gc sling <rig>/builder <bead-id>`
-3. Re-run the reviewer to verify the fix
+2. Create a fresh build bead and re-sling: `bd create --title "Build: <feature> (v2)" --labels ready-to-build && gc sling --nudge <rig>/builder <new-bead>`
+3. Re-run the reviewer (fresh bead again) to verify the fix
 4. This loop is the core discipline: **code quality improves by improving agent config, not by human intervention**
 
 ### Release-Gate (Deployer) Run
-1. Sling to the release-gate: `gc sling <rig>/release-gate <bead-id>`
-2. Verify the gate checklist at `release-gates/<slug>-gate.md`
-3. Every criterion should have PASS/FAIL with evidence, not opinions
+1. Create a fresh bead: `bd create --title "Ship: <feature>" --labels ready-to-ship`
+2. Sling to the release-gate: `gc sling --nudge <rig>/release-gate <bead-id>`
+3. Verify the gate checklist at `release-gates/<slug>-gate.md`
+4. Every criterion should have PASS/FAIL with evidence, not opinions
 
 ## Suggestions Based on Project Type
 
@@ -75,4 +82,4 @@ This lab has the strictest config discipline requirement: manual code fixes are 
 - `review-reports/<slug>-review.md` committed with spec compliance + style + security findings
 - At least one finding resolved by updating the builder prompt (not manual edit)
 - `release-gates/<slug>-gate.md` committed with binary PASS/FAIL evidence for every criterion
-- `orchestrator.yaml` drives both reviewer and release-gate (not run ad-hoc)
+- Each handoff was a fresh bead chained to the prior stage (beads are not re-slung)
