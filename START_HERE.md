@@ -25,12 +25,38 @@ cp -r skills/factory-activity-agent ~/.codex/skills/factory-activity-agent
 
 ## Generate Fired Up Pizza
 
+#### Setup Project W1
+
+In Claude Code session in root of software-factory-intensive
+
+Prompt:
+```
+/factory-activity-agent install w2
+```
+
+#### Uninstall
+
+If needed.
+
+Prompt:
+```
+/factory-activity-agent delete w2
+```
+
 #### Setup Project Manafest
 
 ```bash
 mkdir -p ~/Projects/factory/workshop_w1/w1-project/docs/
 cp ~/Projects/actual-software/software-factory-intensive/activities/workshops/W3/docs/PROJECT_MANIFEST.md ~/Projects/factory/workshop_w1/w1-project/docs/
 ls -al ~/Projects/factory/workshop_w1/w1-project/docs/
+```
+
+#### Stop and Start Gascity
+
+```bash
+pushd ~/Projects/factory/workshop_w3/w3-gc-factory
+gc stop
+gc start
 ```
 
 #### Send Task to Factory
