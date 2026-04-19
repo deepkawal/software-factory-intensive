@@ -77,6 +77,17 @@ gc sling --nudge your-project--builder <bead-id>
 
 L4 (review) runs on committed code from some feature branch. If you skipped L3, either copy the reference project's feature branch verbatim into your rig, or reduce L4 to reviewing a trivial hand-written commit — note the deviation in C1's run report.
 
+## When an agent seems stuck
+
+If an agent's session dies silently mid-task — `gc session list` shows no session and no artifact appears — clear the assignee and re-sling with `--force`:
+
+```bash
+bd update <stuck-bead-id> --assignee ""
+gc sling --nudge --force your-project--<agent> <stuck-bead-id>
+```
+
+See L2's troubleshooting section for full symptoms and explanation.
+
 ## Recover from a broken run
 
 * Revert: `git checkout activities/labs/L3/packs/`

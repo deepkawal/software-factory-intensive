@@ -10,6 +10,8 @@ Companion plan: `plans/fix-stale-docs.md`.
 
 Gas City Pack v1 exposed agent config as `[[agent]]` TOML blocks inside `pack.toml` (or `city.toml`). In Pack v2, agents live at `agents/<name>/agent.toml` inside a pack directory, and the `[[agent]]` block no longer exists in pack.toml at all. Several curriculum files teach students to author, tune, or read `[[agent]]` blocks directly. These lessons cannot be corrected by a string replace — they need rewrites.
 
+**Student impact:** if a student copies a `[[agent]]` block from the curriculum into their `pack.toml`, `gc doctor` will silently ignore it (v2 doesn't parse that key) and the tuning they think they're doing has no effect. The lab's "tune `idle_timeout` and observe the change" exercise fails to teach anything because the tuned value doesn't load.
+
 Regenerate the current hit list before editing:
 
 ```bash
@@ -28,6 +30,8 @@ rg -ln '\[\[agent\]\]' curriculum/ -g '*.md'
 ---
 
 ## 2. Phantom gc commands used throughout curriculum
+
+**Student impact:** students typing `gc watch` / `gc orchestrate` / `gc session stop` get "unknown command" and stall. Worse, the curriculum's instructional prose often depends on the command's presumed behavior ("now `gc watch` the session and observe..."), so the student can't infer a substitute without reading the upstream CLI help. Every hit is a hard stop.
 
 Three commands appear repeatedly in curriculum but do not exist in gc 0.15:
 
@@ -48,6 +52,8 @@ Roughly 40 `gc watch` hits plus `gc orchestrate` and `gc session stop` hits acro
 ---
 
 ## 3. `includes = [...]` and `gc service restart` in curriculum PROMPT.md files
+
+**Student impact:** these PROMPT.md files are instructions the student hands to an LLM agent (Claude, etc.) to guide lab work. If the LLM reads `includes = [...]` or `gc service restart`, it will likely reproduce that syntax in the student's `city.toml` or shell history — producing a config that doesn't parse (v2 uses `[rigs.imports.<binding>]`) or a command that doesn't run (v2 is `gc restart`). The student debugs the LLM's output rather than the lesson.
 
 Three files contain mechanical-looking hits that are actually inside teaching blocks and should be reviewed together with the `[[agent]]` rewrites above (not auto-fixed):
 
@@ -110,7 +116,9 @@ Verify the `workshop:#786` issue description still matches this claim before wor
 
 ## 8. Reference project README assumptions
 
-`reference-project/fired-up-pizza/README.md` was updated to clarify that `gc rig add --include` only applies at first-time rig registration (not on re-runs), with a rig-scoped `[rigs.imports.<binding>]` pattern for post-registration pack changes. Review the "Adapting for Your Project" section to make sure the advice matches the rest of the curriculum.
+`reference-project/fired-up-pizza/README.md:19` correctly warns that `gc rig add --include` applies only at first-time rig registration and that post-registration pack changes go through `city.toml` edits. That advice matches gc 0.15.2 behavior. The "Adapting for Your Project" section (`:121`) still needs one last author pass to confirm the step ordering still matches what a student following the curriculum through L1–L4 will have wired up by that point.
+
+**Student impact:** students who copy from this README as a template for their own project follow the setup in order. If "Adapting for Your Project" references configuration state that curriculum labs produce in a different order or with different names, the student's `city.toml` diverges and labs start failing with confusing "pack not found" errors.
 
 ---
 
@@ -236,16 +244,18 @@ The target agent's `scale_check` filters on the stage label plus `gc.routed_to` 
 
 `--nudge` ensures the target session submits the prompt even if the tmux Enter keystroke races with Claude Code's welcome-screen animation (see §15).
 
-### Flag corrections (upstream bug in curriculum READMEs)
+### Flag corrections (fixed in this pass)
 
-The canonical `bd create` flag name is NOT what several curriculum READMEs currently say. Correct name, verified against `bd create --help`:
+The canonical `bd create` flag name is NOT what several curriculum READMEs used to say. Correct name, verified against `bd create --help`:
 
-| Wrong (in several READMEs) | Correct                       | Notes |
-|----------------------------|-------------------------------|-------|
-| `--label <name>`           | `--labels <name>` (plural)    | Errors out otherwise. |
-| `--depends-on <id>`        | `--deps blocks:<id>` (optional) | Only if you want the dep edge for audit. |
+| Wrong (as written) | Correct                       | Notes |
+|--------------------|-------------------------------|-------|
+| `--label <name>`   | `--labels <name>` (plural)    | Single-form errors out. |
+| `--depends-on <id>`| `--deps blocks:<id>` (optional) | Downstream agents' `scale_check` doesn't read the dep graph, so student flows can omit it entirely. |
 
-Files that still use the wrong flag and need follow-up edits: `curriculum/labs/L{3,4}/README.md`, `curriculum/capstone/C1/README.md`, `curriculum/workshops/W3/README.md`. The activity-side READMEs under `activities/labs/L{2,3,4}/` and `activities/capstone/C1/` and `curriculum/labs/L2/README.md` were fixed as part of this pass.
+**Student impact of the pre-fix state:** students typing the wrong form got "unknown flag" and stalled at the first stage of any pipeline. Both forms were common across L2/L3/L4/C1 curriculum and activity READMEs.
+
+Fix status: swept in this pass. Activity-side READMEs (`activities/labs/L{2,3,4}/`, `activities/capstone/C1/`) and curriculum-side READMEs (`curriculum/labs/L{2,3,4}/`, `curriculum/capstone/C1/`, `curriculum/workshops/W3/`) all corrected. If a new curriculum file lands with either wrong form, the greps in §9 will catch it.
 
 ### Harness reuses student commands verbatim
 
@@ -265,6 +275,6 @@ The prompt text was in the session's input buffer, but never submitted. "LAST AC
 
 Root cause appears to be a race between the Enter keystroke `gc sling` injects via tmux and Claude Code's welcome-screen animation — if Enter arrives before the input area is ready to accept it, it gets dropped, and the session sits forever with a typed-but-not-submitted prompt.
 
-**Workaround in the harness:** `sling_and_nudge` in `test-harness/walkthroughs/_common.sh` calls `gc sling` then fires a backgrounded `gc session nudge <target>` 30 seconds later. If Enter made it through, the nudge queues a redundant system-reminder (harmless). If Enter didn't, the nudge drives the session from the runtime provider side, bypassing the broken tmux keystroke path and the session starts processing.
+**Workaround in the harness:** `sling_and_nudge` in `test-harness/walkthroughs/_common.sh` passes `--nudge` to `gc sling`, which invokes the runtime provider's nudge path after routing. That path drives input submission independently of the broken tmux keystroke path, so the session starts processing regardless of whether the initial Enter was dropped.
 
-**Student-facing guidance:** when a student slings and the agent seems idle for more than a minute, they should `gc session peek <id>` to check for a stuck prompt, and `gc session nudge <id> proceed` to unstick it. The recovery command belongs in each lab README under "when the agent seems stuck". Track upstream fix at `workshop:gc-sling-enter-race`.
+**Student-facing guidance:** the activity READMEs for L2/L3/L4/C1 each have a "When an agent seems stuck" section that walks through the symptoms (no active session, bead assignee set, no artifact) and the recovery command sequence. See those README sections directly — students don't need to read this file to unstick themselves. Track upstream fix at `workshop:gc-sling-enter-race`; once gc submits Enter reliably the `--nudge` flag is no longer load-bearing.

@@ -76,6 +76,24 @@ gc sling --nudge your-project--architect <bead-id>
 
 L3 assumes a work package + ADR exist for the feature it implements. If you skip L2, copy the reference work package and ADR into your rig (renamed for your feature) so L3 has inputs to work from.
 
+## When an agent seems stuck
+
+Sometimes an agent's session dies silently mid-task — the bead stays open, `gc session list` shows no session for that agent, and no artifact ever appears. The dead session left its assignee on the bead, so the reconciler (which filters `--unassigned`) can't spawn a replacement.
+
+To unstick:
+
+```bash
+bd update <stuck-bead-id> --assignee ""
+gc sling --nudge --force your-project--<agent> <stuck-bead-id>
+```
+
+`--force` overwrites the stale `gc.routed_to` metadata so the re-sling actually routes. You should see a new session spawn within one tick (~20s) and the agent pick up where it left off.
+
+Symptoms this is the right fix:
+- `gc session list` shows no active session for the agent.
+- `bd show <bead-id>` shows `Assignee: <agent-template>-1` but the agent isn't running.
+- Artifact file hasn't appeared and no new activity in the last few minutes.
+
 ## Recover from a broken run
 
 * Revert the pack edit: `git checkout activities/labs/L2/packs/`

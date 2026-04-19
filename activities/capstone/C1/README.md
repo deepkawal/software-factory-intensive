@@ -79,6 +79,19 @@ source = "../activities/labs/L3/packs/builder"   # your customised builder, for 
 
 The run still works — the factory uses whichever packs you wired in, shipped or customised. Call out the skipped sessions explicitly in the run report under "Prior-session deviations" so the retrospective can identify what to revisit.
 
+## When an agent seems stuck
+
+Across a six-stage capstone you should expect at least one agent session to die silently — the bead stays open, `gc session list` shows no session for that agent, and no artifact appears. Clear the assignee and re-sling with `--force`:
+
+```bash
+bd update <stuck-bead-id> --assignee ""
+gc sling --nudge --force your-project--<agent> <stuck-bead-id>
+```
+
+Record each rescue in the run report under "Ad-hoc operator interventions" — the capstone's target is zero ad-hoc corrections, and rescues count against that target. Fewer rescues = more stable run.
+
+See L2's troubleshooting section for full symptoms and explanation.
+
 ## Recover from a broken run mid-capstone
 
 * Abandon the feature branch, reset the bead, and re-sling from the stage that failed.

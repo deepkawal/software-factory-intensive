@@ -80,6 +80,17 @@ gc sling --nudge your-project--release-gate <bead-id>
 
 C1 assumes all six agents are running. Shipped `packs/all` includes them all via `default_rig_includes` in the factory's `city.toml.template`, so even without L4 the capstone still runs — just without your review-standards customisations.
 
+## When an agent seems stuck
+
+If the Reviewer or Release-Gate session dies silently mid-task — `gc session list` shows no session and no artifact appears — clear the assignee and re-sling with `--force`:
+
+```bash
+bd update <stuck-bead-id> --assignee ""
+gc sling --nudge --force your-project--<agent> <stuck-bead-id>
+```
+
+See L2's troubleshooting section for full symptoms and explanation. This is common enough on multi-minute LLM stages (Reviewer in particular) that you should expect to do it at least once during a real session.
+
 ## Recover from a broken run
 
 * Revert: `git checkout activities/labs/L4/packs/`
