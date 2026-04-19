@@ -2,26 +2,22 @@
 # L2.sh — Walkthrough for activities/labs/L2/README.md (Planner + Architect handoff).
 #
 # README mirrored:   activities/labs/L2/README.md
-# Commands exercised: bd create --label needs-plan, gc sling planner,
-#                     (wait for work-package), gc sling architect,
-#                     (wait for ADR). Explicit slings — matches the
-#                     README's flow ("gc sling your-project--planner
-#                     <bead-id>" is what students actually type).
+# Commands exercised: bd create --title ... --labels needs-plan,
+#                     gc sling --nudge <rig>/planner.planner <bead>,
+#                     fresh bd create with --labels needs-architecture,
+#                     gc sling --nudge <rig>/architect.architect <new bead>.
+#                     The command shapes match what the activity README
+#                     tells students to type, with <rig> substituted to
+#                     the harness's bundled rig name.
 # Prerequisites:      none — lesson is self-contained
 # Produces:           WALK_L2_FACTORY, WALK_L2_RIG, WALK_L2_CITY_NAME,
 #                     WALK_L2_BEAD_ID, WALK_L2_WORK_PACKAGE, WALK_L2_ADR
 # Expected runtime:   ~10-20 min live (factory bootstrap + two LLM stages)
-# Live-agent stages:  gc sling planner → Planner → work-package
-#                     gc sling architect → Architect → ADR
+# Live-agent stages:  Planner → work-package, Architect → ADR
 #
-# Why standalone instead of chaining off my-factory:
-# Sessions enter a "config-drift" state over time and cannot be re-woken
-# by gc restart / gc session kill / gc sling. Verified empirically in
-# gc 0.15.1: after my-factory finishes and a few minutes pass, its
-# sessions become permanently unwakeable. Chaining L2 off that state
-# fails deterministically. Each lesson registering its own fresh factory
-# matches the student flow (labs run days apart, always against a fresh
-# or restarted factory) and sidesteps the drift bug.
+# Each lesson spins up a fresh scratch factory instead of chaining off
+# my-factory. This matches the real student flow (labs run days apart,
+# always against a restarted factory) and keeps session state clean.
 
 set -uo pipefail
 
@@ -96,6 +92,7 @@ lesson_run() {
   fi
   (cd "$WALK_L2_RIG" && bd config set types.custom "convoy") >/dev/null 2>&1 || true
   save_state WALK_L2_RIG
+  export WALK_FACTORY="$WALK_L2_FACTORY" WALK_RIG="$WALK_L2_RIG"
 
   echo
   echo "[6/9] factory up"
@@ -163,7 +160,8 @@ lesson_run() {
     count=$(find "'"$WALK_L2_RIG"'/work-packages" -maxdepth 1 -type f -name "*.md" 2>/dev/null | wc -l | tr -d " ")
     [ "$count" -ge 1 ]
   '
-  if ! wait_for "Planner to write work-packages/*.md" "$wp_check" 600 15; then
+  local planner_rescue="rescue_dead_session '$WALK_L2_RIG' '$WALK_L2_BEAD_ID' rig/planner.planner"
+  if ! wait_for "Planner to write work-packages/*.md" "$wp_check" 600 15 "$planner_rescue" rig/planner.planner; then
     log "debugging — planner session state:"
     (cd "$WALK_L2_FACTORY" && gc session list 2>/dev/null | head -12 | sed 's/^/    /') | tee -a "$WALK_LOG"
     step_fail "Planner did not produce a work package within 10min"
@@ -199,7 +197,8 @@ lesson_run() {
     count=$(find "'"$WALK_L2_RIG"'/docs/adr" -maxdepth 1 -type f -name "*.md" 2>/dev/null | wc -l | tr -d " ")
     [ "$count" -ge 1 ]
   '
-  if ! wait_for "Architect to write docs/adr/*.md" "$adr_check" 600 15; then
+  local arch_rescue="rescue_dead_session '$WALK_L2_RIG' '$arch_bead' rig/architect.architect"
+  if ! wait_for "Architect to write docs/adr/*.md" "$adr_check" 600 15 "$arch_rescue" rig/architect.architect; then
     log "debugging — architect session state:"
     (cd "$WALK_L2_FACTORY" && gc session list 2>/dev/null | head -12 | sed 's/^/    /') | tee -a "$WALK_LOG"
     step_fail "Architect did not produce an ADR within 10min"
@@ -214,10 +213,18 @@ lesson_run() {
   if [ -n "$WALK_L2_WORK_PACKAGE" ]; then
     assert_artifact_has_sections "$WALK_L2_WORK_PACKAGE" \
       '^## (User Story|Acceptance Criteria|Overview|Problem|Goals?)'
+    # README exit criterion: "at least one user story and acceptance criteria"
+    assert_file_contains_at_least "$WALK_L2_WORK_PACKAGE" 1 \
+      "work package: ≥1 user story ('As a ...')" '^[[:space:]]*([-*][[:space:]]+)?\*{0,2}As an? [a-zA-Z]'
+    assert_file_contains_at_least "$WALK_L2_WORK_PACKAGE" 1 \
+      "work package: ≥1 acceptance criterion" '^[[:space:]]*([-*][[:space:]]+(\[[ xX]\])?|[0-9]+\.)[[:space:]]'
   fi
   if [ -n "$WALK_L2_ADR" ]; then
     assert_artifact_has_sections "$WALK_L2_ADR" \
       '^## Context' '^## (Options|Decision)'
+    # README exit criterion: "ADR with at least two options considered"
+    assert_file_contains_at_least "$WALK_L2_ADR" 2 \
+      "ADR: ≥2 options considered" '\*\*[A-Z]\.[[:space:]]|^#{2,4}[[:space:]]+(Option|Alternative|Approach|Choice)[[:space:]]+[A-Z0-9]|^[-*][[:space:]]+\*{0,2}(Option|Alternative|Approach|Choice)[[:space:]]+[A-Z0-9]'
   fi
 
   log "what L2 produced (rig tree diff since lesson start):"

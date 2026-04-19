@@ -149,32 +149,73 @@ rescue_dead_session() {
 # long-running wait — ~60s is the max a caller should have to wait for a
 # "still alive, still working" signal. Progress without heartbeats looks
 # identical to a stuck run.
+# Query a session's current state from the factory.
+# Args: <factory-path> <session-target>
+# Echoes one of: active, asleep, missing, unknown
+session_state() {
+  local factory="$1" target="$2"
+  if [ -z "$factory" ] || [ -z "$target" ]; then echo unknown; return; fi
+  local out
+  out="$(cd "$factory" 2>/dev/null && gc session list 2>/dev/null)" || { echo unknown; return; }
+  # gc session list columns: ID TEMPLATE STATE REASON TARGET ...
+  # Pick the line whose TEMPLATE matches (2nd column).
+  local line
+  line="$(printf '%s\n' "$out" | awk -v t="$target" 'NR>1 && $2==t {print; exit}')"
+  if [ -z "$line" ]; then echo missing; return; fi
+  printf '%s\n' "$line" | awk '{print $3}'
+}
+
 wait_for() {
   local desc="$1" cmd="$2" timeout="$3" interval="${4:-3}"
-  local rescue_cmd="${5:-}"        # optional shell to run once at WAIT_RESCUE_AFTER
+  local rescue_cmd="${5:-}"        # optional shell to run when session is asleep/missing past rescue_after
+  local session_target="${6:-}"    # e.g., rig/planner.planner
+  local factory_path="${7:-${WALK_FACTORY:-}}"
   local heartbeat="${WALK_HEARTBEAT_SECONDS:-60}"
-  local rescue_after="${WAIT_RESCUE_AFTER:-300}"
+  local rescue_after="${WAIT_RESCUE_AFTER:-120}"
   local start="$SECONDS" last_beat="$SECONDS" last_out="" last_rc=1
   local rescued=0
   log "    waiting: $desc (≤${timeout}s, poll every ${interval}s, heartbeat every ${heartbeat}s)"
+  local tick_log="$WALK_SCRATCH/wait_for.ticks"
   while [ $((SECONDS - start)) -lt "$timeout" ]; do
+    printf '%s SECONDS=%d elapsed=%d desc=%q\n' "$(date +%H:%M:%S)" "$SECONDS" "$((SECONDS - start))" "$desc" >> "$tick_log"
     last_out="$(eval "$cmd" 2>&1)"; last_rc=$?
     if [ "$last_rc" -eq 0 ]; then
       log "    ✓ $desc ($((SECONDS - start))s)"
       return 0
     fi
+    # On each heartbeat, also peek the session state so observers can
+    # see whether the agent is actually working or parked.
     if [ $((SECONDS - last_beat)) -ge "$heartbeat" ]; then
-      log "    … still waiting: $desc ($((SECONDS - start))s elapsed / ${timeout}s budget)"
+      local state_msg=""
+      if [ -n "$session_target" ]; then
+        local st
+        st="$(session_state "$factory_path" "$session_target")"
+        state_msg=" session=$st"
+      fi
+      log "    … still waiting: $desc ($((SECONDS - start))s elapsed / ${timeout}s budget)${state_msg}"
       last_beat="$SECONDS"
     fi
-    # Fire the rescue once after <rescue_after> seconds of waiting. This
-    # covers the empirically observed failure mode: an LLM session dies
-    # mid-task, leaves its bead assignee set, and the reconciler's
-    # --unassigned scale_check can't see it to respawn.
+    # State-driven rescue: if caller gave us a session_target and the
+    # session is asleep or missing (dead) past the grace period, clear
+    # the assignee + re-sling. Fallback to timer-based rescue if no
+    # target was provided (preserves old callers).
     if [ "$rescued" -eq 0 ] && [ -n "$rescue_cmd" ] && [ $((SECONDS - start)) -ge "$rescue_after" ]; then
-      log "    … no progress after ${rescue_after}s — invoking rescue hook"
-      eval "$rescue_cmd" 2>&1 | sed 's/^/      rescue: /' | tee -a "$WALK_LOG"
-      rescued=1
+      local should_rescue=0
+      if [ -n "$session_target" ]; then
+        local st2
+        st2="$(session_state "$factory_path" "$session_target")"
+        if [ "$st2" = "asleep" ] || [ "$st2" = "missing" ]; then
+          log "    … session state=$st2 after ${rescue_after}s — invoking rescue hook"
+          should_rescue=1
+        fi
+      else
+        log "    … no progress after ${rescue_after}s — invoking rescue hook"
+        should_rescue=1
+      fi
+      if [ "$should_rescue" -eq 1 ]; then
+        eval "$rescue_cmd" 2>&1 | sed 's/^/      rescue: /' | tee -a "$WALK_LOG"
+        rescued=1
+      fi
     fi
     sleep "$interval"
   done
@@ -298,6 +339,48 @@ wait_for_agent_ready() {
     "$timeout" "$interval"
 }
 
+# run_stage <stage-name> <label> <target> <artifact-dir> <upstream-bead> [<budget-seconds>] [<title-suffix>]
+#
+# Run one pipeline stage: fresh bead → wait for session → sling + nudge →
+# wait for artifact under $WALK_RIG/<artifact-dir>/*.md.
+#
+# Reads from env: WALK_FACTORY, WALK_RIG (required); WALK_LESSON_NAME
+# (used for title default).
+#
+# On success, exports STAGE_BEAD with the new bead id.
+# Returns 0 on success, 1 on failure. Callers are expected to stop_event_stream / fail.
+run_stage() {
+  local stage_name="$1" label="$2" target="$3" artifact_dir="$4" upstream="$5"
+  local budget="${6:-900}" title_suffix="${7:-$WALK_LESSON_NAME}"
+  STAGE_BEAD=""
+  local stage_title="$stage_name: $title_suffix"
+  log "[$stage_name] bd create --labels $label  (chains after $upstream)"
+  local bead
+  bead="$(stage_bead_create "$WALK_RIG" "$stage_title" "$label" "$upstream")" || {
+    step_fail "bd create failed for $stage_name"; return 1
+  }
+  STAGE_BEAD="$bead"
+  log "[$stage_name] → $STAGE_BEAD"
+  if ! wait_for_agent_ready "$WALK_FACTORY" "$target" 180 5; then
+    step_fail "$stage_name session tmux never came live"; return 1
+  fi
+  sling_and_nudge "$WALK_FACTORY" "$target" "$STAGE_BEAD"
+  if [ "$SLING_RC" -ne 0 ]; then
+    step_fail "sling to $target produced no success marker"; return 1
+  fi
+  local check='
+    count=$(find "'"$WALK_RIG"'/'"$artifact_dir"'" -maxdepth 1 -type f -name "*.md" 2>/dev/null | wc -l | tr -d " ")
+    [ "$count" -ge 1 ]
+  '
+  local rescue="rescue_dead_session '$WALK_RIG' '$STAGE_BEAD' '$target'"
+  if ! wait_for "$stage_name to write $artifact_dir/*.md" "$check" "$budget" 15 "$rescue" "$target"; then
+    log "debugging — session list:"
+    (cd "$WALK_FACTORY" && gc session list 2>/dev/null | head -12 | sed 's/^/    /') | tee -a "$WALK_LOG"
+    return 1
+  fi
+  return 0
+}
+
 # wait_for_bead_closed <rig-path> <bead-id> <timeout> [<interval>]
 wait_for_bead_closed() {
   local rig_path="$1" bead="$2" timeout="$3" interval="${4:-8}"
@@ -334,6 +417,36 @@ assert_glob_nonempty() {
 # section a header identifies semantically, so the helper matches
 # either. If a walkthrough author needs case-strict matching, write
 # the regex directly with grep inline.
+# assert_file_contains_at_least <file> <count> <description> <grep-regex>
+# Fails if the regex matches fewer than <count> lines in <file>. Used to
+# verify README content claims like "work package has ≥1 user story" or
+# "ADR considers ≥2 options" — claims the activity README makes in its
+# exit criteria that purely-structural section checks can't verify.
+#
+# Patterns are case-INSENSITIVE (grep -i). Multiple matches on the same
+# line count as 1 — we're checking line count, not occurrence count.
+assert_file_contains_at_least() {
+  local file="$1" count="$2" desc="$3" pattern="$4"
+  if [ ! -s "$file" ]; then
+    step_fail "$desc — file missing or empty: $file"
+    return 1
+  fi
+  # grep -c can emit weird multi-line output on some platforms/regexes;
+  # pipe through wc -l of matching lines for a reliable integer.
+  local hits
+  hits=$(grep -iE "$pattern" "$file" 2>/dev/null | wc -l | tr -d '[:space:]')
+  hits=${hits:-0}
+  # Strip anything non-numeric as a last-resort guard.
+  hits=$(printf '%s' "$hits" | tr -dc '0-9')
+  : "${hits:=0}"
+  if [ "$hits" -lt "$count" ]; then
+    step_fail "$desc — expected ≥${count} matches for '$pattern' in $(basename "$file"), found $hits"
+    return 1
+  fi
+  step_pass "$desc ($hits matches)"
+}
+
+# assert_artifact_has_sections <file> <section-header-regex>...
 assert_artifact_has_sections() {
   local file="$1"; shift
   if [ ! -s "$file" ]; then

@@ -148,37 +148,7 @@ lesson_run() {
   save_state WALK_C1_BEAD_ID
   local run_start="$SECONDS"
 
-  STAGE_BEAD=""
-  _stage() {
-    local stage_name="$1" label="$2" target="$3" artifact_dir="$4" upstream="$5" budget="${6:-900}"
-    local stage_title="$stage_name: running-average operation"
-    STAGE_BEAD=""
-    log "[$stage_name] bd create --labels $label  (chains after $upstream)"
-    local bead
-    bead="$(stage_bead_create "$WALK_C1_RIG" "$stage_title" "$label" "$upstream")" || {
-      step_fail "bd create failed for $stage_name"; return 1
-    }
-    STAGE_BEAD="$bead"
-    log "[$stage_name] → $STAGE_BEAD"
-    if ! wait_for_agent_ready "$WALK_C1_FACTORY" "$target" 180 5; then
-      step_fail "$stage_name session tmux never came live"; return 1
-    fi
-    sling_and_nudge "$WALK_C1_FACTORY" "$target" "$STAGE_BEAD"
-    if [ "$SLING_RC" -ne 0 ]; then
-      step_fail "sling to $target produced no success marker"; return 1
-    fi
-    local check='
-      count=$(find "'"$WALK_C1_RIG"'/'"$artifact_dir"'" -maxdepth 1 -type f -name "*.md" 2>/dev/null | wc -l | tr -d " ")
-      [ "$count" -ge 1 ]
-    '
-    local rescue="rescue_dead_session '$WALK_C1_RIG' '$STAGE_BEAD' '$target'"
-    if ! wait_for "$stage_name to write $artifact_dir/*.md" "$check" "$budget" 15 "$rescue"; then
-      log "debugging — session list:"
-      (cd "$WALK_C1_FACTORY" && gc session list 2>/dev/null | head -12 | sed 's/^/    /') | tee -a "$WALK_LOG"
-      return 1
-    fi
-    return 0
-  }
+  export WALK_FACTORY="$WALK_C1_FACTORY" WALK_RIG="$WALK_C1_RIG"
 
   echo
   echo "[8/15] Planner stage"
@@ -195,7 +165,8 @@ lesson_run() {
     count=$(find "'"$WALK_C1_RIG"'/work-packages" -maxdepth 1 -type f -name "*.md" 2>/dev/null | wc -l | tr -d " ")
     [ "$count" -ge 1 ]
   '
-  if ! wait_for "Planner to write work-packages/*.md" "$planner_check" 600 15; then
+  local planner_rescue="rescue_dead_session '$WALK_RIG' '$WALK_C1_BEAD_ID' rig/planner.planner"
+  if ! wait_for "Planner to write work-packages/*.md" "$planner_check" 600 15 "$planner_rescue" rig/planner.planner; then
     stop_event_stream; fail "Planner stage failed"
   fi
   WALK_C1_WORK_PACKAGE="$(find "$WALK_C1_RIG/work-packages" -maxdepth 1 -type f -name '*.md' 2>/dev/null | head -1)"
@@ -203,7 +174,7 @@ lesson_run() {
 
   echo
   echo "[9/15] Architect stage"
-  _stage Architect needs-architecture rig/architect.architect docs/adr "$WALK_C1_BEAD_ID" 900 || {
+  run_stage Architect needs-architecture rig/architect.architect docs/adr "$WALK_C1_BEAD_ID" 900 "running-average operation" || {
     stop_event_stream; fail "Architect stage failed"
   }
   local arch_bead="$STAGE_BEAD"
@@ -212,7 +183,7 @@ lesson_run() {
 
   echo
   echo "[10/15] Designer stage"
-  _stage Designer needs-design rig/designer.designer docs/design "$arch_bead" 900 || {
+  run_stage Designer needs-design rig/designer.designer docs/design "$arch_bead" 900 "running-average operation" || {
     stop_event_stream; fail "Designer stage failed"
   }
   local design_bead="$STAGE_BEAD"
@@ -241,7 +212,8 @@ lesson_run() {
   local build_check='
     cd "'"$WALK_C1_RIG"'" && git log --all --oneline 2>/dev/null | grep -v "'"$initial_hash"'" | grep -q .
   '
-  if ! wait_for "Builder to commit at least one new change" "$build_check" 900 20; then
+  local builder_rescue="rescue_dead_session '$WALK_C1_RIG' '$build_bead' rig/builder.builder"
+  if ! wait_for "Builder to commit at least one new change" "$build_check" 900 20 "$builder_rescue" rig/builder.builder; then
     step_fail "Builder did not produce a new commit within 15min"
     stop_event_stream; fail "Builder stage failed"
   fi
@@ -266,7 +238,7 @@ lesson_run() {
 
   echo
   echo "[13/15] Reviewer stage"
-  _stage Reviewer needs-review rig/reviewer.reviewer review-reports "$build_bead" 600 || {
+  run_stage Reviewer needs-review rig/reviewer.reviewer review-reports "$build_bead" 600 "running-average operation" || {
     stop_event_stream; fail "Reviewer stage failed"
   }
   local review_bead="$STAGE_BEAD"
@@ -275,7 +247,7 @@ lesson_run() {
 
   echo
   echo "[14/15] Release-Gate stage"
-  _stage Release-Gate ready-to-ship rig/release-gate.release-gate release-gates "$review_bead" 600 || {
+  run_stage Release-Gate ready-to-ship rig/release-gate.release-gate release-gates "$review_bead" 600 "running-average operation" || {
     stop_event_stream; fail "Release-Gate stage failed"
   }
   WALK_C1_RELEASE_GATE="$(find "$WALK_C1_RIG/release-gates" -maxdepth 1 -type f -name '*.md' 2>/dev/null | head -1)"
@@ -305,26 +277,35 @@ lesson_run() {
   } > "$summary"
   step_pass "run summary written → $summary"
 
-  # Artifact structural checks.
-  [ -n "$WALK_C1_WORK_PACKAGE" ] && assert_artifact_has_sections "$WALK_C1_WORK_PACKAGE" \
-    '^## (user story|acceptance criteria|overview|problem|goals?|scope)'
-  [ -n "$WALK_C1_ADR" ] && assert_artifact_has_sections "$WALK_C1_ADR" \
-    '^## context' '^## (options|decision)'
-  [ -n "$WALK_C1_DESIGN_SPEC" ] && assert_artifact_has_sections "$WALK_C1_DESIGN_SPEC" \
-    '^## (interface|props|interactions|edge cases|test plan|components|behavior)'
+  # Artifact structural + content checks.
+  if [ -n "$WALK_C1_WORK_PACKAGE" ]; then
+    assert_artifact_has_sections "$WALK_C1_WORK_PACKAGE" \
+      '^## (user story|acceptance criteria|overview|problem|goals?|scope)'
+    assert_file_contains_at_least "$WALK_C1_WORK_PACKAGE" 1 \
+      "work package: ≥1 user story ('As a ...')" '^[[:space:]]*([-*][[:space:]]+)?\*{0,2}As an? [a-zA-Z]'
+    assert_file_contains_at_least "$WALK_C1_WORK_PACKAGE" 1 \
+      "work package: ≥1 acceptance criterion" '^[[:space:]]*([-*][[:space:]]+(\[[ xX]\])?|[0-9]+\.)[[:space:]]'
+  fi
+  if [ -n "$WALK_C1_ADR" ]; then
+    assert_artifact_has_sections "$WALK_C1_ADR" \
+      '^## context' '^## (options|decision)'
+    assert_file_contains_at_least "$WALK_C1_ADR" 2 \
+      "ADR: ≥2 options considered" '\*\*[A-Z]\.[[:space:]]|^#{2,4}[[:space:]]+(Option|Alternative|Approach|Choice)[[:space:]]+[A-Z0-9]|^[-*][[:space:]]+\*{0,2}(Option|Alternative|Approach|Choice)[[:space:]]+[A-Z0-9]'
+  fi
+  if [ -n "$WALK_C1_DESIGN_SPEC" ]; then
+    assert_artifact_has_sections "$WALK_C1_DESIGN_SPEC" \
+      '^## (interface|props|inputs|api)' \
+      '^## (interactions|behavior|flow)' \
+      '^## (edge cases|error|states|failure)' \
+      '^## (test plan|tests|testing|test cases)'
+  fi
   if [ -n "$WALK_C1_REVIEW_REPORT" ]; then
-    if grep -iqE '(severity|critical|high|medium|low|finding)' "$WALK_C1_REVIEW_REPORT"; then
-      step_pass "review report mentions severity/findings"
-    else
-      divergence "$WALK_LESSON_NAME" "review report has no severity/finding markers"
-    fi
+    assert_file_contains_at_least "$WALK_C1_REVIEW_REPORT" 1 \
+      "review report: ≥1 severity-tagged finding" '\b(critical|high|medium|low)\b.*[:\-]|severity[^a-z]*(critical|high|medium|low)'
   fi
   if [ -n "$WALK_C1_RELEASE_GATE" ]; then
-    if grep -iqE '\b(PASS|FAIL|approve|reject|blocked|ship|no-ship)\b' "$WALK_C1_RELEASE_GATE"; then
-      step_pass "release gate has explicit verdict"
-    else
-      divergence "$WALK_LESSON_NAME" "release gate has no PASS/FAIL verdict"
-    fi
+    assert_file_contains_at_least "$WALK_C1_RELEASE_GATE" 1 \
+      "release gate: explicit PASS/FAIL verdict" '\b(PASS|FAIL|APPROVE|REJECT|NO-SHIP|SHIP)\b'
   fi
 
   save_state WALK_C1_WORK_PACKAGE WALK_C1_ADR WALK_C1_DESIGN_SPEC \
