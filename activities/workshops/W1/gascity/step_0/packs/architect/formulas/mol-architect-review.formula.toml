@@ -9,7 +9,8 @@ skill to keep ADRs in sync with generated CLAUDE.md/AGENTS.md files.
 
 1. Caller slings with a bead id (passed implicitly via `bd mol current`).
 2. Architect reads steps, executes each in order.
-3. On completion, child beads labelled `needs-pm` exist for the pm.
+3. On completion, a child bead labelled `needs-design` ALWAYS exists for the designer.
+   The designer decides whether to design or fast-path to `needs-pm`.
 
 ## Variables
 
@@ -274,17 +275,17 @@ git commit -m "actual-architect: add rule for {{topic}} (refs $ROOT_ID)"
 
 [[steps]]
 id = "handoff"
-title = "Create downstream work beads and hand off to pm"
+title = "Create downstream work beads and hand off to designer"
 needs = ["rules"]
 description = """
-Convert the architectural decision into concrete next-action beads
-for the pm.
+Convert the architectural decision into a design bead. The designer
+decides whether to design or fast-path to pm.
 
-**1. For each implication of the new rule, create a child bead:**
+**1. For each implication of the architecture, create a child bead:**
 ```bash
 CHILD_ID=$(bd create \\
-    --title "<concrete implication>" \\
-    --label needs-pm \\
+    --title "<concrete task implied by the architecture>" \\
+    --label needs-design \\
     --label source:actual-architect \\
     --notes "Derived from {{topic}} architecture. See docs/architecture/{{topic}}.md and docs/rules/{{topic}}.md" \\
     --json | jq -r '.id')
@@ -296,12 +297,15 @@ bd dep add $CHILD_ID --blocked-by $ROOT_ID
 bd close $ROOT_ID --reason "architecture complete, see docs/architecture/{{topic}}.md"
 ```
 
-**3. The pm picks up work automatically:**
+**3. Notify the designer:**
 ```bash
-# Mail the pm so it wakes and picks up the needs-pm beads.
-gc mail send pm "Handoff: rule {{topic}} published, child beads labelled needs-pm"
+gc mail send designer "Handoff: {{topic}} architecture complete, child beads labelled needs-design"
 ```
 
+**ROUTING RULE:** The architect ONLY creates `needs-design` beads. Do NOT
+create `needs-pm` or `ready-to-build` beads. The designer owns all
+decisions after architecture.
+
 **Exit criteria:** Root bead closed, at least one child bead created
-with `needs-pm` label.
+with `needs-design` label, designer notified.
 """
