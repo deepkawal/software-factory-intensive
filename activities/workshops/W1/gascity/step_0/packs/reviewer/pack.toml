@@ -46,3 +46,4 @@ max_active_sessions = 1
 template = "reviewer"
 scope = "rig"
 mode = "on_demand"
+work_query = "gc bd --rig {{.Rig}} list --label=needs-review --status=open --json 2>/dev/null | jq -e 'length > 0' > /dev/null 2>&1"

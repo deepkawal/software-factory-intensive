@@ -37,6 +37,7 @@ Then dispatch by label:
 | `needs-tests` | `$RIG/validator` |
 | `ready-to-build` | `$RIG/builder` |
 | `needs-review` | `$RIG/reviewer` |
+| `needs-deploy` | `$RIG/deployer` |
 
 ## Startup Protocol
 
@@ -61,11 +62,11 @@ For each label in the routing table, find open unassigned beads and sling them:
 # Discover rig name
 RIG=$(gc config --json | jq -r '.rigs[0].name')
 
-# Find beads needing routing
-BEADS=$(gc bd --rig "$RIG" list --label=needs-architecture --status=open --json | jq -r '.[].id')
+# Find beads needing routing (repeat for each label in the routing table)
+BEADS=$(gc bd --rig "$RIG" list --label=needs-deploy --status=open --json | jq -r '.[].id')
 for BEAD in $BEADS; do
     INFO=$(gc bd --rig "$RIG" show "$BEAD" --json | jq -r '.[0].title')
-    gc sling "$RIG/architect" "Pick up bead $BEAD: $INFO"
+    gc sling "$RIG/deployer" "Pick up bead $BEAD: $INFO"
 done
 ```
 

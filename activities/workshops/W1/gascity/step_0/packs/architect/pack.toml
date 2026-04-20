@@ -51,3 +51,4 @@ max_active_sessions = 1
 template = "architect"
 scope = "rig"
 mode = "on_demand"
+work_query = "gc bd --rig {{.Rig}} list --label=needs-architecture --status=open --json 2>/dev/null | jq -e 'length > 0' > /dev/null 2>&1"
