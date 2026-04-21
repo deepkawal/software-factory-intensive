@@ -46,8 +46,7 @@ lesson_run() {
   # L2 gets its own factory + rig under a per-lesson subdir so scratch
   # hygiene stays clean when lessons chain in time even if not in state.
   WALK_L2_SCRATCH="$WALK_SCRATCH/L2"
-  export TMUX_TMPDIR="$WALK_L2_SCRATCH/tmux"
-  mkdir -p "$TMUX_TMPDIR"
+  # See my-factory.sh — do NOT set TMUX_TMPDIR under 1.0 launchd supervisor.
   unset GC_SESSION GC_BEADS GC_DOLT 2>/dev/null || true
   step_pass "scratch tree $WALK_L2_SCRATCH"
 
@@ -58,12 +57,13 @@ lesson_run() {
   cp "$WALK_REPO_ROOT/my-factory/pack.toml.template" "$WALK_L2_FACTORY/pack.toml"
   cp "$WALK_REPO_ROOT/my-factory/city.toml.template" "$WALK_L2_FACTORY/city.toml"
   ln -s "$WALK_REPO_ROOT/packs" "$WALK_L2_SCRATCH/packs"
+  WALK_L2_CITY_NAME="sfi-walkthrough-L2-$run_id"
+  sed -i '' "s|^name = \"my-factory\"$|name = \"$WALK_L2_CITY_NAME\"|" "$WALK_L2_FACTORY/city.toml"
   step_pass "templates copied + packs symlinked at $WALK_L2_FACTORY"
   save_state WALK_L2_FACTORY
 
   echo
   echo "[4/9] gc register L2 factory"
-  WALK_L2_CITY_NAME="sfi-walkthrough-L2-$run_id"
   local register_out
   register_out="$(cd "$WALK_L2_FACTORY" && gc register --name "$WALK_L2_CITY_NAME" . 2>&1)"
   log "gc register output (first 10 lines):"

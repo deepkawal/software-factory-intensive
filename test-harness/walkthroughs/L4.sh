@@ -58,8 +58,7 @@ lesson_run() {
   echo
   echo "[2/14] scratch setup"
   WALK_L4_SCRATCH="$WALK_SCRATCH/L4"
-  export TMUX_TMPDIR="$WALK_L4_SCRATCH/tmux"
-  mkdir -p "$TMUX_TMPDIR"
+  # See my-factory.sh — do NOT set TMUX_TMPDIR under 1.0 launchd supervisor.
   unset GC_SESSION GC_BEADS GC_DOLT 2>/dev/null || true
   step_pass "scratch tree $WALK_L4_SCRATCH"
 
@@ -69,13 +68,14 @@ lesson_run() {
   mkdir -p "$WALK_L4_FACTORY"
   cp "$WALK_REPO_ROOT/my-factory/pack.toml.template" "$WALK_L4_FACTORY/pack.toml"
   cp "$WALK_REPO_ROOT/my-factory/city.toml.template" "$WALK_L4_FACTORY/city.toml"
+  WALK_L4_CITY_NAME="sfi-walkthrough-L4-$run_id"
+  sed -i '' "s|^name = \"my-factory\"$|name = \"$WALK_L4_CITY_NAME\"|" "$WALK_L4_FACTORY/city.toml"
   ln -s "$WALK_REPO_ROOT/packs" "$WALK_L4_SCRATCH/packs"
   step_pass "templates copied + packs symlinked"
   save_state WALK_L4_FACTORY
 
   echo
   echo "[4/14] gc register L4 factory"
-  WALK_L4_CITY_NAME="sfi-walkthrough-L4-$run_id"
   local register_out
   register_out="$(cd "$WALK_L4_FACTORY" && gc register --name "$WALK_L4_CITY_NAME" . 2>&1)"
   if echo "$register_out" | grep -q "Registered city '$WALK_L4_CITY_NAME'"; then

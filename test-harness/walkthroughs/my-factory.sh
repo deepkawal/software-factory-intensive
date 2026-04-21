@@ -43,11 +43,14 @@ lesson_run() {
 
   echo
   echo "[2/8] scratch setup"
-  export TMUX_TMPDIR="$WALK_SCRATCH/tmux"
-  mkdir -p "$TMUX_TMPDIR"
+  # Deliberately do NOT override TMUX_TMPDIR — the 1.0 launchd supervisor
+  # spawns tmux from its own plist environment. If our shell sets
+  # TMUX_TMPDIR it leaks into `gc sling`/`gc restart` calls and the
+  # supervisor's reconciler loses track of the resulting tmux sessions,
+  # manifesting as `reaped stale session bead` + repeated respawns.
   # Clear gc env caches so the scratch factory gets fresh resolution.
   unset GC_SESSION GC_BEADS GC_DOLT 2>/dev/null || true
-  step_pass "scratch tree $WALK_SCRATCH  TMUX_TMPDIR=$TMUX_TMPDIR"
+  step_pass "scratch tree $WALK_SCRATCH"
 
   echo
   echo "[3/8] copy my-factory templates"
@@ -55,6 +58,11 @@ lesson_run() {
   mkdir -p "$WALK_FACTORY"
   cp "$WALK_REPO_ROOT/my-factory/pack.toml.template" "$WALK_FACTORY/pack.toml"
   cp "$WALK_REPO_ROOT/my-factory/city.toml.template" "$WALK_FACTORY/city.toml"
+  # 1.0 RC1 halts the controller silently when `gc register --name X` produces
+  # a name different from `workspace.name` in city.toml. Pre-substitute the
+  # registered name into the template so the two agree from the start.
+  WALK_CITY_NAME="sfi-walkthrough-$run_id"
+  sed -i '' "s|^name = \"my-factory\"$|name = \"$WALK_CITY_NAME\"|" "$WALK_FACTORY/city.toml"
   # pack.toml.template refers to "../packs" — symlink the repo's packs
   # so the relative path resolves from the scratch factory dir.
   ln -s "$WALK_REPO_ROOT/packs" "$WALK_SCRATCH/packs"
@@ -184,6 +192,13 @@ lesson_run() {
   fi
   step_pass "bd create filed bead: $WALK_MYFACTORY_BEAD_ID"
   save_state WALK_MYFACTORY_BEAD_ID
+
+  # 1.0 RC1 no longer auto-routes beads from label alone — scaleCheck
+  # only scales templates that already have an assigned bead. Explicitly
+  # sling to the architect to kick the pipeline off.
+  log "sling rig-$WALK_MYFACTORY_BEAD_ID → rig/architect.architect:"
+  (cd "$WALK_FACTORY" && gc sling --nudge rig/architect.architect "$WALK_MYFACTORY_BEAD_ID" 2>&1) \
+    | head -6 | sed 's/^/    /' | tee -a "$WALK_LOG"
 
   # We USED to wait here for the architect's session state to show
   # 'active' before checking for work. That was a mistake: polling every
