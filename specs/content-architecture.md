@@ -20,9 +20,10 @@ create labelled bead -> order scans label -> helper command wakes downstream ->
 agent prompt polls label -> formula relabels bead -> repeat
 ```
 
-This spec optimizes for teaching. Shared reusable packs may still exist for
-maintainers, references, and future production use, but they should not be the
-main runtime surface for lessons.
+This spec optimizes for teaching. The old shared/manual/label pack topology is
+not a reference architecture to preserve in active repo paths. Git history is
+the archive for that version of the material. The active repository should move
+to self-contained lesson packs and formula-native content.
 
 ## Teaching Goals
 
@@ -35,6 +36,7 @@ The content should make these concepts obvious in this order:
 5. Routing is defined by the formula and pack configuration.
 6. Beads are the runtime records of work.
 7. Labels are metadata for search, provenance, reporting, and human triage.
+8. The same project rig carries artifacts forward across lessons.
 
 The curriculum should minimize CLI surface area until the student has a reason
 to learn more. The pack should carry defaults; students should not have to pass
@@ -109,6 +111,11 @@ builder agents, L3 contains its own copies of those definitions.
 
 This duplication is intentional. Students should be able to open one folder and
 understand the entire factory they are about to run.
+
+Students should keep the same project rig across lessons. L2 creates early
+planning and architecture artifacts, L3 consumes and extends them through
+design/build work, L4 reviews and release-checks the same project history, and
+C1 runs an end-to-end feature against the accumulated rig state.
 
 ## PackV2 Implementation Facts
 
@@ -186,7 +193,7 @@ The teaching progression should add one concept at a time:
 
 - first formula lesson: `version = 2`, `contract = "graph.v2"`, simple steps
 - dependency lesson: `needs = [...]`
-- multi-agent lesson: `metadata = { "gc.run_target" = "planner" }`
+- multi-agent lesson: `metadata = { "gc.run_target" = "lesson.planner" }`
 - larger workflow lesson: `children` only if grouping makes the graph clearer
 - validation/retry lesson: `check` or `retry` only if the lesson explicitly
   teaches runtime validation
@@ -197,8 +204,8 @@ advice, scopes, cleanup controls, or dispatcher internals in the first pass.
 Those are advanced Gas City features, not prerequisites for understanding
 packs, formulas, agents, and beads.
 
-FormulaV1 can remain in historical or legacy reference material, but no active
-student lesson should require students to author new FormulaV1 files.
+FormulaV1 should not remain in active student-path material. Git history is the
+archive for old FormulaV1 examples.
 
 ## Lesson Pack Contract
 
@@ -375,25 +382,25 @@ description = "Run the L3 factory from feature request to implemented change."
 [[steps]]
 id = "plan"
 title = "Break the feature into implementation work"
-metadata = { "gc.run_target" = "planner" }
+metadata = { "gc.run_target" = "lesson.planner" }
 
 [[steps]]
 id = "architecture"
 title = "Choose the technical approach"
 needs = ["plan"]
-metadata = { "gc.run_target" = "architect" }
+metadata = { "gc.run_target" = "lesson.architect" }
 
 [[steps]]
 id = "design"
 title = "Design the UI and interaction changes"
 needs = ["architecture"]
-metadata = { "gc.run_target" = "designer" }
+metadata = { "gc.run_target" = "lesson.designer" }
 
 [[steps]]
 id = "build"
 title = "Implement the approved design"
 needs = ["design"]
-metadata = { "gc.run_target" = "builder" }
+metadata = { "gc.run_target" = "lesson.builder" }
 ```
 
 Use formula features before shell workarounds:
@@ -436,7 +443,7 @@ The pack should capture as much as possible so the student command is short.
 Preferred:
 
 ```bash
-gc sling <rig>/planner "Build user profile editing"
+gc sling <rig>/lesson.planner "Build user profile editing"
 ```
 
 This is the target when `default_sling_formula` is configured on the entry
@@ -445,14 +452,14 @@ agent.
 Acceptable when the lesson needs explicit formula attachment:
 
 ```bash
-gc sling <rig>/planner "Build user profile editing" --on mol-l3-factory
+gc sling <rig>/lesson.planner "Build user profile editing" --on mol-l3-factory
 ```
 
 Avoid as the normal student path:
 
 ```bash
 bd create --title "Build user profile editing" --label needs-plan
-gc sling --nudge <rig>/planner <bead-id>
+gc sling --nudge <rig>/lesson.planner <bead-id>
 ```
 
 That path teaches bead creation, stage labels, and explicit routing before the
@@ -481,6 +488,47 @@ Students switch lessons by editing the city root `my-factory/pack.toml`:
 ```toml
 [defaults.rig.imports.lesson]
 source = "../packs/lessons/L3"
+```
+
+This is city-wide active lesson selection. It is the source of truth for which
+lesson factory should be active across the city.
+
+The agents inside each lesson pack remain rig-scoped:
+
+```toml
+scope = "rig"
+```
+
+With the import binding named `lesson`, students address lesson agents as
+`<rig>/lesson.<agent>`, for example:
+
+```bash
+gc sling <rig>/lesson.planner "Build user profile editing"
+```
+
+Current Gas City copies root default rig imports into a rig when `gc rig add`
+creates that rig. Because students keep the same rig from lesson to lesson, the
+docs and harness must include an existing-rig sync step after changing the
+active lesson. The synced rig import should match the city-wide lesson
+selection:
+
+```toml
+[rigs.imports.lesson]
+source = "../packs/lessons/L3"
+```
+
+Student-facing docs should make that sync concrete. For L2, where the rig may
+not yet have a lesson import:
+
+```bash
+gc --rig <rig> import add ../packs/lessons/L2 --name lesson
+```
+
+For L3 and later, where the same rig already has a previous lesson import:
+
+```bash
+gc --rig <rig> import remove lesson
+gc --rig <rig> import add ../packs/lessons/L3 --name lesson
 ```
 
 If a lesson must expose city-scope commands, add an explicit city import as a
@@ -556,7 +604,7 @@ Better lesson-default pattern:
 [[steps]]
 id = "review"
 needs = ["build"]
-metadata = { "gc.run_target" = "reviewer" }
+metadata = { "gc.run_target" = "lesson.reviewer" }
 ```
 
 ## Commands
@@ -565,7 +613,7 @@ Commands are allowed, but they should be optional convenience.
 
 Good command uses:
 
-- `gc lesson status`
+- lesson-local graph status
 - show lesson artifacts
 - reset lesson scratch files
 - import demo tickets
@@ -573,6 +621,7 @@ Good command uses:
 Bad command use:
 
 - scan labels and wake downstream agents
+- report only label queues as lesson status
 - implement the workflow scheduler
 - hide required behavior outside formulas
 
@@ -662,8 +711,8 @@ Minimum formula graph:
 
 | step id | needs | `gc.run_target` |
 | --- | --- | --- |
-| `plan` | none | `planner` |
-| `architecture` | `plan` | `architect` |
+| `plan` | none | `lesson.planner` |
+| `architecture` | `plan` | `lesson.architect` |
 
 ### L3
 
@@ -680,10 +729,10 @@ Minimum formula graph:
 
 | step id | needs | `gc.run_target` |
 | --- | --- | --- |
-| `plan` | none | `planner` |
-| `architecture` | `plan` | `architect` |
-| `design` | `architecture` | `designer` |
-| `build` | `design` | `builder` |
+| `plan` | none | `lesson.planner` |
+| `architecture` | `plan` | `lesson.architect` |
+| `design` | `architecture` | `lesson.designer` |
+| `build` | `design` | `lesson.builder` |
 
 ### L4
 
@@ -702,12 +751,12 @@ Minimum formula graph:
 
 | step id | needs | `gc.run_target` |
 | --- | --- | --- |
-| `plan` | none | `planner` |
-| `architecture` | `plan` | `architect` |
-| `design` | `architecture` | `designer` |
-| `build` | `design` | `builder` |
-| `review` | `build` | `reviewer` |
-| `release-check` | `review` | `release-gate` |
+| `plan` | none | `lesson.planner` |
+| `architecture` | `plan` | `lesson.architect` |
+| `design` | `architecture` | `lesson.designer` |
+| `build` | `design` | `lesson.builder` |
+| `review` | `build` | `lesson.reviewer` |
+| `release-check` | `review` | `lesson.release-gate` |
 
 ### W3
 
@@ -758,13 +807,13 @@ Minimum formula graph:
 
 | step id | needs | `gc.run_target` |
 | --- | --- | --- |
-| `plan` | none | `planner` |
-| `architecture` | `plan` | `architect` |
-| `design` | `architecture` | `designer` |
-| `build` | `design` | `builder` |
-| `validate` | `build` | `validator` |
-| `review` | `validate` | `reviewer` |
-| `release` | `review` | `release-gate` |
+| `plan` | none | `lesson.planner` |
+| `architecture` | `plan` | `lesson.architect` |
+| `design` | `architecture` | `lesson.designer` |
+| `build` | `design` | `lesson.builder` |
+| `validate` | `build` | `lesson.validator` |
+| `review` | `validate` | `lesson.reviewer` |
+| `release` | `review` | `lesson.release-gate` |
 
 ## Migration Path
 
@@ -778,7 +827,8 @@ Minimum formula graph:
 7. Rework W1-W4 around the same architecture.
 8. Remove `packs/all`, label handoff, and activity override instructions from
    the primary student path.
-9. Keep reusable leaf packs only as reference or compatibility material.
+9. Delete or replace the old shared/manual/label pack topology from active repo
+   paths; git history is the archive.
 
 ## Maintenance Checks
 
@@ -797,7 +847,7 @@ rg 'gc all wake-downstream|bd ready --label|bd create .*--labels?|needs-plan|nee
   curriculum activities activites packs/lessons my-factory
 ```
 
-Allowed matches should be explicit historical comparison callouts only.
+Expected result: no active lesson-path matches.
 
 Search for FormulaV1 in active lesson packs:
 
@@ -831,7 +881,8 @@ This architecture is successful when:
 - each runtime lab can run from a single lesson pack
 - students can inspect one folder and see all runtime definitions for that lab
 - FormulaV2 is enabled once in `my-factory/city.toml`
-- switching lessons requires one documented import edit in `my-factory/pack.toml`
+- switching lessons uses city-wide selection in `my-factory/pack.toml` plus an
+  existing-rig sync step for the same project rig
 - starting a lesson requires one simple `gc sling` command
 - active lesson formulas use `version = 2` and `contract = "graph.v2"`
 - lesson packs do not depend on `packs/all`
@@ -845,13 +896,12 @@ This architecture is successful when:
 
 This spec does not require:
 
-- deleting shared packs immediately
 - renaming `activites/`
 - fixing upstream Gas City command exposure
 - fixing upstream skill materialization
 - using every FormulaV2 feature in the first formula lesson
-- rewriting every legacy/reference formula in one pass
+- performing the full migration in one atomic commit
 
 The first concrete step is to make lesson-pack composition explicit and
-self-contained. Active lesson formulas should be FormulaV2; legacy/reference
-formula cleanup can then happen lesson by lesson.
+self-contained. Active lesson formulas should be FormulaV2; old FormulaV1 and
+label-dispatch material should leave active repo paths as each lesson migrates.
