@@ -335,12 +335,28 @@ they should match the FormulaV2 output format students see.
 New direction: define W3 as a FormulaV2 graph design activity and update
 reference artifacts alongside the lesson formulas that produce them.
 
+### 18. Workshops are still on the old architecture
+
+W1-W4 are active content, not optional extras. The current workshop material
+still points students at shared leaf packs, old prompt-template paths,
+label-triggered coordination, `orchestrator.yaml`, copied activity packs, and
+old `city.toml` wiring.
+
+New direction: migrate every workshop to the same content architecture. W1 and
+W2 may remain design-only, but their examples and deliverables must point
+forward to self-contained lesson packs and FormulaV2 graphs. W3 becomes a
+FormulaV2 coordination design workshop. W4 updates active lesson-pack prompt
+copies and manifests, not shared shipped packs or activity overrides.
+
 ## Full Implementation Scope
 
 This port is not complete when the docs merely describe a better architecture.
 It is complete only when the repository's runnable materials behave that way.
 
-The migration must update all active file families:
+The migration must update all active file families. "Active" includes every
+workshop, lab, capstone, curriculum mirror, activity page, reference artifact,
+pack, factory config, and test harness that a student or instructor can reach
+from the main repo path.
 
 - canonical packs under `packs/`
 - new self-contained lesson packs under `packs/lessons/`
@@ -415,13 +431,22 @@ packs/lessons/
 ```
 
 Add W packs only where the workshop has a runnable factory experience that is
-cleared by a pack:
+cleared by a pack, but migrate every workshop's Markdown either way:
 
 ```text
 packs/lessons/
+  W1/
+  W2/
   W3/
   W4/
 ```
+
+W1 and W2 may stay design-only with no runtime pack if their rewritten
+deliverables do not require running Gas City. W3 and W4 must either use a
+self-contained workshop pack or be explicitly written as design/config
+exercises whose runtime effects happen in the active lab/capstone lesson pack.
+No workshop may continue to teach shared leaf packs, label-driven handoff,
+`orchestrator.yaml` as the primary workflow engine, or `default_rig_includes`.
 
 Each lesson pack is the factory for that lesson. It must contain:
 
@@ -434,6 +459,43 @@ Each lesson pack is the factory for that lesson. It must contain:
 
 Lesson packs must not import other packs. Duplication is intentional. Students
 should be able to open one folder and understand the whole runnable lesson.
+
+### Prompt rewrite workstream
+
+Prompt rewrites are a major authoring task, not a small config cleanup. The
+current repository has 8 canonical role prompts under `packs/*/agents/*/` and
+9 checkpoint prompt copies under `activites/`. Self-contained L2/L3/L4/C1
+lesson packs add at least 19 lesson prompt files if each lesson carries local
+copies of the roles it teaches:
+
+| lesson | local role prompts |
+| --- | --- |
+| L2 | planner, architect |
+| L3 | planner, architect, designer, builder |
+| L4 | planner, architect, designer, builder, reviewer, release-gate |
+| C1 | planner, architect, designer, builder, validator, reviewer, release-gate |
+
+That puts the prompt rewrite scope at roughly 27 prompt files before any W3/W4
+runtime packs, and 32+ files if workshop packs or canonical reference packs are
+kept formula-native. Assign prompt rewriting explicitly in each lesson phase.
+
+Every rewritten prompt should adapt this shared graph-worker-style structure:
+
+1. `Role`: role-specific responsibility, authority, and quality bar.
+2. `Inputs`: current formula step, current bead, upstream artifacts, project
+   files, and lesson context to inspect.
+3. `Graph Work Process`: inspect assigned/routed work, execute only the current
+   formula step, write the expected artifact, and avoid creating downstream
+   stage beads or labels.
+4. `Output Format`: artifact paths, summary, decisions, risks, and handoff
+   notes expected by the next formula step.
+5. `Close Behavior`: close the current step when complete, record useful
+   metadata or review findings, do not relabel the bead, and do not run
+   `gc all wake-downstream`.
+
+Keep persona and role-specific guidance inside that scaffold. Do not let each
+implementer invent a different work loop for planner, architect, builder,
+reviewer, or release-gate prompts.
 
 ### Canonical packs
 
@@ -584,10 +646,15 @@ Required doc updates:
   teach lesson packs as the runtime surface
 - `activities/labs/*/README.md`: rewrite step-by-step lab commands around the
   active lesson pack and its formula
+- `activities/workshops/W1/README.md`: keep design-only if appropriate, but map
+  the workflow card to the shared graph-worker prompt sections and future
+  lesson-pack prompts
+- `activities/workshops/W2/README.md`: replace shipped leaf-pack mapping with
+  a self-contained lesson-pack and FormulaV2 graph wiring table
 - `activities/workshops/W3/README.md`: replace `orchestrator.yaml` as the main
   artifact with formula graph design or make it an explicit comparison
 - `activities/workshops/W4/README.md`: update feedback/improvement flow to use
-  formula-native handoff
+  active lesson-pack prompt copies and formula-native handoff
 - `activities/capstone/C1/README.md`: replace six manual stage beads with one
   capstone request and formula-driven stages
 - `curriculum/**/README.md` and `curriculum/**/PROMPT.md`: mirror the activity
@@ -632,6 +699,8 @@ The dry-run should also verify positive structure:
 - every lesson pack has its local agents and formulas
 - every multi-agent lesson formula uses graph dependencies and
   `metadata."gc.run_target"`
+- every lesson prompt contains the shared sections: `Role`, `Inputs`,
+  `Graph Work Process`, `Output Format`, and `Close Behavior`
 - every lesson README contains the one-command sling entrypoint
 - every lesson's expected artifacts are named consistently between docs,
   formulas, and tests
@@ -716,15 +785,20 @@ packs/
     C1/
 ```
 
-Not every conceptual workshop needs a full runtime factory immediately. The
-first migration should prioritize runtime-heavy lessons:
+Every workshop is migration scope. Not every conceptual workshop needs a full
+runtime factory, but every workshop must be rewritten to match this content
+architecture. The first implementation pass should prioritize runtime-heavy
+lessons, then sweep the design workshops:
 
 1. `L2`
 2. `L3`
 3. `L4`
 4. `C1`
-5. `W3` if the coordination exercise remains runtime-backed
-6. the remaining workshops/labs as needed
+5. `W3`
+6. `W4`
+7. `W2`
+8. `W1`
+9. `L1`
 
 Each lesson pack is self-contained:
 
@@ -1083,6 +1157,8 @@ Requirements:
 - formulas express the lesson workflow with graph steps and route metadata
 - prompts describe formula-routed work instead of label polling
 - scripts inspect or validate formula state instead of dispatching labels
+- L2 planner and architect prompts are rewritten from the shared prompt
+  structure, not copied with label-polling behavior
 
 Use this lesson to validate the PackV2 and FormulaV2 teaching shape before
 duplicating work across L3/L4/C1.
@@ -1129,6 +1205,7 @@ For each lesson, update all three layers in the same change:
 - pack and scripts
 - Markdown lesson content
 - dry-run and walkthrough coverage
+- local prompt copies for every role in the lesson graph
 
 Also update `reference-project/` artifacts in the same phase when a lesson's
 formula output contract changes.
@@ -1141,7 +1218,8 @@ them out of the active teaching path.
 Required work includes deleting stale material, not just editing it in place:
 
 - `packs/*/agents/*/agent.toml`: formula-native nudges/default formulas
-- `packs/*/agents/*/prompt.template.md`: no label-polling loops
+- `packs/*/agents/*/prompt.template.md`: adapt the shared graph-worker prompt
+  structure; no label-polling loops
 - `packs/*/formulas/*.toml`: graph/routing/dependency flow
 - `packs/*/orders/*.toml`: external triggers only, not stage queues
 - `packs/*/commands/*/run.sh`: status/inspection only, not handoff
@@ -1170,7 +1248,38 @@ Recommended teaching move:
 Keep `orchestrator.yaml` only as a comparison artifact if the lesson explicitly
 contrasts external orchestration with formula-native orchestration.
 
-### Phase 7: Rewrite The Markdown Surface
+### Phase 7: Rework The Remaining Workshops
+
+Rewrite W1, W2, and W4 so all workshops match the same architecture.
+
+W1:
+
+- keep it design-only unless a runtime exercise is added
+- map the workflow card to the shared prompt sections: `Role`, `Inputs`,
+  `Graph Work Process`, `Output Format`, and `Close Behavior`
+- update references from shared pack prompts to active lesson-pack prompt copies
+- remove any downstream framing that says W3/W4 are orchestrator or label
+  systems
+
+W2:
+
+- replace shipped leaf-pack mapping with a self-contained lesson-pack wiring
+  model
+- make the deliverable a table of roles, FormulaV2 graph steps, artifacts, and
+  lesson-local prompt paths
+- remove claims that L2 installs shared packs through `city.toml`
+
+W4:
+
+- feedback rules target the active lesson pack prompt copy, project manifest, or
+  formula artifact contract
+- reactive and aggregate loops are config changes followed by re-slinging the
+  lesson formula
+- external loops start a new formula run through the lesson entrypoint
+- remove `default_rig_includes`, copied activity-pack, and old prompt-path
+  guidance
+
+### Phase 8: Rewrite The Markdown Surface
 
 After lesson packs exist, rewrite or quarantine student-facing references to:
 
@@ -1185,7 +1294,7 @@ After lesson packs exist, rewrite or quarantine student-facing references to:
 This phase covers `README.md`, `activities/`, `curriculum/`, `my-factory/`,
 `packs/`, `reference-project/`, and `test-harness/README.md`.
 
-### Phase 8: Update Dry-Run And Walkthrough Harness
+### Phase 9: Update Dry-Run And Walkthrough Harness
 
 Rewrite harness expectations to enforce the new architecture:
 
@@ -1195,7 +1304,7 @@ Rewrite harness expectations to enforce the new architecture:
 - behavioral smoke proves formula handoff, not label handoff
 - harness docs explain formula-native validation
 
-### Phase 9: Clean Checkpoints And Legacy References
+### Phase 10: Clean Checkpoints And Legacy References
 
 Freeze `activites/` checkpoints as historical now; later decide whether they
 should be deleted.
@@ -1223,9 +1332,11 @@ Do not use orders as the normal formula step handoff mechanism.
 
 Question: Should every workshop get a runtime pack?
 
-Recommended answer: only when the workshop requires running a factory. Start
-with runtime-heavy labs and capstone. Add workshop packs where they clarify the
-lesson.
+Recommended answer: every workshop must migrate, but not every workshop needs a
+runtime pack. If the workshop runs agents or formulas, give it a
+self-contained pack. If it is design-only, rewrite its deliverable, examples,
+and references so they point to self-contained lesson packs and FormulaV2
+graphs.
 
 Question: Should the capstone still create one bead per stage?
 
@@ -1283,7 +1394,8 @@ The migration is on track when:
 The migration is complete when:
 
 - L2, L3, L4, and C1 each have self-contained lesson packs
-- any runnable W lesson that needs a factory has a self-contained lesson pack
+- W1-W4 are all rewritten to match `specs/content-architecture.md`
+- any workshop that runs a factory has a self-contained lesson pack
 - student docs no longer teach `packs/all` as the main factory
 - capstone starts from one request, not six manually-created stage beads
 - W3 coordination is taught through formulas or an explicit comparison to
@@ -1294,10 +1406,14 @@ The migration is complete when:
   historical and excluded from active lessons
 - all pack scripts, doctors, orders, formulas, and prompts obey the same
   formula-native workflow model
+- all active lesson prompts use the shared graph-worker-style section
+  structure while preserving role-specific guidance
 - all active lesson formulas use FormulaV2 syntax; FormulaV1 appears only in
   legacy/reference material
 - all student-facing Markdown gives accurate, complete, step-by-step commands
   for the active lesson pack
+- all workshop Markdown either has no runtime wiring by design or points to the
+  active self-contained lesson pack model
 - dry-run/static checks enforce the content architecture
 - walkthrough scripts execute the documented steps for every runnable lesson
 - behavioral smoke proves formula graph routing rather than label scanning
@@ -1334,6 +1450,16 @@ rg 'workspace scope|scope = "workspace"|bd dep graph|append_fragments = \["graph
 ```
 
 Expected result: no active student-path matches.
+
+Workshop architecture checks:
+
+```bash
+rg 'orchestrator.yaml|label-based handoff|needs-plan|needs-design|ready-to-build|needs-review|ready-to-ship|prompts/<agent>\\.md\\.tmpl|default_rig_includes|shipped packs' \
+  activities/workshops curriculum/workshops
+```
+
+Expected result: no active workshop-path matches except clearly marked
+historical comparison callouts.
 
 Root factory wiring checks:
 
@@ -1375,6 +1501,18 @@ rg 'version\s*=\s*1' packs/lessons
 ```
 
 Expected result: no matches.
+
+Prompt structure checks:
+
+```bash
+for section in 'Role' 'Inputs' 'Graph Work Process' 'Output Format' 'Close Behavior'; do
+  rg "^# .*${section}|^## .*${section}" packs/lessons/*/agents/*/prompt.template.md
+done
+```
+
+Every active lesson prompt should use the shared section structure. Prompts may
+add role-specific sections, but they should not omit the graph work loop or
+close behavior.
 
 Runtime smoke test for each lesson:
 

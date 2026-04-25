@@ -86,14 +86,22 @@ packs/
     C1/
 ```
 
-Not every conceptual workshop needs a runtime pack immediately. Runtime-heavy
-lessons should move first:
+All active content in this repository is in scope: workshops, labs, capstone,
+curriculum mirrors, activity READMEs, reference artifacts, `my-factory`, packs,
+and harnesses. Some workshops are design-only and do not need a runtime pack,
+but they still must teach the same content architecture and must not preserve
+the old leaf-pack, label-handoff, or `default_rig_includes` model.
+
+Runtime-heavy lessons should move first:
 
 1. `L2`
 2. `L3`
 3. `L4`
 4. `C1`
-5. `W3` if coordination remains a runtime exercise
+5. `W3` formula-design content
+6. `W4` feedback-loop content
+7. `W2` factory-design content
+8. `W1` workflow-card content
 
 Each lesson pack must be self-contained. It must not import earlier lesson packs
 or shared agent leaf packs. If L3 needs planner, architect, designer, and
@@ -309,6 +317,30 @@ Dependency readiness is based on prerequisite beads being closed. A failed or
 request-changes result does not automatically choose a different graph path.
 Branching, retry, or validation behavior must be modeled with explicit
 `check`, `retry`, `condition`, or student-driven re-sling instructions.
+
+### Reference Prompt Structure
+
+Every lesson `agents/<name>/prompt.template.md` should adapt the same
+graph-worker-style structure. Role-specific judgment, taste, and quality bars
+belong inside that structure; the work loop should not be redesigned per agent.
+
+Required sections:
+
+1. `Role`: the agent's lesson role, scope of authority, and quality bar.
+2. `Inputs`: current formula step, current bead, upstream artifacts, project
+   files, and any lesson-specific context the agent should read.
+3. `Graph Work Process`: inspect assigned/routed work, execute only the current
+   step, read prerequisite artifacts, write the expected artifact, and avoid
+   creating downstream stage beads or labels.
+4. `Output Format`: artifact paths, summary, decisions, risks, and handoff
+   notes expected by the next formula step.
+5. `Close Behavior`: close the current step when complete, record useful
+   metadata or review findings, do not relabel the bead, and do not run
+   `gc all wake-downstream`.
+
+Prompts may mention labels only as metadata for search, provenance, or human
+triage. They must not instruct agents to poll label queues, add stage labels, or
+wake downstream agents manually.
 
 ## Formula-Native Workflow
 
@@ -586,6 +618,33 @@ can inspect.
 
 ## Curriculum Guidance
 
+### W1
+
+Teaching focus: single-agent workflow discipline.
+
+Recommended rewrite:
+
+- remains design-only unless a future exercise runs a factory
+- workflow card maps forward to `Role`, `Inputs`, `Graph Work Process`,
+  `Output Format`, and `Close Behavior`
+- references active lesson prompt paths under `packs/lessons/*`, not shared
+  leaf packs as the student runtime surface
+- does not describe W3/W4 as an orchestrator or label system
+
+### W2
+
+Teaching focus: factory design before runtime execution.
+
+Recommended rewrite:
+
+- remains design-only unless paired with a runtime demonstration pack
+- deliverable is a factory wiring table for self-contained lesson packs
+- maps roles to lesson-local agents and FormulaV2 graph steps, not shipped leaf
+  packs
+- names artifact contracts and prompt sections using the shared prompt
+  structure
+- does not tell students that L2 adds shared packs through `city.toml`
+
 ### L2
 
 Teaching focus: first real factory with planner and architect.
@@ -666,6 +725,21 @@ Recommended rewrite:
   student-driven re-sling loop
 - keep `orchestrator.yaml` only as a comparison artifact if useful
 
+### W4
+
+Teaching focus: continuous improvement loops.
+
+Recommended rewrite:
+
+- feedback rules update the active lesson pack prompt copy, manifest, or
+  formula artifact contract
+- rule files name the exact lesson-local prompt path under `packs/lessons/*`
+- reactive and aggregate loops are documented as config changes followed by a
+  re-sling, not as edits to shared shipped packs
+- external loops start a new formula run through the lesson entrypoint
+- no references to `default_rig_includes`, copied activity packs, or old
+  prompt-template paths
+
 ### C1
 
 Teaching focus: end-to-end factory run.
@@ -701,7 +775,7 @@ Minimum formula graph:
 4. Update L2 docs to switch one lesson import and run one `gc sling`.
 5. Validate the runtime on a clean factory.
 6. Repeat for L3, L4, and C1.
-7. Rework W3 around formulas.
+7. Rework W1-W4 around the same architecture.
 8. Remove `packs/all`, label handoff, and activity override instructions from
    the primary student path.
 9. Keep reusable leaf packs only as reference or compatibility material.
