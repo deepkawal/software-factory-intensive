@@ -1,7 +1,7 @@
 [lesson]
 id = "L2"
 pack_dir = "packs/lessons/L2"
-entry_formula = "mol-l2-factory"
+entry_formula = "mol-feature-intake"
 entry_agent = "planner"
 roles = ["planner", "architect"]
 docs = [
@@ -13,11 +13,11 @@ docs = [
 [[steps]]
 id = "plan"
 needs = []
-target = "lesson.planner"
+target = "factory.planner"
 artifact = "docs/plans/<slug>.md"
 
 [[steps]]
 id = "architecture"
 needs = ["plan"]
-target = "lesson.architect"
+target = "factory.architect"
 artifact = "docs/architecture/<slug>.md"

@@ -1,7 +1,7 @@
 [lesson]
 id = "C1"
 pack_dir = "packs/lessons/C1"
-entry_formula = "mol-c1-factory"
+entry_formula = "mol-release-delivery"
 entry_agent = "planner"
 roles = ["planner", "architect", "designer", "builder", "validator", "reviewer", "release-gate"]
 docs = [
@@ -13,41 +13,41 @@ docs = [
 [[steps]]
 id = "plan"
 needs = []
-target = "lesson.planner"
+target = "factory.planner"
 artifact = "docs/plans/<slug>.md"
 
 [[steps]]
 id = "architecture"
 needs = ["plan"]
-target = "lesson.architect"
+target = "factory.architect"
 artifact = "docs/architecture/<slug>.md"
 
 [[steps]]
 id = "design"
 needs = ["architecture"]
-target = "lesson.designer"
+target = "factory.designer"
 artifact = "docs/designs/<slug>.md"
 
 [[steps]]
 id = "build"
 needs = ["design"]
-target = "lesson.builder"
+target = "factory.builder"
 artifact = "implementation commit"
 
 [[steps]]
 id = "validate"
 needs = ["build"]
-target = "lesson.validator"
+target = "factory.validator"
 artifact = "test report"
 
 [[steps]]
 id = "review"
 needs = ["validate"]
-target = "lesson.reviewer"
+target = "factory.reviewer"
 artifact = "docs/reviews/<slug>.md"
 
 [[steps]]
 id = "release"
 needs = ["review"]
-target = "lesson.release-gate"
+target = "factory.release-gate"
 artifact = "docs/releases/<slug>.md"

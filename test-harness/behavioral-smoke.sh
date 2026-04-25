@@ -79,16 +79,16 @@ else
 fi
 
 # --- Check 2: every migrated canonical pack's doctor check appears in output ---
-# Scope limited to canonical packs/ — the smoke factory imports packs/all,
-# packs/fired-up-pizza, and packs/workshop, not the checkpoint trees under
-# activites/. Checkpoint factories are verified by their own smoke tests
-# (see plan's Verification §6).
+# Scope limited to the old canonical pack surface imported by packs/all,
+# packs/fired-up-pizza, and packs/workshop. Self-contained lesson packs under
+# packs/lessons/* are checked by lesson-pack-lint and the per-lesson
+# walkthroughs; they are not imported into this legacy smoke factory.
 echo "[2] every migrated canonical pack's doctor check is present"
 MIGRATED_AGENT_PACKS=()
 while IFS= read -r pack_name; do
   MIGRATED_AGENT_PACKS+=("$pack_name")
 done < <(
-  for pt in $(find packs -name pack.toml 2>/dev/null); do
+  for pt in $(find packs -path 'packs/lessons' -prune -o -name pack.toml -print 2>/dev/null); do
     if grep -q '^schema = 2' "$pt" && [ -d "$(dirname "$pt")/agents" ]; then
       grep -E '^name = ' "$pt" | head -1 | sed -E 's/^name = "([^"]+)".*/\1/'
     fi

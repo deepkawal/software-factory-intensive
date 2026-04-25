@@ -22,11 +22,12 @@ This is the executable form of `specs/content-architecture.md`. It reads
 - a self-contained `packs/lessons/<lesson>/` pack
 - local rig-scoped role agents
 - a FormulaV2 `contract = "graph.v2"` entry formula
-- binding-qualified routes such as `lesson.planner`
+- binding-qualified routes such as `factory.planner`
 - artifact metadata for each graph step
 - graph-worker prompt sections
+- pack runtime files that stay curriculum-blind and portable
 - docs that show city-wide lesson selection, existing-rig import sync, and one
-  `gc sling <rig>/lesson.<agent>` entrypoint
+  `gc sling <rig>/factory.<agent>` entrypoint
 
 It also scans active curriculum paths for old label/manual-pack patterns such
 as `packs/all`, `default_rig_includes`, `bd ready --label`, and

@@ -7,6 +7,13 @@ PackV2 lesson packs. Each lesson pack is a complete, runnable, inspectable
 factory for that lesson, even when that duplicates agents, formulas, prompts,
 skills, and support files from earlier lessons.
 
+The top-level folder or pack name may use the curriculum identifier for
+navigation, such as `packs/lessons/L2` or `name = "sfi-l2"`. Inside that pack,
+runtime definitions must read like a small portable factory someone could take
+home: no agent prompt, formula description, doctor, command, or pack README
+should say it is running "L2", a lesson, a lab, a workshop, or a curriculum
+exercise. That framing belongs in the user-facing tutorials only.
+
 The primary student path should be:
 
 ```text
@@ -155,7 +162,7 @@ Current implementation details that affect lesson design:
 - `assets/` files are opaque resources reached by explicit references; they
   are not auto-wired as lesson behavior.
 - `[defaults.rig.imports]` is implemented in the city root `pack.toml` and is
-  the primary lesson-switching mechanism.
+  the primary active-factory switching mechanism.
 - supported pack scopes are `city` and `rig`.
 - FormulaV2 is still feature-gated by `[daemon] formula_v2 = true`, but this
   curriculum treats that as a permanent city prerequisite, not a per-lesson
@@ -175,7 +182,7 @@ FormulaV2 feature. A simple FormulaV2 formula is only slightly more syntax than
 a simple FormulaV1 formula:
 
 ```toml
-formula = "mol-l2-intake"
+formula = "mol-feature-intake"
 version = 2
 contract = "graph.v2"
 
@@ -193,7 +200,7 @@ The teaching progression should add one concept at a time:
 
 - first formula lesson: `version = 2`, `contract = "graph.v2"`, simple steps
 - dependency lesson: `needs = [...]`
-- multi-agent lesson: `metadata = { "gc.run_target" = "lesson.planner" }`
+- multi-agent lesson: `metadata = { "gc.run_target" = "factory.planner" }`
 - larger workflow lesson: `children` only if grouping makes the graph clearer
 - validation/retry lesson: `check` or `retry` only if the lesson explicitly
   teaches runtime validation
@@ -218,7 +225,7 @@ Every runtime lesson pack should satisfy this contract:
 - uses FormulaV2 syntax for active lesson formulas
 - does not import shared packs
 - does not require `packs/all`
-- has doctor checks for lesson readiness
+- has doctor checks for factory readiness
 - starts from one documented `gc sling` command
 - uses labels only as metadata
 - uses formulas for workflow structure and stage progression
@@ -247,9 +254,9 @@ packs/lessons/L3/
       prompt.template.md
       overlay/
   formulas/
-    mol-l3-factory.toml
+    mol-feature-delivery.toml
   doctor/
-    lesson-ready/
+    factory-ready/
       doctor.toml
       run.sh
   commands/
@@ -275,7 +282,7 @@ make student commands simpler:
 
 ```toml
 [agent_defaults]
-default_sling_formula = "mol-l3-factory"
+default_sling_formula = "mol-feature-delivery"
 ```
 
 Avoid legacy declarations:
@@ -299,7 +306,7 @@ Keep each agent's essential configuration local:
 scope = "rig"
 wake_mode = "fresh"
 max_active_sessions = 1
-default_sling_formula = "mol-l3-factory"
+default_sling_formula = "mol-feature-delivery"
 nudge = "Run gc prime, then work the assigned formula step."
 ```
 
@@ -326,15 +333,15 @@ Branching, retry, or validation behavior must be modeled with explicit
 
 ### Reference Prompt Structure
 
-Every lesson `agents/<name>/prompt.template.md` should adapt the same
+Every runtime `agents/<name>/prompt.template.md` should adapt the same
 graph-worker-style structure. Role-specific judgment, taste, and quality bars
 belong inside that structure; the work loop should not be redesigned per agent.
 
 Required sections:
 
-1. `Role`: the agent's lesson role, scope of authority, and quality bar.
+1. `Role`: the agent's factory role, scope of authority, and quality bar.
 2. `Inputs`: current formula step, current bead, upstream artifacts, project
-   files, and any lesson-specific context the agent should read.
+   files, and any domain or pack-local context the agent should read.
 3. `Graph Work Process`: inspect assigned/routed work, execute only the current
    step, read prerequisite artifacts, write the expected artifact, and avoid
    creating downstream stage beads or labels.
@@ -347,6 +354,11 @@ Required sections:
 Prompts may mention labels only as metadata for search, provenance, or human
 triage. They must not instruct agents to poll label queues, add stage labels, or
 wake downstream agents manually.
+
+Prompts must also be curriculum-blind. Do not tell an agent that it is "the L2
+Planner", "running a workshop", helping "students", or following "lab"
+instructions. The same prompt should make sense if copied into a small real
+project factory.
 
 ## Formula-Native Workflow
 
@@ -373,7 +385,7 @@ that judgment.
 Recommended entry formula:
 
 ```toml
-formula = "mol-l3-factory"
+formula = "mol-feature-delivery"
 version = 2
 contract = "graph.v2"
 description = "Run the L3 factory from feature request to implemented change."
@@ -381,25 +393,25 @@ description = "Run the L3 factory from feature request to implemented change."
 [[steps]]
 id = "plan"
 title = "Break the feature into implementation work"
-metadata = { "gc.run_target" = "lesson.planner" }
+metadata = { "gc.run_target" = "factory.planner" }
 
 [[steps]]
 id = "architecture"
 title = "Choose the technical approach"
 needs = ["plan"]
-metadata = { "gc.run_target" = "lesson.architect" }
+metadata = { "gc.run_target" = "factory.architect" }
 
 [[steps]]
 id = "design"
 title = "Design the UI and interaction changes"
 needs = ["architecture"]
-metadata = { "gc.run_target" = "lesson.designer" }
+metadata = { "gc.run_target" = "factory.designer" }
 
 [[steps]]
 id = "build"
 title = "Implement the approved design"
 needs = ["design"]
-metadata = { "gc.run_target" = "lesson.builder" }
+metadata = { "gc.run_target" = "factory.builder" }
 ```
 
 Use formula features before shell workarounds:
@@ -442,7 +454,7 @@ The pack should capture as much as possible so the student command is short.
 Preferred:
 
 ```bash
-gc sling <rig>/lesson.planner "Build user profile editing"
+gc sling <rig>/factory.planner "Build user profile editing"
 ```
 
 This is the target when `default_sling_formula` is configured on the entry
@@ -451,14 +463,14 @@ agent.
 Acceptable when the lesson needs explicit formula attachment:
 
 ```bash
-gc sling <rig>/lesson.planner "Build user profile editing" --on mol-l3-factory
+gc sling <rig>/factory.planner "Build user profile editing" --on mol-feature-delivery
 ```
 
 Avoid as the normal student path:
 
 ```bash
 bd create --title "Build user profile editing" --label needs-plan
-gc sling --nudge <rig>/lesson.planner <bead-id>
+gc sling --nudge <rig>/factory.planner <bead-id>
 ```
 
 That path teaches bead creation, stage labels, and explicit routing before the
@@ -485,12 +497,12 @@ formula_v2 = true
 Students switch lessons by editing the city root `my-factory/pack.toml`:
 
 ```toml
-[defaults.rig.imports.lesson]
+[defaults.rig.imports.factory]
 source = "../packs/lessons/L3"
 ```
 
 This is city-wide active lesson selection. It is the source of truth for which
-lesson factory should be active across the city.
+factory pack should be active across the city.
 
 The agents inside each lesson pack remain rig-scoped:
 
@@ -498,43 +510,43 @@ The agents inside each lesson pack remain rig-scoped:
 scope = "rig"
 ```
 
-With the import binding named `lesson`, students address lesson agents as
-`<rig>/lesson.<agent>`, for example:
+With the import binding named `factory`, students address the imported agents as
+`<rig>/factory.<agent>`, for example:
 
 ```bash
-gc sling <rig>/lesson.planner "Build user profile editing"
+gc sling <rig>/factory.planner "Build user profile editing"
 ```
 
 Current Gas City copies root default rig imports into a rig when `gc rig add`
 creates that rig. Because students keep the same rig from lesson to lesson, the
 docs and harness must include an existing-rig sync step after changing the
-active lesson. The synced rig import should match the city-wide lesson
+active lesson. The synced rig import should match the city-wide factory
 selection:
 
 ```toml
-[rigs.imports.lesson]
+[rigs.imports.factory]
 source = "../packs/lessons/L3"
 ```
 
 Student-facing docs should make that sync concrete. For L2, where the rig may
-not yet have a lesson import:
+not yet have a factory import:
 
 ```bash
-gc --rig <rig> import add ../packs/lessons/L2 --name lesson
+gc --rig <rig> import add ../packs/lessons/L2 --name factory
 ```
 
-For L3 and later, where the same rig already has a previous lesson import:
+For L3 and later, where the same rig already has a previous factory import:
 
 ```bash
-gc --rig <rig> import remove lesson
-gc --rig <rig> import add ../packs/lessons/L3 --name lesson
+gc --rig <rig> import remove factory
+gc --rig <rig> import add ../packs/lessons/L3 --name factory
 ```
 
 If a lesson must expose city-scope commands, add an explicit city import as a
 separate, documented exception:
 
 ```toml
-[imports.lesson]
+[imports.factory]
 source = "../packs/lessons/L3"
 ```
 
@@ -603,7 +615,7 @@ Better lesson-default pattern:
 [[steps]]
 id = "review"
 needs = ["build"]
-metadata = { "gc.run_target" = "lesson.reviewer" }
+metadata = { "gc.run_target" = "factory.reviewer" }
 ```
 
 ## Commands
@@ -637,7 +649,7 @@ Recommended checks:
 - bead store initialized
 - expected lesson artifact directories writable
 
-Doctor output should teach the pack boundary: "this lesson pack is loaded and
+Doctor output should teach the pack boundary: "this factory pack is loaded and
 ready."
 
 ## Duplication Policy
@@ -710,8 +722,8 @@ Minimum formula graph:
 
 | step id | needs | `gc.run_target` |
 | --- | --- | --- |
-| `plan` | none | `lesson.planner` |
-| `architecture` | `plan` | `lesson.architect` |
+| `plan` | none | `factory.planner` |
+| `architecture` | `plan` | `factory.architect` |
 
 ### L3
 
@@ -728,10 +740,10 @@ Minimum formula graph:
 
 | step id | needs | `gc.run_target` |
 | --- | --- | --- |
-| `plan` | none | `lesson.planner` |
-| `architecture` | `plan` | `lesson.architect` |
-| `design` | `architecture` | `lesson.designer` |
-| `build` | `design` | `lesson.builder` |
+| `plan` | none | `factory.planner` |
+| `architecture` | `plan` | `factory.architect` |
+| `design` | `architecture` | `factory.designer` |
+| `build` | `design` | `factory.builder` |
 
 ### L4
 
@@ -750,12 +762,12 @@ Minimum formula graph:
 
 | step id | needs | `gc.run_target` |
 | --- | --- | --- |
-| `plan` | none | `lesson.planner` |
-| `architecture` | `plan` | `lesson.architect` |
-| `design` | `architecture` | `lesson.designer` |
-| `build` | `design` | `lesson.builder` |
-| `review` | `build` | `lesson.reviewer` |
-| `release-check` | `review` | `lesson.release-gate` |
+| `plan` | none | `factory.planner` |
+| `architecture` | `plan` | `factory.architect` |
+| `design` | `architecture` | `factory.designer` |
+| `build` | `design` | `factory.builder` |
+| `review` | `build` | `factory.reviewer` |
+| `release-check` | `review` | `factory.release-gate` |
 
 ### W3
 
@@ -806,13 +818,13 @@ Minimum formula graph:
 
 | step id | needs | `gc.run_target` |
 | --- | --- | --- |
-| `plan` | none | `lesson.planner` |
-| `architecture` | `plan` | `lesson.architect` |
-| `design` | `architecture` | `lesson.designer` |
-| `build` | `design` | `lesson.builder` |
-| `validate` | `build` | `lesson.validator` |
-| `review` | `validate` | `lesson.reviewer` |
-| `release` | `review` | `lesson.release-gate` |
+| `plan` | none | `factory.planner` |
+| `architecture` | `plan` | `factory.architect` |
+| `design` | `architecture` | `factory.designer` |
+| `build` | `design` | `factory.builder` |
+| `validate` | `build` | `factory.validator` |
+| `review` | `validate` | `factory.reviewer` |
+| `release` | `review` | `factory.release-gate` |
 
 ## Migration Path
 
@@ -820,7 +832,7 @@ Minimum formula graph:
 2. Rewrite `plans/port-to-packs-v2.md` around lesson packs, not format-only
    migration.
 3. Create `packs/lessons/L2` as proof of shape.
-4. Update L2 docs to switch one lesson import and run one `gc sling`.
+4. Update L2 docs to switch one factory import and run one `gc sling`.
 5. Validate the runtime on a clean factory.
 6. Repeat for L3, L4, and C1.
 7. Rework W1-W4 around the same architecture.

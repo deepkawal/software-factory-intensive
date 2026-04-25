@@ -8,8 +8,11 @@
 .gc/
 .runtime/
 
-# Claude Code local settings
+# Claude Code local settings. Pack overlays may intentionally contain
+# overlay/.claude/settings.json and should be tracked.
 .claude/
+!**/overlay/.claude/
+!**/overlay/.claude/**
 .vscode/settings.json
 
 # macOS editor/swap tempfiles (e.g. .!PID!filename)

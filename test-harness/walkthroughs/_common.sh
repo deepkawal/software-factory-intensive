@@ -166,6 +166,47 @@ session_state() {
   printf '%s\n' "$line" | awk '{print $3}'
 }
 
+session_ref() {
+  local factory="$1" target="$2"
+  if [ -z "$factory" ] || [ -z "$target" ]; then return 1; fi
+  local out line
+  out="$(cd "$factory" 2>/dev/null && gc session list 2>/dev/null)" || return 1
+  line="$(printf '%s\n' "$out" | awk -v t="$target" 'NR>1 && ($2==t || $5==t) {print; exit}')"
+  [ -n "$line" ] || return 1
+  printf '%s\n' "$line" | awk '{print $1}'
+}
+
+progress_snapshot() {
+  local factory="$1" target="${2:-}" rig="${WALK_RIG:-}" root_bead="${WALK_ROOT_BEAD_ID:-}"
+  [ -n "$factory" ] && [ -d "$factory" ] || return 0
+
+  log "      progress snapshot: gc session list"
+  (cd "$factory" && gc session list 2>&1 | head -30 | sed 's/^/        /') | tee -a "$WALK_LOG" || true
+
+  if [ -n "$target" ]; then
+    local ref
+    ref="$(session_ref "$factory" "$target" 2>/dev/null || true)"
+    if [ -n "$ref" ]; then
+      log "      progress snapshot: gc session peek $target via $ref (tail)"
+      (cd "$factory" && gc session peek "$ref" 2>&1 | tail -40 | sed 's/^/        /') | tee -a "$WALK_LOG" || true
+    else
+      log "      progress snapshot: no live session ref for $target"
+    fi
+  fi
+
+  if [ -n "$root_bead" ]; then
+    log "      progress snapshot: gc graph $root_bead"
+    (cd "$factory" && gc graph "$root_bead" 2>&1 | tail -60 | sed 's/^/        /') | tee -a "$WALK_LOG" || true
+  fi
+
+  if [ -n "$rig" ] && [ -d "$rig" ]; then
+    log "      progress snapshot: bd graph --all --compact"
+    (cd "$rig" && bd graph --all --compact 2>&1 | tail -80 | sed 's/^/        /') | tee -a "$WALK_LOG" || true
+    log "      progress snapshot: bd list"
+    (cd "$rig" && bd list --all --limit 20 2>&1 | tail -40 | sed 's/^/        /') | tee -a "$WALK_LOG" || true
+  fi
+}
+
 wait_for() {
   local desc="$1" cmd="$2" timeout="$3" interval="${4:-3}"
   local rescue_cmd="${5:-}"        # optional shell to run when session is asleep/missing past rescue_after
@@ -194,6 +235,7 @@ wait_for() {
         state_msg=" session=$st"
       fi
       log "    … still waiting: $desc ($((SECONDS - start))s elapsed / ${timeout}s budget)${state_msg}"
+      progress_snapshot "$factory_path" "$session_target"
       last_beat="$SECONDS"
     fi
     # State-driven rescue: if caller gave us a session_target and the

@@ -15,6 +15,14 @@ architecture:
 - labels are metadata, not the control plane
 - student commands stay minimal because the pack carries the defaults
 
+The pack folder and pack name may carry the curriculum identifier for clarity,
+for example `packs/lessons/L2` and `name = "sfi-l2"`. Runtime definitions
+inside the pack must not. Agent prompts, formulas, doctors, commands, overlays,
+and pack READMEs should read like a small real-world factory that can be reused
+outside the workshop. Lesson numbers, lab language, workshop framing, and
+student/facilitator instructions belong only in tutorial Markdown and the test
+harness.
+
 ## Decision Summary
 
 Recommended decision: build self-contained lesson packs under
@@ -70,7 +78,7 @@ of delegating the flow to labels and shell scripts.
 For graph-first lesson workflows:
 
 ```toml
-formula = "mol-l3-factory"
+formula = "mol-feature-delivery"
 version = 2
 contract = "graph.v2"
 ```
@@ -83,24 +91,24 @@ formula_v2 = true
 ```
 
 This is a one-time city prerequisite in `my-factory/city.toml`, not a
-per-lesson opt-in. The lesson import belongs in the city root
+per-lesson opt-in. The active factory import belongs in the city root
 `my-factory/pack.toml`:
 
 ```toml
-[defaults.rig.imports.lesson]
+[defaults.rig.imports.factory]
 source = "../packs/lessons/L3"
 ```
 
-This is city-wide active lesson selection. The imported lesson agents remain
+This is city-wide active lesson selection. The imported factory agents remain
 rig-scoped (`scope = "rig"`) because they work inside the student's project rig
-and bead store. With the binding named `lesson`, student and formula targets are
-binding-qualified: `<rig>/lesson.planner`, `<rig>/lesson.designer`, and
-rig-relative formula metadata such as `lesson.designer`.
+and bead store. With the neutral binding named `factory`, student and formula targets are
+binding-qualified: `<rig>/factory.planner`, `<rig>/factory.designer`, and
+rig-relative formula metadata such as `factory.designer`.
 
 Current Gas City applies root `[defaults.rig.imports]` when `gc rig add`
 creates a rig. Students keep the same project rig across lessons, so every
 lesson switch also needs an explicit sync step for the existing rig's
-`[rigs.imports.lesson]` entry. The teaching language should be:
+`[rigs.imports.factory]` entry. The teaching language should be:
 
 - L2: "You already created your rig. Now bring in the L2 factory pack."
 - L3 and later: "Keep the same rig. Update the active lesson factory pack."
@@ -111,7 +119,7 @@ scope. Do not use `default_rig_includes` in new student-facing material.
 For routing a graph step to an agent, prefer:
 
 ```toml
-metadata = { "gc.run_target" = "lesson.designer" }
+metadata = { "gc.run_target" = "factory.designer" }
 ```
 
 Do not use stage labels such as `needs-design` as the primary routing
@@ -326,7 +334,7 @@ New direction:
 
 - `my-factory/city.toml` contains permanent `[daemon] formula_v2 = true`
 - `my-factory/pack.toml` contains the active
-  `[defaults.rig.imports.lesson]`
+  `[defaults.rig.imports.factory]`
 - no active student path uses `default_rig_includes`
 - docs use `city` and `rig` for scopes
 
@@ -370,7 +378,7 @@ against the same accumulated context.
 
 New direction: lesson switching changes the active factory pack; it does not
 reset the project rig. Root defaults select the active lesson for new rigs, and
-existing rigs must be synced to the same lesson import before the next lab.
+existing rigs must be synced to the same factory import before the next lab.
 
 ## Full Implementation Scope
 
@@ -477,7 +485,9 @@ exercises whose runtime effects happen in the active lab/capstone lesson pack.
 No workshop may continue to teach shared leaf packs, label-driven handoff,
 `orchestrator.yaml` as the primary workflow engine, or `default_rig_includes`.
 
-Each lesson pack is the factory for that lesson. It must contain:
+Each lesson pack is the factory for that lesson. Its top-level folder may be
+curriculum-indexed, but the runnable contents should be portable and
+workshop-blind. It must contain:
 
 - `pack.toml`
 - every agent definition used by the lesson
@@ -489,6 +499,11 @@ Each lesson pack is the factory for that lesson. It must contain:
 Lesson packs must not import other packs. Duplication is intentional. Students
 should be able to open one folder and understand the whole runnable lesson.
 Old canonical role packs are not an alternate runtime path for students.
+
+Do not write agent prompts or formulas that say "you are running L2", "this
+lab", "this workshop", or "help the student". Those are facilitator concerns.
+The pack itself should describe factory responsibilities, inputs, artifacts,
+and close behavior.
 
 ### Prompt rewrite workstream
 
@@ -513,7 +528,7 @@ Every rewritten prompt should adapt this shared graph-worker-style structure:
 
 1. `Role`: role-specific responsibility, authority, and quality bar.
 2. `Inputs`: current formula step, current bead, upstream artifacts, project
-   files, and lesson context to inspect.
+   files, and project/domain context to inspect.
 3. `Graph Work Process`: inspect assigned/routed work, execute only the current
    formula step, write the expected artifact, and avoid creating downstream
    stage beads or labels.
@@ -526,6 +541,9 @@ Every rewritten prompt should adapt this shared graph-worker-style structure:
 Keep persona and role-specific guidance inside that scaffold. Do not let each
 implementer invent a different work loop for planner, architect, builder,
 reviewer, or release-gate prompts.
+Also keep the scaffold curriculum-blind: no lesson number, workshop/lab
+language, student/facilitator framing, or tutorial instructions inside runtime
+prompt files.
 
 ### Canonical packs
 
@@ -643,7 +661,7 @@ Every student-facing Markdown file must show the same lesson model:
 
 1. ensure FormulaV2 is enabled once in `my-factory/city.toml`
 2. select the lesson's self-contained pack in `my-factory/pack.toml`
-3. sync the existing project rig to the active lesson pack
+3. sync the existing project rig to the active factory pack
 4. restart or reload Gas City
 5. run the lesson's simplest `gc sling` command
 6. inspect the formula, graph state, artifacts, and beads that were produced
@@ -657,9 +675,9 @@ with the simplest arguments:
 ```bash
 gc restart
 gc doctor
-gc --rig <rig> import add ../packs/lessons/L2 --name lesson
-gc --rig <rig> import remove lesson
-gc sling <rig>/lesson.planner "lesson request"
+gc --rig <rig> import add ../packs/lessons/L2 --name factory
+gc --rig <rig> import remove factory
+gc sling <rig>/factory.planner "lesson request"
 gc events --follow
 gc graph <bead-id>
 bd list
@@ -678,7 +696,7 @@ Required doc updates:
   formula/artifact inspection
 - `my-factory/city.toml`: include `[daemon] formula_v2 = true` and no
   lesson-specific import
-- `my-factory/pack.toml`: use `[defaults.rig.imports.lesson]` for the active
+- `my-factory/pack.toml`: use `[defaults.rig.imports.factory]` for the active
   lesson, remove inherited `packs/all` comments, and remove old
   `wake-downstream` command guidance
 - `activities/README.md`: remove the pack-copy override model as the main path;
@@ -749,8 +767,8 @@ Update the dry-run checks so they fail when active lesson paths contain:
   expected
 - active lesson formulas using `version = 1`
 - lesson packs with imports
-- lesson docs that omit `[defaults.rig.imports.lesson]`
-- lesson docs that omit the existing-rig lesson import sync step
+- lesson docs that omit `[defaults.rig.imports.factory]`
+- lesson docs that omit the existing-rig factory import sync step
 - unqualified lesson agent routes such as `gc.run_target = "planner"`
 - `default_rig_includes`
 - `workspace scope` or `scope = "workspace"`
@@ -763,7 +781,7 @@ The dry-run should also verify positive structure:
 - every lesson pack has its local agents and formulas
 - every multi-agent lesson formula uses graph dependencies and
   binding-qualified `metadata."gc.run_target"` values such as
-  `lesson.designer`
+  `factory.designer`
 - every lesson prompt contains the shared sections: `Role`, `Inputs`,
   `Graph Work Process`, `Output Format`, and `Close Behavior`
 - every lesson README contains the one-command sling entrypoint
@@ -771,7 +789,7 @@ The dry-run should also verify positive structure:
   formulas, and tests
 - `my-factory/city.toml` contains `[daemon] formula_v2 = true`
 - `my-factory/pack.toml` contains exactly one active
-  `[defaults.rig.imports.lesson]`
+  `[defaults.rig.imports.factory]`
 - `my-factory/*.template`, `commands/*/command.toml`, and
   `doctor/*/doctor.toml` do not preserve stale label/manual wiring
 
@@ -806,8 +824,8 @@ assert_doc_command_present <markdown-file> <command-regex>
 
 The helpers should edit only the root factory files needed by the lesson:
 `my-factory/city.toml` for permanent FormulaV2 setup and `my-factory/pack.toml`
-for `[defaults.rig.imports.lesson]`, plus the selected existing rig's
-`[rigs.imports.lesson]` entry when switching lessons after rig creation.
+for `[defaults.rig.imports.factory]`, plus the selected existing rig's
+`[rigs.imports.factory]` entry when switching lessons after rig creation.
 
 Update these walkthroughs:
 
@@ -893,7 +911,7 @@ packs/lessons/L3/
       prompt.template.md
       overlay/
   formulas/
-    mol-l3-factory.toml
+    mol-feature-delivery.toml
   doctor/
     lesson-ready/
       run.sh
@@ -929,7 +947,7 @@ If most agents share the same default formula:
 
 ```toml
 [agent_defaults]
-default_sling_formula = "mol-l3-factory"
+default_sling_formula = "mol-feature-delivery"
 ```
 
 If agents need different default formulas, put `default_sling_formula` in each
@@ -957,7 +975,7 @@ Keep essential per-agent values in `agents/<name>/agent.toml`:
 scope = "rig"
 wake_mode = "fresh"
 max_active_sessions = 1
-default_sling_formula = "mol-l3-factory"
+default_sling_formula = "mol-feature-delivery"
 nudge = "Run gc prime, then work the assigned formula step."
 ```
 
@@ -972,7 +990,7 @@ built-in FormulaV2 fallback, not a template fragment.
 A lesson should have one visible entry formula:
 
 ```toml
-formula = "mol-l3-factory"
+formula = "mol-feature-delivery"
 version = 2
 contract = "graph.v2"
 description = "Run the L3 factory from feature request to implemented change."
@@ -980,25 +998,25 @@ description = "Run the L3 factory from feature request to implemented change."
 [[steps]]
 id = "plan"
 title = "Break the feature into implementation work"
-metadata = { "gc.run_target" = "lesson.planner" }
+metadata = { "gc.run_target" = "factory.planner" }
 
 [[steps]]
 id = "architecture"
 title = "Choose the technical approach"
 needs = ["plan"]
-metadata = { "gc.run_target" = "lesson.architect" }
+metadata = { "gc.run_target" = "factory.architect" }
 
 [[steps]]
 id = "design"
 title = "Design the UI and interaction changes"
 needs = ["architecture"]
-metadata = { "gc.run_target" = "lesson.designer" }
+metadata = { "gc.run_target" = "factory.designer" }
 
 [[steps]]
 id = "build"
 title = "Implement the approved design"
 needs = ["design"]
-metadata = { "gc.run_target" = "lesson.builder" }
+metadata = { "gc.run_target" = "factory.builder" }
 ```
 
 Use FormulaV2 syntax even for the first simple formula lesson. The beginner
@@ -1010,7 +1028,7 @@ Teaching progression:
 - first formula lesson: `version = 2`, `contract = "graph.v2"`, simple steps
 - dependency lesson: add `needs = [...]`
 - multi-agent lesson: add
-  `metadata = { "gc.run_target" = "lesson.planner" }`
+  `metadata = { "gc.run_target" = "factory.planner" }`
 - larger workflow lesson: add `children` only if grouping makes inspection
   clearer
 - validation lesson: add `check` or `retry` only if retry behavior is being
@@ -1050,28 +1068,28 @@ L2:
 
 | step id | needs | `gc.run_target` |
 | --- | --- | --- |
-| `plan` | none | `lesson.planner` |
-| `architecture` | `plan` | `lesson.architect` |
+| `plan` | none | `factory.planner` |
+| `architecture` | `plan` | `factory.architect` |
 
 L3:
 
 | step id | needs | `gc.run_target` |
 | --- | --- | --- |
-| `plan` | none | `lesson.planner` |
-| `architecture` | `plan` | `lesson.architect` |
-| `design` | `architecture` | `lesson.designer` |
-| `build` | `design` | `lesson.builder` |
+| `plan` | none | `factory.planner` |
+| `architecture` | `plan` | `factory.architect` |
+| `design` | `architecture` | `factory.designer` |
+| `build` | `design` | `factory.builder` |
 
 L4:
 
 | step id | needs | `gc.run_target` |
 | --- | --- | --- |
-| `plan` | none | `lesson.planner` |
-| `architecture` | `plan` | `lesson.architect` |
-| `design` | `architecture` | `lesson.designer` |
-| `build` | `design` | `lesson.builder` |
-| `review` | `build` | `lesson.reviewer` |
-| `release-check` | `review` | `lesson.release-gate` |
+| `plan` | none | `factory.planner` |
+| `architecture` | `plan` | `factory.architect` |
+| `design` | `architecture` | `factory.designer` |
+| `build` | `design` | `factory.builder` |
+| `review` | `build` | `factory.reviewer` |
+| `release-check` | `review` | `factory.release-gate` |
 
 L4's rework loop is student-driven unless the lesson explicitly teaches
 FormulaV2 branching. The reviewer records pass/request-changes output; the
@@ -1082,39 +1100,39 @@ C1:
 
 | step id | needs | `gc.run_target` |
 | --- | --- | --- |
-| `plan` | none | `lesson.planner` |
-| `architecture` | `plan` | `lesson.architect` |
-| `design` | `architecture` | `lesson.designer` |
-| `build` | `design` | `lesson.builder` |
-| `validate` | `build` | `lesson.validator` |
-| `review` | `validate` | `lesson.reviewer` |
-| `release` | `review` | `lesson.release-gate` |
+| `plan` | none | `factory.planner` |
+| `architecture` | `plan` | `factory.architect` |
+| `design` | `architecture` | `factory.designer` |
+| `build` | `design` | `factory.builder` |
+| `validate` | `build` | `factory.validator` |
+| `review` | `validate` | `factory.reviewer` |
+| `release` | `review` | `factory.release-gate` |
 
 ## Simplest Student CLI
 
-The lesson pack should carry enough defaults that students do not need to know
+The active factory pack should carry enough defaults that students do not need to know
 the bead lifecycle just to start a lab.
 
 Preferred per-lesson run command:
 
 ```bash
-gc sling <rig>/lesson.planner "Build user profile editing"
+gc sling <rig>/factory.planner "Build user profile editing"
 ```
 
 This works when the target agent has `default_sling_formula` configured in the
-lesson pack. Gas City creates/routes the bead and attaches the lesson formula.
+pack. Gas City creates/routes the bead and attaches the formula.
 
 If a lesson needs to make formula attachment explicit:
 
 ```bash
-gc sling <rig>/lesson.planner "Build user profile editing" --on mol-l3-factory
+gc sling <rig>/factory.planner "Build user profile editing" --on mol-feature-delivery
 ```
 
 Avoid making the normal path:
 
 ```bash
 bd create --title "Build user profile editing" --label needs-plan
-gc sling --nudge <rig>/lesson.planner <bead-id>
+gc sling --nudge <rig>/factory.planner <bead-id>
 ```
 
 That teaches two tools and a stage label before the student has seen the
@@ -1132,46 +1150,46 @@ formula_v2 = true
 Students switch lessons by editing `my-factory/pack.toml`:
 
 ```toml
-[defaults.rig.imports.lesson]
+[defaults.rig.imports.factory]
 source = "../packs/lessons/L3"
 ```
 
 This is city-wide active lesson selection for the curriculum. The agents inside
 that pack remain rig-scoped, so the selected project rig sees them as
-`<rig>/lesson.planner`, `<rig>/lesson.architect`, and so on.
+`<rig>/factory.planner`, `<rig>/factory.architect`, and so on.
 
 Because root defaults are applied when a rig is created, students who keep the
 same project rig must also sync the existing rig import after changing lessons.
 The resulting rig import should point at the same lesson pack:
 
 ```toml
-[rigs.imports.lesson]
+[rigs.imports.factory]
 source = "../packs/lessons/L3"
 ```
 
 Student-facing docs should make the sync concrete. L2 can add the import:
 
 ```bash
-gc --rig <rig> import add ../packs/lessons/L2 --name lesson
+gc --rig <rig> import add ../packs/lessons/L2 --name factory
 ```
 
-L3 and later should replace the previous lesson import:
+L3 and later should replace the previous factory import:
 
 ```bash
-gc --rig <rig> import remove lesson
-gc --rig <rig> import add ../packs/lessons/L3 --name lesson
+gc --rig <rig> import remove factory
+gc --rig <rig> import add ../packs/lessons/L3 --name factory
 ```
 
 If lesson pack commands must be exposed as `gc <binding> <cmd>`, add an
 explicit city import as an exception:
 
 ```toml
-[imports.lesson]
+[imports.factory]
 source = "../packs/lessons/L3"
 ```
 
 The normal lesson path should not need this exception. Student-facing docs
-should present exactly one lesson import to change and should not mention
+should present exactly one factory import to change and should not mention
 `default_rig_includes`.
 
 ## Commands and Doctors
@@ -1253,7 +1271,7 @@ Requirements:
 - no stage-label order handoff
 - student starts with one `gc sling` command
 - formulas express the lesson workflow with graph steps and route metadata
-- formula routes use binding-qualified targets such as `lesson.planner`
+- formula routes use binding-qualified targets such as `factory.planner`
 - prompts describe formula-routed work instead of label polling
 - scripts inspect or validate formula state instead of dispatching labels
 - L2 planner and architect prompts are rewritten from the shared prompt
@@ -1267,10 +1285,10 @@ duplicating work across L3/L4/C1.
 Update L2 docs and walkthrough so students:
 
 1. confirm `[daemon] formula_v2 = true` in `my-factory/city.toml`
-2. set `[defaults.rig.imports.lesson]` to `../packs/lessons/L2`
-3. sync the existing rig's `lesson` import to `../packs/lessons/L2`
+2. set `[defaults.rig.imports.factory]` to `../packs/lessons/L2`
+3. sync the existing rig's `factory` import to `../packs/lessons/L2`
 4. run `gc restart`
-5. run one `gc sling <rig>/lesson.planner` command
+5. run one `gc sling <rig>/factory.planner` command
 6. inspect `gc events`, `gc graph`, `bd show`, and lesson artifacts
 
 Update at the same time:
@@ -1470,7 +1488,7 @@ Question: Should students edit `city.toml` every lesson?
 
 Recommended answer: no. `city.toml` gets the one-time
 `[daemon] formula_v2 = true` setting. Per-lesson switching happens in
-`my-factory/pack.toml` by changing `[defaults.rig.imports.lesson]`.
+`my-factory/pack.toml` by changing `[defaults.rig.imports.factory]`.
 
 Question: Should students learn `bd create` early?
 
@@ -1483,7 +1501,7 @@ The migration is on track when:
 
 - `packs/lessons/L2` exists and runs standalone
 - L2 docs use one active lesson pack import in `my-factory/pack.toml`
-- L2 docs include the existing-rig sync step for `[rigs.imports.lesson]`
+- L2 docs include the existing-rig sync step for `[rigs.imports.factory]`
 - `my-factory/city.toml` enables FormulaV2 permanently
 - L2 starts with one `gc sling` command
 - active L2 lesson formulas use `version = 2` and `contract = "graph.v2"`
@@ -1491,7 +1509,7 @@ The migration is on track when:
 - no L2-critical flow uses `gc all wake-downstream`
 - no L2-critical flow uses stage-label orders
 - formulas route work with binding-qualified `gc.run_target` values such as
-  `lesson.planner`
+  `factory.planner`
 - labels in L2 are metadata only
 - L2 walkthrough follows the Markdown commands
 - dry-run checks fail if L2 reintroduces label dispatch
@@ -1627,7 +1645,7 @@ Runtime smoke test for each lesson:
 cd my-factory
 gc restart
 gc doctor
-gc sling <rig>/lesson.<entry-agent> "Small feature request"
+gc sling <rig>/factory.<entry-agent> "Small feature request"
 ```
 
 Then verify:

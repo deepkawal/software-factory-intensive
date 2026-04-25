@@ -43,6 +43,11 @@ ROLE_NAMES = [
     "release-gate",
 ]
 
+PACK_RUNTIME_LEAKAGE = re.compile(
+    r"\b(?:lesson|workshop|student|lab|curriculum|SFI|Software Factory Intensive|L[0-9]+|C[0-9]+)\b",
+    re.IGNORECASE,
+)
+
 BANNED_PATTERNS = [
     ("SFI001", re.compile(r"gc all wake-downstream"), "old label scheduler command"),
     ("SFI002", re.compile(r"bd ready --label"), "label queue polling"),
@@ -191,7 +196,7 @@ def check_root_factory(root: Path, findings: list[Finding]) -> None:
                 "city config still uses default_rig_includes",
                 root=root,
                 line=line_number(text, "default_rig_includes"),
-                hint="move active lesson selection to my-factory/pack.toml [defaults.rig.imports.lesson]",
+                hint="move active lesson selection to my-factory/pack.toml [defaults.rig.imports.factory]",
             )
 
     pack_files = [root / "my-factory" / "pack.toml.template", root / "my-factory" / "pack.toml"]
@@ -205,20 +210,20 @@ def check_root_factory(root: Path, findings: list[Finding]) -> None:
         except tomllib.TOMLDecodeError as exc:
             add(findings, "SFI111", path, f"root pack config is not valid TOML: {exc}", root=root)
             continue
-        lesson = (
+        factory = (
             data.get("defaults", {})
             .get("rig", {})
             .get("imports", {})
-            .get("lesson")
+            .get("factory")
         )
-        if not isinstance(lesson, dict) or "../packs/lessons/" not in str(lesson.get("source", "")):
+        if not isinstance(factory, dict) or "../packs/lessons/" not in str(factory.get("source", "")):
             add(
                 findings,
                 "SFI112",
                 path,
-                "root pack does not define the active lesson default rig import",
+                "root pack does not define the active factory default rig import",
                 root=root,
-                hint='expected [defaults.rig.imports.lesson] source = "../packs/lessons/<lesson>"',
+                hint='expected [defaults.rig.imports.factory] source = "../packs/lessons/<lesson>"',
             )
         imports = data.get("imports", {})
         if "all" in imports:
@@ -229,7 +234,7 @@ def check_root_factory(root: Path, findings: list[Finding]) -> None:
                 "root pack still imports packs/all",
                 root=root,
                 line=line_number(text, re.compile(r"^\[imports\.all\]")),
-                hint="use the lesson binding instead of the old composition pack",
+                hint="use the factory binding instead of the old composition pack",
             )
 
 
@@ -332,7 +337,31 @@ def check_lesson(root: Path, contract: dict[str, Any], findings: list[Finding]) 
 
     check_roles(root, lesson_id, pack_dir, roles, formula_name, findings)
     check_formula(root, lesson_id, pack_dir, formula_name, steps, findings)
+    check_pack_runtime_language(root, lesson_id, pack_dir, findings)
     check_docs(root, lesson_id, docs, findings)
+
+
+def check_pack_runtime_language(root: Path, lesson_id: str, pack_dir: Path, findings: list[Finding]) -> None:
+    for path in sorted(pack_dir.rglob("*")):
+        if not path.is_file():
+            continue
+        if path.name == "pack.toml":
+            continue
+        if path.suffix not in TEXT_FILE_SUFFIXES and not path.name.endswith(".toml.template"):
+            continue
+        text = read_text(path)
+        for i, line in enumerate(text.splitlines(), start=1):
+            if PACK_RUNTIME_LEAKAGE.search(line):
+                add(
+                    findings,
+                    "SFI320",
+                    path,
+                    f"{lesson_id} pack runtime file contains workshop/lesson-specific language",
+                    root=root,
+                    line=i,
+                    hint="keep lesson framing in tutorials; pack internals should read like a portable small factory",
+                )
+                break
 
 
 def check_roles(
@@ -512,7 +541,7 @@ def check_formula(
                 formula_path,
                 f"{lesson_id} step {step_id!r} uses unqualified target {target!r}",
                 root=root,
-                hint=f"use lesson.{target}",
+                hint=f"use factory.{target}",
             )
 
         expected_artifact = expected.get("artifact")
@@ -542,32 +571,32 @@ def check_docs(root: Path, lesson_id: str, docs: list[str], findings: list[Findi
             add(findings, "SFI500", path, f"{lesson_id} expected doc is missing", root=root)
             continue
         text = read_text(path)
-        if "[defaults.rig.imports.lesson]" not in text:
+        if "[defaults.rig.imports.factory]" not in text:
             add(
                 findings,
                 "SFI501",
                 path,
                 f"{lesson_id} docs omit city-wide active lesson selection",
                 root=root,
-                hint="show [defaults.rig.imports.lesson]",
+                hint="show [defaults.rig.imports.factory]",
             )
         if not re.search(r"gc\s+--rig\s+\S+\s+import\s+(?:add|remove)\b", text):
             add(
                 findings,
                 "SFI502",
                 path,
-                f"{lesson_id} docs omit existing-rig lesson import sync",
+                f"{lesson_id} docs omit existing-rig factory import sync",
                 root=root,
-                hint="show gc --rig <rig> import remove/add lesson",
+                hint="show gc --rig <rig> import remove/add factory",
             )
-        if not re.search(r"gc\s+sling\s+\S*/lesson\.", text):
+        if not re.search(r"gc\s+sling\s+\S*/factory\.", text):
             add(
                 findings,
                 "SFI503",
                 path,
                 f"{lesson_id} docs omit a binding-qualified gc sling entrypoint",
                 root=root,
-                hint="show gc sling <rig>/lesson.<agent> ...",
+                hint="show gc sling <rig>/factory.<agent> ...",
             )
 
 
