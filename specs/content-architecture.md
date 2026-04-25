@@ -897,7 +897,7 @@ Check the root factory wiring:
 
 ```bash
 rg '^\[daemon\]|formula_v2\s*=\s*true' my-factory/city.toml
-rg '^\[defaults\.rig\.imports\.lesson\]|source\s*=\s*"\.\./packs/lessons/' my-factory/pack.toml
+rg '^\[defaults\.rig\.imports\.factory\]|source\s*=\s*"\.\./packs/lessons/' my-factory/pack.toml
 ```
 
 ## Acceptance Criteria

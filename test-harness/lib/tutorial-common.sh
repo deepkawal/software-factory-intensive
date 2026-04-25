@@ -45,19 +45,94 @@ DIVERGENCES_LOG="$TUTORIAL_SCRATCH_ROOT/divergences.log"
 declare -a FAILED_LESSONS=()
 declare -a REGISTERED_CITY_PATHS=()
 
+run_bounded() {
+  local seconds="$1"; shift
+  "$@" &
+  local cmd_pid=$!
+  (
+    sleep "$seconds"
+    if kill -0 "$cmd_pid" 2>/dev/null; then
+      kill "$cmd_pid" 2>/dev/null || true
+      sleep 2
+      kill -KILL "$cmd_pid" 2>/dev/null || true
+    fi
+  ) &
+  local watchdog_pid=$!
+  wait "$cmd_pid"
+  local rc=$?
+  kill "$watchdog_pid" 2>/dev/null || true
+  wait "$watchdog_pid" 2>/dev/null || true
+  return "$rc"
+}
+
+prune_walkthrough_city_registry() {
+  local city_path="$1"
+  local registry="${HOME}/.gc/cities.toml"
+  [ -f "$registry" ] || return 0
+  case "$city_path" in
+    /tmp/sfi-tutorial-walkthrough/*|/private/tmp/sfi-tutorial-walkthrough/*) ;;
+    *) return 0 ;;
+  esac
+  local tmp
+  tmp="$(mktemp "${registry}.XXXXXX")" || return 0
+  awk -v p="$city_path" '
+    function flush() {
+      if (block != "") {
+        if (keep) {
+          printf "%s", block
+        }
+        block = ""
+        keep = 1
+        in_city = 0
+      }
+    }
+    function value(line) {
+      sub(/^[[:space:]]*[a-z_]+[[:space:]]*=[[:space:]]*"/, "", line)
+      sub(/"[[:space:]]*$/, "", line)
+      return line
+    }
+    BEGIN { keep = 1 }
+    /^\[\[/ {
+      flush()
+      block = $0 ORS
+      in_city = ($0 == "[[cities]]")
+      city_path = ""
+      city_name = ""
+      next
+    }
+    {
+      if (block != "") {
+        block = block $0 ORS
+        if (in_city && $1 == "path") {
+          city_path = value($0)
+        }
+        if (in_city && $1 == "name") {
+          city_name = value($0)
+        }
+        if (in_city && city_path == p && city_name ~ /^sfi-walkthrough-/) {
+          keep = 0
+        }
+      } else {
+        print
+      }
+    }
+    END { flush() }
+  ' "$registry" > "$tmp" && mv "$tmp" "$registry" || rm -f "$tmp"
+}
+
 # Unique suffix so parallel runs (and cohort users on the same machine)
 # don't collide on registry names or scratch paths.
 run_id="$(date +%s)-$$"
 
 cleanup() {
-  local rc=$?
+  local rc="${1:-$?}"
   # Stop any still-running standalone controllers so unregister can tear
   # down state cleanly. Then unregister by absolute path (gc unregister
   # takes a path, not a --name — learned the hard way).
   for city_path in "${REGISTERED_CITY_PATHS[@]-}"; do
     [ -n "$city_path" ] || continue
-    (cd "$city_path" 2>/dev/null && gc stop >/dev/null 2>&1) || true
-    gc unregister "$city_path" >/dev/null 2>&1 || true
+    (cd "$city_path" 2>/dev/null && run_bounded 20 gc stop >/dev/null 2>&1) || true
+    run_bounded 30 gc unregister "$city_path" >/dev/null 2>&1 || prune_walkthrough_city_registry "$city_path"
   done
   echo
   if [ -s "$DIVERGENCES_LOG" ]; then

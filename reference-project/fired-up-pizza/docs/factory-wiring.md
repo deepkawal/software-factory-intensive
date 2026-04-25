@@ -9,12 +9,12 @@ The W2 deliverable for Fired Up Pizza. This document is the single piece of pape
 ```mermaid
 graph LR
     FR[Feature Request<br/>bd create] --> P[Planner]
-    P -->|work-packages/loyalty-points-system.md| A[Architect]
-    A -->|docs/adr/0001-loyalty-points-storage.md| D[Designer]
-    D -->|design/loyalty-points-spec.md| C[Coder]
+    P -->|docs/plans/loyalty-points-system.md| A[Architect]
+    A -->|docs/architecture/0001-loyalty-points-storage.md| D[Designer]
+    D -->|docs/designs/loyalty-points-spec.md| C[Coder]
     C -->|branch feat/loyalty-points + src/ code| R[Reviewer]
-    R -->|review-reports/loyalty-points-review.md| DP[Deployer]
-    DP -->|release-gates/loyalty-points-gate.md| DONE[Release Gate PASS]
+    R -->|docs/reviews/loyalty-points-review.md| DP[Deployer]
+    DP -->|docs/releases/loyalty-points-gate.md| DONE[Release Gate PASS]
 ```
 
 ---
@@ -23,12 +23,12 @@ graph LR
 
 | Agent      | Reads                                                             | Produces                                                                 |
 |------------|-------------------------------------------------------------------|--------------------------------------------------------------------------|
-| Planner    | bead description, `docs/PROJECT_MANIFEST.md`                       | `work-packages/loyalty-points-system.md` — stories, AC, tests, scope     |
-| Architect  | work package, project manifest, prior ADRs, `CLAUDE.md`            | `docs/adr/0001-loyalty-points-storage.md` — `points_ledger` vs column    |
-| Designer   | work package + ADR, project manifest                               | `design/loyalty-points-spec.md` — `LoyaltyBalance` + checkout mutation   |
+| Planner    | bead description, `docs/PROJECT_MANIFEST.md`                       | `docs/plans/loyalty-points-system.md` — stories, AC, tests, scope     |
+| Architect  | work package, project manifest, prior ADRs, `CLAUDE.md`            | `docs/architecture/0001-loyalty-points-storage.md` — `points_ledger` vs column    |
+| Designer   | work package + ADR, project manifest                               | `docs/designs/loyalty-points-spec.md` — `LoyaltyBalance` + checkout mutation   |
 | Coder      | design spec + work package + project manifest                      | `src/components/LoyaltyBalance.tsx`, `src/db/pointsLedger.ts`, tests      |
-| Reviewer   | code diff + design spec + review standards                         | `review-reports/loyalty-points-review.md` — findings + severity          |
-| Deployer   | review report + release criteria                                   | `release-gates/loyalty-points-gate.md` — binary PASS/FAIL per criterion  |
+| Reviewer   | code diff + design spec + review standards                         | `docs/reviews/loyalty-points-review.md` — findings + severity          |
+| Deployer   | review report + release criteria                                   | `docs/releases/loyalty-points-gate.md` — binary PASS/FAIL per criterion  |
 
 ---
 
@@ -68,12 +68,12 @@ The ADR is where this decision lands. Downstream agents act on the decision — 
 | From → To | Artifact path | File MUST contain |
 |-----------|---------------|-------------------|
 | bead → Planner | bead description | feature ask + one architectural question |
-| Planner → Architect | `work-packages/loyalty-points-system.md` | Stories with numbered ACs, Scope (IN/OUT), Tests, Open Questions |
-| Architect → Designer | `docs/adr/0001-loyalty-points-storage.md` | Context, Options with trade-offs, Decision, Consequences |
-| Designer → Coder | `design/loyalty-points-spec.md` | Location, Props, State, Layout, Interactions, Edge Cases, Data Flow |
+| Planner → Architect | `docs/plans/loyalty-points-system.md` | Stories with numbered ACs, Scope (IN/OUT), Tests, Open Questions |
+| Architect → Designer | `docs/architecture/0001-loyalty-points-storage.md` | Context, Options with trade-offs, Decision, Consequences |
+| Designer → Coder | `docs/designs/loyalty-points-spec.md` | Location, Props, State, Layout, Interactions, Edge Cases, Data Flow |
 | Coder → Reviewer | feature branch + all files in Integration Points | Tests that reference the work package's Test section |
-| Reviewer → Deployer | `review-reports/loyalty-points-review.md` | Verdict (APPROVE/REQUEST CHANGES/BLOCK) + findings list with severity |
-| Deployer → Done | `release-gates/loyalty-points-gate.md` | Binary PASS/FAIL for every Release Criterion in the manifest |
+| Reviewer → Deployer | `docs/reviews/loyalty-points-review.md` | Verdict (APPROVE/REQUEST CHANGES/BLOCK) + findings list with severity |
+| Deployer → Done | `docs/releases/loyalty-points-gate.md` | Binary PASS/FAIL for every Release Criterion in the manifest |
 
 ---
 
@@ -84,7 +84,7 @@ Two gates along this pipeline require human approval before the next agent can s
 1. **After Architect, before Designer** — confirm the storage decision before design work begins. The ADR is the blast radius for the feature; downstream work is expensive if the decision is wrong.
 2. **After Reviewer, before Deployer** — confirm the review verdict. Even if the Reviewer says APPROVE, a human initials `bd approve <bead>` before the Deployer runs.
 
-All other handoffs are machine-automated via `orchestrator.yaml`.
+All other handoffs are machine-automated via `docs/formula/loyalty-points-graph.yaml`.
 
 ---
 

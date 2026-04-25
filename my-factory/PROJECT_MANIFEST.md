@@ -44,11 +44,11 @@
 | Agent | Receives | From |
 |-------|----------|------|
 | Planner | Feature request | |
-| Architect | Work package | `work-packages/<slug>.md` |
-| Designer | Work package + ADR | `work-packages/` + `docs/adr/` |
+| Architect | Work package | `docs/plans/<slug>.md` |
+| Designer | Work package + architecture decision | `docs/plans/` + `docs/architecture/` |
 | Builder (Coder) | Component spec + test cases | `design/<slug>-spec.md` + work package |
 | Reviewer | Code diff + spec + review standards | Feature branch + `design/` + this manifest |
-| Release-Gate (Deployer) | Review report + release criteria | `review-reports/` + this manifest |
+| Release-Gate (Deployer) | Review report + release criteria | `docs/reviews/` + this manifest |
 
 ## Services to Connect
 

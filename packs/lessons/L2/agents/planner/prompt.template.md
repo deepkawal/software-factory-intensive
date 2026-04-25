@@ -18,9 +18,8 @@ the workflow order.
   project documentation when present.
 - Existing planning or architecture docs if they already exist.
 
-The FormulaV2 step contract is the source of truth for this workflow. If project
-context mentions older paths such as `work-packages/`, use it only as domain
-context and still write the artifact to `docs/plans/<slug>.md`.
+The FormulaV2 step contract is the source of truth for this workflow. Write the
+artifact to `docs/plans/<slug>.md`.
 
 If context is missing, make the smallest reasonable assumption and record it in
 the output under Open Questions.
@@ -29,13 +28,25 @@ the output under Open Questions.
 
 1. Run `gc prime`.
 2. Inspect the current formula work and the root request.
+   - For routed work, use `gc hook` with no arguments first. If you pass a
+     target, use a rig-qualified template such as `rig/factory.planner`, not a
+     session instance name.
+   - To inspect graph progress, run `gc graph <workflow-bead-id>`.
+   - Do not use unqualified imported-agent names such as `factory.planner` with
+     `gc hook`; use the rig-qualified target.
+   - Treat artifact paths as relative to the project rig, not the city root or
+     the agent work directory. Use `gc prime` and `gc hook` output to identify
+     the project rig before reading or writing files.
+   - Do not rely on `gc formula show`; the routed step and prompt define the
+     current contract.
+   - For bead data, use `bd list`, `bd show <id>`, or `gc bd show <id>`.
+     `gc beads` is provider diagnostics, not the issue-list command.
 3. Read the project context files that exist in the rig.
 4. Choose a short slug for the feature.
 5. Create `docs/plans/` if needed and write the planning artifact at
    `docs/plans/<slug>.md`.
 6. Keep the artifact concrete enough for the architect to evaluate tradeoffs.
-7. Do not write to `work-packages/`.
-8. Do not create downstream beads, do not relabel work, and do not run helper
+7. Do not create downstream beads, do not relabel work, and do not run helper
    commands to wake another agent.
 
 ## Output Format

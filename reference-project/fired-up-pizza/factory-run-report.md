@@ -24,12 +24,12 @@ Chosen as the capstone feature because:
 
 | Stage | Agent | Status | Artifact | Slings | Config Changes |
 |-------|-------|--------|----------|--------|----------------|
-| Plan | planner | PASS | `work-packages/order-history-page.md` | 1 | None |
-| Architect | architect | PASS | `docs/adr/0002-order-history-pagination.md` | 2 | Architect prompt: added rule *"List ≥3 storage or access-pattern alternatives when a scaling question exists. One-option ADRs are rejected."* |
-| Design | designer | PASS | `design/order-history-spec.md` | 1 | None |
+| Plan | planner | PASS | `docs/plans/order-history-page.md` | 1 | None |
+| Architect | architect | PASS | `docs/architecture/0002-order-history-pagination.md` | 2 | Architect prompt: added rule *"List ≥3 storage or access-pattern alternatives when a scaling question exists. One-option ADRs are rejected."* |
+| Design | designer | PASS | `docs/designs/order-history-spec.md` | 1 | None |
 | Code | coder | PASS | `src/pages/OrderHistoryPage.tsx`, `src/api/orderHistory.ts`, `src/db/orderHistory.ts` + tests | 2 | Coder prompt: added rule *"Pagination helpers must accept `cursor` as `string \| null`, not `number`. Never rely on sequential numeric offsets for ordered lists."* |
-| Review | reviewer | PASS (APPROVE, 2 Low findings) | `review-reports/order-history-review.md` | 1 | None |
-| Deploy | deployer | PASS (6/6 required) | `release-gates/order-history-gate.md` | 1 | None |
+| Review | reviewer | PASS (APPROVE, 2 Low findings) | `docs/reviews/order-history-review.md` | 1 | None |
+| Deploy | deployer | PASS (6/6 required) | `docs/releases/order-history-gate.md` | 1 | None |
 
 **Total slings across the run:** 8 (target for a well-tuned factory: ≤10)
 **Total config edits during the run:** 2 (both encoded into pack prompts; no ad-hoc chat corrections)
@@ -41,14 +41,14 @@ Chosen as the capstone feature because:
 | Time | Event |
 |------|-------|
 | 00:00 | Bead created: `fup-order-history-2026-04-16`. Slung to Planner. |
-| 00:06 | Planner emitted `work-packages/order-history-page.md`. Slung to Architect. |
+| 00:06 | Planner emitted `docs/plans/order-history-page.md`. Slung to Architect. |
 | 00:14 | Architect sling 1 returned a single-option ADR (only proposed cursor pagination). Rejected; architect prompt edited with the ≥3 options rule; re-slung. |
-| 00:22 | Architect sling 2 emitted `docs/adr/0002-order-history-pagination.md` with three options (numeric offset, cursor pagination, keyset pagination). Decision: cursor pagination on `created_at`. Human gate approved at 00:24. |
-| 00:32 | Designer emitted `design/order-history-spec.md`. Slung to Coder. |
+| 00:22 | Architect sling 2 emitted `docs/architecture/0002-order-history-pagination.md` with three options (numeric offset, cursor pagination, keyset pagination). Decision: cursor pagination on `created_at`. Human gate approved at 00:24. |
+| 00:32 | Designer emitted `docs/designs/order-history-spec.md`. Slung to Coder. |
 | 00:48 | Coder sling 1 failed a test: cursor was typed as `number` instead of `string \| null`. Coder prompt edited; `git reset --hard HEAD`; re-slung. |
 | 00:59 | Coder sling 2 clean. 12/12 tests passing. Feature branch pushed. Slung to Reviewer. |
-| 01:08 | Reviewer emitted `review-reports/order-history-review.md` — APPROVE with 2 Low findings (JSDoc terseness, missing `aria-busy` during fetch). Human gate approved at 01:10. |
-| 01:18 | Deployer emitted `release-gates/order-history-gate.md` — PASS (6/6 required). |
+| 01:08 | Reviewer emitted `docs/reviews/order-history-review.md` — APPROVE with 2 Low findings (JSDoc terseness, missing `aria-busy` during fetch). Human gate approved at 01:10. |
+| 01:18 | Deployer emitted `docs/releases/order-history-gate.md` — PASS (6/6 required). |
 
 ---
 
@@ -104,16 +104,16 @@ When should an ADR reject an option outright vs. document it as a trade-off? The
 
 ## Artifacts Produced
 
-- `work-packages/order-history-page.md`
-- `docs/adr/0002-order-history-pagination.md`
-- `design/order-history-spec.md`
+- `docs/plans/order-history-page.md`
+- `docs/architecture/0002-order-history-pagination.md`
+- `docs/designs/order-history-spec.md`
 - `src/pages/OrderHistoryPage.tsx` + tests
 - `src/api/orderHistory.ts` + tests
 - `src/db/orderHistory.ts` + tests
-- `review-reports/order-history-review.md`
-- `release-gates/order-history-gate.md`
+- `docs/reviews/order-history-review.md`
+- `docs/releases/order-history-gate.md`
 - `DECISIONS.md` — two new entries
-- Updated: `packs/architect/agents/architect/prompt.template.md`
-- Updated: `packs/builder/agents/builder/prompt.template.md`
+- Updated: `packs/lessons/C1/agents/architect/prompt.template.md`
+- Updated: `packs/lessons/C1/agents/builder/prompt.template.md`
 
 Feature branch `feat/order-history` is mergeable with `main`. Final merge pending founder sign-off outside the capstone session.

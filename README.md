@@ -1,212 +1,108 @@
 # Software Factory Intensive
 
-Hands-on, project-based workshop to learn how to build a software factory — a system of AI agents that can plan, architect, code, review, and deploy software continuously.
+Hands-on curriculum for building small software factories with Gas City, PackV2, and FormulaV2.
 
-| | |
-|---|---|
-| **Format** | Self-paced walkthroughs (9 sessions: 4 workshops + 4 labs + 1 capstone) |
-| **Estimated total time** | ~9 hours of guided work |
-| **Reference project** | [Fired Up Pizza](reference-project/fired-up-pizza/) |
+The active curriculum is built around self-contained lesson packs. Each runnable lab has one complete factory under `packs/lessons/<lesson>/`: agents, prompts, formulas, doctors, and commands live together so students can inspect the whole system without chasing shared pack imports.
 
----
+## Before You Start
 
-## Before You Arrive
+Install Gas City and the supporting tools:
 
-### 1. Software Project Overview
-
-You should bring a real software project to build your factory around. Before starting the curriculum, write a **Project Overview** for it — a loosely structured document answering the questions below. (Don't fill in the structured `my-factory/PROJECT_MANIFEST.md` yet — your local coding agent generates that from your overview during L1.)
-
-A complete overview covers:
-
-- **User needs** — what does this software do, and for whom?
-- **Size, type, languages, resource constraints** — is it a new project or an existing codebase? Which languages and frameworks? Any limits on memory, runtime, or platform?
-- **Potential SDLC service integrations** — which external services is this factory likely to touch (Vercel, Jira, Linear, AWS, Grafana, GitHub, etc.)?
-
-Use [`curriculum/PROJECT_OVERVIEW_TEMPLATE.md`](curriculum/PROJECT_OVERVIEW_TEMPLATE.md) as a starting point. See [`reference-project/fired-up-pizza/docs/PROJECT_OVERVIEW.md`](reference-project/fired-up-pizza/docs/PROJECT_OVERVIEW.md) for a completed example.
-
-### 2. Library Dependencies
-
-Install Gas City and the tools it depends on. See [`installation.md`](installation.md) for the full dependency list and platform-specific notes.
-
-- **Gas City ≥ 0.15.0**: `brew install gastownhall/gascity/gascity` (verify with `gc version`)
-- **Supporting tools**: `git`, `tmux`, `jq`, `dolt` — typically installed automatically alongside Gas City on macOS
-
-### 3. CLI Coding Agents
-
-You need at least one CLI coding agent installed and authenticated. Additional agents give you broader capabilities and redundancy (different models have different strengths).
-
-- **Recommended**: Claude Code Max 20×, Codex Pro 20×, or similar paid tiers
-- **Minimum**: Claude Code Max, Codex Pro, or similar
-- **Others may work** (no compatibility guarantees):
-  - Gemini CLI
-  - OpenCode
-  - GitHub Copilot
-  - Cursor
-
-For the current list of supported providers and their configuration keys, see Gas City's provider registry: [`internal/config/provider.go#L203-L209`](https://github.com/gastownhall/gascity/blob/73f09ddd78fed9b90e0589b324255c36d030eb46/internal/config/provider.go#L203-L209).
-
-### 4. Operating System
-
-- **macOS / Linux**: works as-is
-- **Windows**: install [WSL](https://learn.microsoft.com/en-us/windows/wsl/install) first; run everything from inside the WSL shell
-
----
-
-## Why Gas City
-
-This curriculum is built on top of [Gas City](https://github.com/gastownhall/gascity), an open-source framework for running multi-agent systems. Gas City abstracts the primitives of multi-agent coordination — agents, packs, rigs, beads, sessions, orders, routes — so that any multi-agent architecture can be expressed within the same framework rather than re-invented each time.
-
-We use Gas City here because the 6-agent factory is one instance of a much broader pattern. Once you've learned the primitives, you can swap out the specific agent roles and build pipelines for code review, research, data processing, ops automation — the framework doesn't care what the agents do. The goal of the workshop is to make these primitives internalized enough that you can design your own multi-agent systems after you leave.
-
-For the authoritative definitions of every Gas City term used across the curriculum (agent, pack, rig, bead, sling, order, route, formula, overlay, etc.), see the upstream glossary: [Gas City glossary](https://github.com/gastownhall/gascity/blob/main/engdocs/architecture/glossary.md). Skim it once before W1 and keep it open as a reference during the labs.
-
----
-
-## The 6-Agent Software Factory
-
-Across 9 sessions you build a pipeline of six AI agents that turn a feature request into deployed code:
-
-```
-Feature Request → Planner → Architect → Designer → Builder → Reviewer → Release-Gate → Done
+```bash
+brew install gastownhall/gascity/gascity
+gc version
 ```
 
-| Role (curriculum) | Shipped pack | What It Does |
-|-------------------|-------------|-------------|
-| **Planner** | `packs/planner` | Breaks features into structured work packages |
-| **Architect** | `packs/architect` | Makes technical decisions, produces ADRs |
-| **Designer** | `packs/designer` | Creates component/module specs |
-| **Builder** (Coder) | `packs/builder` | Implements code from specs |
-| **Reviewer** | `packs/reviewer` | Reviews code against specs and standards |
-| **Release-Gate** (Deployer) | `packs/release-gate` | Evaluates release gates |
+You also need a CLI coding agent installed and authenticated. The walkthrough harness currently exercises Claude Code, but the lesson content is written around Gas City concepts rather than one provider.
 
-## Core Principle: Config Over Prompting
+Bring a real project or use the bundled fixture/reference material. Before the first lab, write a short project overview from [`curriculum/PROJECT_OVERVIEW_TEMPLATE.md`](curriculum/PROJECT_OVERVIEW_TEMPLATE.md).
 
-The single most important discipline this workshop teaches: **change agent behavior through config, not through ad-hoc prompting.**
+## Architecture
 
-When an agent produces wrong output, update its config file and re-run — don't type a correction into the chat. This discipline is the bridge between individual AI use and a factory that runs 24/7 without a human at the keyboard.
+The student path is:
 
----
-
-## Session Map
-
-| ID | Type | Estimated Duration | Title |
-|----|------|--------------------|-------|
-| [W1](curriculum/workshops/W1/) | WORKSHOP | ~60 min | Optimize the Individual AI Workflow |
-| [L1](curriculum/labs/L1/) | LAB | ~60 min | Build a Structured Development Loop |
-| [W2](curriculum/workshops/W2/) | WORKSHOP | ~45 min | Design the 6-Agent Software Factory |
-| [L2](curriculum/labs/L2/) | LAB | ~75 min | Deploy Planner + Architect Agents |
-| [L3](curriculum/labs/L3/) | LAB | ~75 min | Deploy Designer + Coder Agents |
-| [W3](curriculum/workshops/W3/) | WORKSHOP | ~45 min | Architect Multi-Agent Coordination |
-| [L4](curriculum/labs/L4/) | LAB | ~75 min | Deploy Reviewer + Deployer Agents |
-| [W4](curriculum/workshops/W4/) | WORKSHOP | ~45 min | Create Continuous Improvement Loops |
-| [C1](curriculum/capstone/C1/) | CAPSTONE | ~90 min | Run the Software Factory End-to-End |
-
----
-
-## Repo Structure
-
+```text
+choose lesson factory pack -> sync the existing project rig -> sling one request -> formula routes work
 ```
+
+The factory path is not based on hand-made stage queues. Formulas define the workflow graph; beads record runtime work and artifacts; labels are metadata for searching and reporting.
+
+## Repo Layout
+
+```text
 software-factory-intensive/
-├── README.md                        # You are here
-├── installation.md                  # Dependency install guide
-│
-├── my-factory/                      # Your Gas City factory (pack.toml + city.toml live here)
-│   ├── pack.toml.template           # Committed — copy to pack.toml at setup
-│   ├── city.toml.template           # Committed — copy to city.toml at setup
-│   ├── pack.toml                    # (gitignored) your local copy — not mutated by gc
-│   ├── city.toml                    # (gitignored) your local copy — gc register --name / gc rig add mutate this
-│   ├── .gitignore                   # Ignores the runtime copies above
-│   ├── README.md                    # Quickstart: register factory, add rig, kick off a task
-│   └── PROJECT_MANIFEST.md          # Manifest template (filled in during L1)
-│
-├── activities/                      # Where you place per-session deliverables + pack customisations
-│   ├── README.md                    # Session layout + additive/independent model
-│   ├── workshops/
-│   │   ├── W1/README.md             # Workflow card
-│   │   ├── W2/README.md             # Factory wiring
-│   │   ├── W3/README.md             # orchestrator.yaml + gate justifications
-│   │   └── W4/README.md             # Feedback-loop rule files
-│   ├── labs/
-│   │   ├── L1/README.md             # CLAUDE.md + DECISIONS.md
-│   │   ├── L2/README.md             # Planner + Architect activity
-│   │   ├── L3/README.md             # Designer + Builder activity
-│   │   └── L4/README.md             # Reviewer + Release-Gate activity
-│   └── capstone/
-│       └── C1/README.md             # Run report + retrospective
-│
-├── curriculum/                      # Self-paced session walkthroughs and facilitation prompts
-│   ├── README.md
-│   ├── PROJECT_OVERVIEW_TEMPLATE.md # Loose-structure project brief (you fill in)
-│   ├── PROJECT_MANIFEST_TEMPLATE.md # Structural skeleton (agent-generated in L1)
-│   ├── workshops/W1..W4/            # Each has README.md + PROMPT.md
-│   ├── labs/L1..L4/                 # Each has README.md + PROMPT.md
-│   └── capstone/C1/                 # README.md + PROMPT.md
-│
-├── packs/                           # Shipped Gas City agent packs (all v2 — schema=2)
-│   ├── README.md                    # Pack authoring + persona mapping
-│   ├── planner/                     # Added in L2
-│   ├── architect/                   # Added in L2
-│   ├── designer/                    # Added in L3
-│   ├── builder/                     # Added in L3 (called "Coder" in the curriculum)
-│   ├── reviewer/                    # Added in L4
-│   ├── release-gate/                # Added in L4 (called "Deployer" in the curriculum)
-│   ├── validator/                   # Optional — writes failing tests from ACs
-│   ├── improver/                    # Optional — harvests feedback from runs
-│   ├── all/                         # Composition pack; hosts `gc all wake-downstream`
-│   ├── fired-up-pizza/              # Composite for the reference project
-│   └── workshop/                    # Pre-configured integrations (Jira, Linear, GitHub, etc.)
-│
-└── reference-project/
-    └── fired-up-pizza/              # Working reference — complete 6-agent factory example
+├── my-factory/                 # city templates and quickstart
+├── packs/
+│   ├── lessons/
+│   │   ├── L2/                 # planner + architect factory
+│   │   ├── L3/                 # planner + architect + designer + builder
+│   │   ├── L4/                 # delivery review factory
+│   │   └── C1/                 # end-to-end release factory
+│   └── workshop/               # optional service-integration helpers
+├── curriculum/                 # long-form walkthroughs
+├── activities/                 # student deliverables and short instructions
+├── reference-project/          # example project artifacts
+└── test-harness/               # lint, dry-run, and live walkthrough tests
 ```
 
----
+## Lesson Packs
 
-## Integrations
+Each lesson pack is portable factory code. The folder name may include a lesson number for navigation, but files inside the pack should read like production factory definitions: no prompt should tell an agent it is in a class, lab, or workshop.
 
-The [`packs/workshop/`](packs/workshop/) pack provides pre-configured integrations for external services your factory can connect to:
+| Lesson | Factory Pack | Entry Formula | Entry Target |
+|---|---|---|---|
+| L2 | `packs/lessons/L2` | `mol-feature-intake` | `<rig>/factory.planner` |
+| L3 | `packs/lessons/L3` | `mol-feature-delivery` | `<rig>/factory.planner` |
+| L4 | `packs/lessons/L4` | `mol-delivery-review` | `<rig>/factory.planner` |
+| C1 | `packs/lessons/C1` | `mol-release-delivery` | `<rig>/factory.planner` |
 
-- **Issue tracker sync** — Jira, Linear, GitHub Issues, GitLab Issues, Azure DevOps, Notion (via `bd` native sync with periodic orders)
-- **Observability** — Sentry, DataDog, PostHog, Grafana (via MCP servers giving agents direct tool access)
-- **Cloud providers** — AWS, GCP, Azure (validated via CLI auth)
-- **Communication** — Slack, Discord (via MCP servers)
+## Quickstart
 
-The workshop pack is already imported in `my-factory/pack.toml.template` at workspace scope, so commands like `gc workshop status` and `gc workshop sync-all` are available once you've registered the factory:
-
-```bash
-# Copy the env template and fill in your credentials
-cp packs/workshop/env.example .env
-
-# Validate connections
-cd my-factory && gc doctor
-```
-
-Only configure the integrations your project actually uses. See [`packs/workshop/README.md`](packs/workshop/README.md) for the full list and setup details.
-
----
-
-## Getting Started
+Create local runtime config from the templates:
 
 ```bash
-# Clone the repo
-git clone https://github.com/actual-software/software-factory-intensive.git
-cd software-factory-intensive
-
-# Copy the committed templates to your local runtime copies (gitignored)
 cp my-factory/pack.toml.template my-factory/pack.toml
 cp my-factory/city.toml.template my-factory/city.toml
-
-# Register my-factory/ with the Gas City supervisor
-cd my-factory
-gc register .
-
-# Add your project as a rig — all 8 agent packs compose in automatically
-# via default_rig_includes
-gc rig add ~/Projects/your-project
-
-# Start the factory
-gc restart
-gc status
 ```
 
-See [`my-factory/README.md`](my-factory/README.md) for the full factory quickstart, [`activities/README.md`](activities/README.md) for the per-session deliverable layout, or the [curriculum README](curriculum/README.md) for session structure. Jump to [W1](curriculum/workshops/W1/) to start.
+Register the city and add your project rig:
+
+```bash
+cd my-factory
+gc register .
+gc rig add ~/Projects/your-project
+gc doctor --fix
+```
+
+The default template selects the L2 factory:
+
+```toml
+[defaults.rig.imports.factory]
+source = "../packs/lessons/L2"
+```
+
+When you move to another runnable lesson, update that source path and sync the existing rig:
+
+```bash
+gc --rig your-project import remove factory
+gc --rig your-project import add ../packs/lessons/L3 --name factory
+```
+
+Then sling work to the lesson formula:
+
+```bash
+gc sling your-project/factory.planner \
+  "Add a percent operation: percent(whole, fraction) returns whole*fraction/100" \
+  --on mol-feature-delivery
+```
+
+Watch progress with:
+
+```bash
+gc events --follow
+gc session list
+gc session peek your-project/factory.planner
+gc graph <workflow-bead-id>
+```
+
+Start with [`curriculum/workshops/W1/README.md`](curriculum/workshops/W1/README.md), then follow the session map in [`curriculum/README.md`](curriculum/README.md).

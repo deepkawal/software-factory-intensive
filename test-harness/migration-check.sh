@@ -6,10 +6,8 @@
 # haven't migrated yet. Run this after every per-pack slice per the plan's
 # Principle 3 + 5.
 #
-# Invariants apply to packs under:
-#   - packs/                                            (canonical)
-#   - activites/workshops/Wn/gascity/step_X/packs/      (W2/L2 checkpoints)
-#   - activites/labs/Ln/gascity/step_X/packs/
+# Invariants apply to active packs under:
+#   - packs/
 #
 # Exit codes:
 #   0 — all invariants pass
@@ -26,11 +24,11 @@ fail() {
   FAILED=$((FAILED + 1))
 }
 
-# Enumerate every pack.toml under the canonical + checkpoint trees.
+# Enumerate every active pack.toml.
 PACK_TOMLS=()
 while IFS= read -r pack_toml; do
   PACK_TOMLS+=("$pack_toml")
-done < <(find packs activites/workshops activites/labs -name pack.toml 2>/dev/null | sort)
+done < <(find packs -name pack.toml 2>/dev/null | sort)
 
 MIGRATED_PACK_DIRS=()
 for pt in "${PACK_TOMLS[@]}"; do

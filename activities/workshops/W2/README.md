@@ -1,35 +1,40 @@
-# W2 · Design the 6-Agent Software Factory — Activity
+# W2 · Design The Software Factory — Activity
 
 **Walkthrough:** [`../../../curriculum/workshops/W2/README.md`](../../../curriculum/workshops/W2/README.md)
-**Reference example:** [`../../../reference-project/fired-up-pizza/docs/factory-wiring.md`](../../../reference-project/fired-up-pizza/docs/factory-wiring.md)
+
+Create a local factory map that explains how your project should flow through the lesson factories.
 
 ## Deliverable
 
-One file in this folder:
+Create:
 
-* `factory-wiring.md` — a per-agent table for the six agents (Planner, Architect, Designer, Builder, Reviewer, Release-Gate) showing input artifact, output artifact, config file, and the integration surface each agent touches (e.g. Jira, Slack, GitHub).
+```bash
+activities/workshops/W2/factory-map.md
+```
 
-The six agents map to these shipped packs:
+Include these sections:
 
-| Role in the curriculum | Pack path |
-|------------------------|-----------|
-| Planner | `../../../packs/planner` |
-| Architect | `../../../packs/architect` |
-| Designer | `../../../packs/designer` |
-| Builder (Coder) | `../../../packs/builder` |
-| Reviewer | `../../../packs/reviewer` |
-| Release-Gate (Deployer) | `../../../packs/release-gate` |
+- roles and responsibilities
+- artifacts each role reads and writes
+- formula step IDs
+- target agents such as `factory.planner`
+- dependencies between steps
+- done criteria for each artifact
 
-## Workspace wiring
+## Reference Packs To Inspect
 
-W2 is a design session — no pack is installed yet, so `../../../my-factory/city.toml` stays empty. The next lab (L2) adds the first two packs.
+Use the self-contained lesson packs:
 
-## Exit criteria
+- `../../../packs/lessons/L2`
+- `../../../packs/lessons/L3`
+- `../../../packs/lessons/L4`
+- `../../../packs/lessons/C1`
 
-* [ ] `factory-wiring.md` exists and covers all six agents.
-* [ ] Each row names a concrete artifact path (e.g. `work-packages/<slug>.md`) and a concrete prompt file (e.g. `../../../packs/builder/agents/builder/prompt.template.md`).
-* [ ] Integration surface column lists the specific external services your project touches — not generic "any tracker".
+Do not design around a separate reusable-role topology. The lesson factory pack is the unit of runtime definition.
 
-## Skipped this session?
+## Exit Criteria
 
-L2 onwards work without a wiring doc, but you'll reinvent the table in your head every time. If you skip W2, at minimum skim the reference `factory-wiring.md` before L2 so you know which files you're about to edit.
+- [ ] Each role has a concrete responsibility.
+- [ ] Each role writes a concrete artifact path.
+- [ ] Each formula step names a target and dependency list.
+- [ ] Your map explains what the next lab should be able to assume.

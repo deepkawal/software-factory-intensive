@@ -1,7 +1,0 @@
-scope = "rig"
-wake_mode = "fresh"
-work_dir = ".gc/agents/{{.Rig}}/validator"
-nudge = "Run 'gc prime', then check bd ready --label=needs-tests for work."
-idle_timeout = "2h"
-min_active_sessions = 0
-max_active_sessions = 1

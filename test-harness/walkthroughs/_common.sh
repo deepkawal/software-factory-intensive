@@ -41,6 +41,36 @@ fail() {
   exit 1
 }
 
+register_walkthrough_city() {
+  local factory="$1" city_name="$2" lesson="$3"
+  local out_file="$WALK_SCRATCH/register-$lesson.out"
+  : > "$out_file"
+
+  (cd "$factory" && run_bounded "${WALK_REGISTER_TIMEOUT_SECONDS:-60}" gc register --name "$city_name" . >"$out_file" 2>&1)
+  local register_rc=$?
+  local register_out
+  register_out="$(cat "$out_file" 2>/dev/null || true)"
+
+  log "gc register output (first 10 lines):"
+  echo "$register_out" | head -10 | sed 's/^/    /' | tee -a "$WALK_LOG"
+
+  if echo "$register_out" | grep -q "Registered city '$city_name'"; then
+    REGISTERED_CITY_PATHS+=("$factory")
+    step_pass "gc register --name $city_name . registered city"
+    return 0
+  fi
+
+  if gc cities 2>/dev/null | awk -v n="$city_name" '$1 == n { found = 1 } END { exit !found }'; then
+    REGISTERED_CITY_PATHS+=("$factory")
+    divergence "$lesson" "gc register timed out or omitted marker after creating $city_name; continuing from registry evidence"
+    step_pass "gc register --name $city_name . registered city"
+    return 0
+  fi
+
+  step_fail "gc register did not emit 'Registered city' marker"
+  return "$register_rc"
+}
+
 # --- State.env plumbing ------------------------------------------------
 
 # Call once after setting shell vars you want to export to later lessons:
@@ -270,160 +300,6 @@ wait_for() {
   return 1
 }
 
-# wait_for_bead_label <rig-path> <label> <timeout> [<interval>]
-# Succeeds when any bead in the rig has the expected label.
-wait_for_bead_label() {
-  local rig_path="$1" label="$2" timeout="$3" interval="${4:-8}"
-  wait_for "any bead in rig labelled '$label'" \
-    "cd '$rig_path' && bd list --label='$label' --json 2>/dev/null | jq -e 'length > 0' >/dev/null" \
-    "$timeout" "$interval"
-}
-
-# find_ready_bead_or_wait <rig-path> <label> <fallback-bead> <wait-seconds>
-# Returns (on stdout) the id of a bd-ready bead with the expected label,
-# waiting up to <wait-seconds> for one to appear. If none does, returns
-# <fallback-bead> and logs a divergence — the caller can still sling the
-# original bead, which works when the upstream agent hasn't re-labelled.
-find_ready_bead_or_wait() {
-  local rig="$1" label="$2" fallback="$3" wait_s="${4:-60}"
-  local deadline=$((SECONDS + wait_s)) bead=""
-  while [ "$SECONDS" -lt "$deadline" ]; do
-    bead="$(cd "$rig" && bd ready --label="$label" --limit=1 --json 2>/dev/null \
-      | jq -r '.[0].id // empty' 2>/dev/null)"
-    if [ -n "$bead" ]; then
-      echo "$bead"
-      return 0
-    fi
-    sleep 3
-  done
-  divergence "${WALK_LESSON_NAME:-unknown}" "no $label bead after ${wait_s}s — slinging $fallback"
-  echo "$fallback"
-}
-
-# sling_and_nudge <factory-path> <target-template> <bead-id>
-#
-# `gc sling --nudge` routes the bead AND invokes the runtime provider's
-# nudge path in the same command, so the session starts processing even
-# if the initial tmux keystroke racing with Claude Code's welcome-screen
-# animation dropped the Enter. `--nudge` is a built-in flag on `gc sling`
-# (see cmd/gc/cmd_sling.go in the gascity source); wrapping it here
-# centralises the log line format.
-#
-# Sets SLING_RC to 0 on success, 1 on failure. Artifact wait is the
-# caller's responsibility.
-sling_and_nudge() {
-  local factory="$1" target="$2" bead="$3"
-  local sling_out
-  sling_out="$(cd "$factory" && gc sling --nudge "$target" "$bead" 2>&1)"
-  log "gc sling --nudge $target $bead:"
-  echo "$sling_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
-  if ! echo "$sling_out" | grep -qiE 'Slung|dispatched'; then
-    SLING_RC=1
-    return 1
-  fi
-  SLING_RC=0
-  return 0
-}
-
-# stage_bead_create <rig-path> <title> <label> <upstream-bead>
-#
-# Create a fresh bead for the next pipeline stage. Prints the new bead
-# id on stdout.
-#
-# The rig's CLAUDE.md instructs each agent to close its own bead when
-# finished. This helper defensively closes the upstream bead anyway —
-# if the upstream agent already closed it, the close is a harmless
-# no-op; if the agent forgot (LLM compliance isn't perfect), this
-# prevents a second bead with the same stage label from colliding
-# with the new one in the downstream agent's scale_check.
-#
-# The student-facing flow in the activity READMEs is just:
-#   bd create --title "<stage>: <feature>" --labels <stage-label>
-#   gc sling --nudge rig/<agent>.<template> <new-bead>
-# — the close happens agent-side.
-stage_bead_create() {
-  local rig="$1" title="$2" label="$3" upstream="$4"
-  if [ -n "$upstream" ]; then
-    # Close the upstream bead. Ignore errors — may already be closed.
-    (cd "$rig" && bd close "$upstream" >/dev/null 2>&1) || true
-  fi
-  local out bead
-  out="$(cd "$rig" && bd create \
-    --title "$title" \
-    --labels "$label" 2>&1)"
-  bead="$(echo "$out" | grep -oE 'rig-[a-zA-Z0-9.]+' | head -1)"
-  if [ -z "$bead" ]; then
-    log "bd create failed for $title:"
-    echo "$out" | sed 's/^/    /' | tee -a "$WALK_LOG"
-    return 1
-  fi
-  echo "$bead"
-}
-
-# Alias for back-compat; prefer stage_bead_create going forward.
-create_downstream_bead() {
-  stage_bead_create "$@"
-}
-
-# wait_for_agent_ready <factory-path> <agent-template> <timeout> [<interval>]
-# Polls until `gc session peek <template>` returns without the "no tmux
-# server running" error — confirms a tmux pane is actually backing the
-# session record. Critical before slinging: a freshly-bootstrapped
-# session shows up in `gc session list` with a STATE but may not yet
-# have a tmux pane, and slinging at that moment routes the bead into
-# a black hole (session stays asleep indefinitely with config-drift).
-#
-# Note: gc session peek exits 0 even when "no tmux server running" — it
-# prints that to stdout. Grep for the negative signal.
-wait_for_agent_ready() {
-  local factory="$1" template="$2" timeout="$3" interval="${4:-5}"
-  wait_for "$template session has live tmux backing" \
-    "cd '$factory' && gc session peek '$template' 2>&1 | grep -q 'no tmux server running' && exit 1 || exit 0" \
-    "$timeout" "$interval"
-}
-
-# run_stage <stage-name> <label> <target> <artifact-dir> <upstream-bead> [<budget-seconds>] [<title-suffix>]
-#
-# Run one pipeline stage: fresh bead → wait for session → sling + nudge →
-# wait for artifact under $WALK_RIG/<artifact-dir>/*.md.
-#
-# Reads from env: WALK_FACTORY, WALK_RIG (required); WALK_LESSON_NAME
-# (used for title default).
-#
-# On success, exports STAGE_BEAD with the new bead id.
-# Returns 0 on success, 1 on failure. Callers are expected to stop_event_stream / fail.
-run_stage() {
-  local stage_name="$1" label="$2" target="$3" artifact_dir="$4" upstream="$5"
-  local budget="${6:-900}" title_suffix="${7:-$WALK_LESSON_NAME}"
-  STAGE_BEAD=""
-  local stage_title="$stage_name: $title_suffix"
-  log "[$stage_name] bd create --labels $label  (chains after $upstream)"
-  local bead
-  bead="$(stage_bead_create "$WALK_RIG" "$stage_title" "$label" "$upstream")" || {
-    step_fail "bd create failed for $stage_name"; return 1
-  }
-  STAGE_BEAD="$bead"
-  log "[$stage_name] → $STAGE_BEAD"
-  if ! wait_for_agent_ready "$WALK_FACTORY" "$target" 180 5; then
-    step_fail "$stage_name session tmux never came live"; return 1
-  fi
-  sling_and_nudge "$WALK_FACTORY" "$target" "$STAGE_BEAD"
-  if [ "$SLING_RC" -ne 0 ]; then
-    step_fail "sling to $target produced no success marker"; return 1
-  fi
-  local check='
-    count=$(find "'"$WALK_RIG"'/'"$artifact_dir"'" -maxdepth 1 -type f -name "*.md" 2>/dev/null | wc -l | tr -d " ")
-    [ "$count" -ge 1 ]
-  '
-  local rescue="rescue_dead_session '$WALK_RIG' '$STAGE_BEAD' '$target'"
-  if ! wait_for "$stage_name to write $artifact_dir/*.md" "$check" "$budget" 15 "$rescue" "$target"; then
-    log "debugging — session list:"
-    (cd "$WALK_FACTORY" && gc session list 2>/dev/null | head -12 | sed 's/^/    /') | tee -a "$WALK_LOG"
-    return 1
-  fi
-  return 0
-}
-
 # wait_for_bead_closed <rig-path> <bead-id> <timeout> [<interval>]
 wait_for_bead_closed() {
   local rig_path="$1" bead="$2" timeout="$3" interval="${4:-8}"
@@ -523,8 +399,13 @@ purge_stranded_walkthrough_cities() {
   divergence "$WALK_LESSON_NAME" "found stranded sfi-walkthrough-* cities from prior runs; cleaning up"
   while IFS= read -r city_path; do
     [ -n "$city_path" ] || continue
-    gc unregister "$city_path" >/dev/null 2>&1 || true
-    log "    purged $city_path"
+    (cd "$city_path" 2>/dev/null && run_bounded 20 gc stop >/dev/null 2>&1) || true
+    if run_bounded 30 gc unregister "$city_path" >/dev/null 2>&1; then
+      log "    purged $city_path"
+    else
+      prune_walkthrough_city_registry "$city_path"
+      log "    purge timed out for $city_path"
+    fi
   done <<< "$stranded"
 }
 

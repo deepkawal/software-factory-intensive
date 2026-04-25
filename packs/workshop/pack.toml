@@ -7,7 +7,7 @@
 #   - overlay/.claude/settings.json — MCP servers + permissions for
 #     GitHub, Sentry, PostHog, Datadog, Grafana, Slack, Linear. Reaches
 #     agent sessions via PackOverlayDirs when this pack is imported at
-#     workspace scope (verified runtime path; see
+#     city scope (verified runtime path; see
 #     internal/config/pack.go § ExpandPacks and
 #     internal/runtime/tmux/adapter.go § session setup).
 

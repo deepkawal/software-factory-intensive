@@ -1,56 +1,47 @@
 # Activities
 
-This directory is where you do your work for each session of the Software Factory Intensive. It is separate from `../curriculum/`, which contains the walkthroughs you *read*, and separate from `../packs/`, which contains the canonical, shipped agent packs.
+This directory holds the student-facing deliverables for each session. The long walkthroughs live in `../curriculum/`; runnable factory definitions live in `../packs/lessons/`.
 
-| Tree | What goes here |
-|------|----------------|
-| `workshops/W1..W4/` | Deliverables from each workshop (design docs, config files, feedback-loop notes) |
-| `labs/L1..L4/` | Deliverables from each lab plus any customised pack copies |
-| `capstone/C1/` | Capstone run report and retrospective |
+## How Activities Relate To Packs
 
-## The additive, independent model
+Activities are where you write notes, run reports, and local design artifacts. They are not where workflow routing lives.
 
-Every session ships a ready-to-use reference pack under `../packs/<agent>/`. The curriculum is designed so that **skipping a session does not break the pipeline** — you just include the shipped pack as-is instead of your own customised copy.
+For runnable labs, the active factory is selected from `my-factory/pack.toml`:
 
-Within a session you can customise a pack two ways:
+```toml
+[defaults.rig.imports.factory]
+source = "../packs/lessons/L3"
+```
 
-1. **Copy it** — `cp -r ../../packs/<agent> packs/<agent>/` inside the session's activity folder, edit your copy, and point your rig at the customised copy by adding a rig-scoped import to `../my-factory/city.toml`:
-   ```toml
-   [rigs.imports.<agent>]
-   source = "../activities/<session>/packs/<agent>"
-   ```
-   This overrides the shipped `../packs/<agent>` for this rig only.
-2. **Leave it alone** — the shipped pack is already wired via `default_rig_includes` in `city.toml.template`; focus on the workshop's conceptual deliverables.
+Students keep the same project rig across lessons. After changing the active lesson factory, sync the existing rig import:
 
-Either way, at the end of the session you **update `../my-factory/city.toml`** to reflect which packs your rig should run. Each session's README tells you the exact lines.
+```bash
+cd ../my-factory
+gc --rig your-project import remove factory
+gc --rig your-project import add ../packs/lessons/L3 --name factory
+```
 
-## Typical session flow
+Then sling one feature request to the formula entrypoint shown in the activity README.
 
-1. Open `../curriculum/<session>/README.md` and read the walkthrough.
-2. Work inside this session's folder (`activities/<session>/`). Most sessions ask for one or two markdown deliverables (a workflow card, a factory-wiring doc, an orchestrator.yaml, a feedback-loop note).
-3. For labs that deploy a new agent: copy the shipped pack into `activities/<session>/packs/<agent>/`, customise, and wire it into `../my-factory/city.toml` using the `[rigs.imports.<agent>]` block above.
-4. Run `gc restart && gc doctor` from `../my-factory/` to reload the city. (Pack-level changes also hot-reload within ~30s via the patrol tick, but `gc restart` is the reliable recovery path for nested edits.)
+## Typical Session Flow
 
-## Getting un-stuck
-
-If a session breaks your factory:
-
-1. `git checkout activities/<session>/packs/` to discard the customised pack copy.
-2. Remove the `[rigs.imports.<agent>] source = "../activities/<session>/packs/<agent>"` block you added to `../my-factory/city.toml`. The shipped `../packs/<agent>` composed via `default_rig_includes` takes over again.
-3. `gc restart` from `my-factory/`.
-
-You lose the customisation but keep a working factory, and you can retry the customisation later.
+1. Read the matching walkthrough under `../curriculum/`.
+2. Write the requested activity deliverables in this directory.
+3. For runnable labs, select the matching self-contained factory pack.
+4. Sync the existing project rig's `factory` import.
+5. Start the formula with `gc sling <rig>/factory.planner ... --on <formula>`.
+6. Inspect progress with `gc events --follow`, `gc session list`, `gc session peek`, and `gc graph`.
 
 ## Sessions
 
 | Session | Folder | Key deliverable |
-|---------|--------|-----------------|
-| W1 | [`workshops/W1/`](workshops/W1/) | Workflow card — single-agent workflow discipline |
-| W2 | [`workshops/W2/`](workshops/W2/) | Factory wiring — per-agent table + integration points |
-| W3 | [`workshops/W3/`](workshops/W3/) | `orchestrator.yaml` + gate justification doc |
-| W4 | [`workshops/W4/`](workshops/W4/) | Feedback-loops — reactive / aggregate / external rules |
-| L1 | [`labs/L1/`](labs/L1/) | Filled-in `CLAUDE.md` + `DECISIONS.md` log |
-| L2 | [`labs/L2/`](labs/L2/) | First work package + ADR; Planner + Architect packs wired |
-| L3 | [`labs/L3/`](labs/L3/) | Design spec + implementation; Designer + Builder packs wired |
-| L4 | [`labs/L4/`](labs/L4/) | Review report + release gate; Reviewer + Release-Gate packs wired |
-| C1 | [`capstone/C1/`](capstone/C1/) | Factory run report + retrospective card |
+|---|---|---|
+| W1 | [`workshops/W1/`](workshops/W1/) | Workflow card for individual AI work |
+| L1 | [`labs/L1/`](labs/L1/) | Project instructions, decision log, project manifest |
+| W2 | [`workshops/W2/`](workshops/W2/) | Factory role and artifact map |
+| L2 | [`labs/L2/`](labs/L2/) | Planner and Architect artifacts |
+| L3 | [`labs/L3/`](labs/L3/) | Design spec and implementation |
+| W3 | [`workshops/W3/`](workshops/W3/) | Formula graph design notes |
+| L4 | [`labs/L4/`](labs/L4/) | Review report and release gate |
+| W4 | [`workshops/W4/`](workshops/W4/) | Feedback-loop rule proposals |
+| C1 | [`capstone/C1/`](capstone/C1/) | End-to-end run report and retrospective |

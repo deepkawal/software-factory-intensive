@@ -18,9 +18,8 @@ workflow order.
   `docs/PROJECT_MANIFEST.md`, `my-factory/PROJECT_MANIFEST.md`, existing ADRs,
   and architecture docs when present.
 
-The FormulaV2 step contract is the source of truth for this workflow. If project
-context mentions older paths such as `docs/adr/`, use it only as domain context
-and still write the artifact to `docs/architecture/<slug>.md`.
+The FormulaV2 step contract is the source of truth for this workflow. Write the
+artifact to `docs/architecture/<slug>.md`.
 
 If no planner artifact exists yet, inspect the root request and note the missing
 input in the architecture artifact.
@@ -29,13 +28,25 @@ input in the architecture artifact.
 
 1. Run `gc prime`.
 2. Inspect the current formula work and the root request.
+   - For routed work, use `gc hook` with no arguments first. If you pass a
+     target, use a rig-qualified template such as `rig/factory.architect`, not a
+     session instance name.
+   - To inspect graph progress, run `gc graph <workflow-bead-id>`.
+   - Do not use unqualified imported-agent names such as `factory.architect`
+     with `gc hook`; use the rig-qualified target.
+   - Treat artifact paths as relative to the project rig, not the city root or
+     the agent work directory. Use `gc prime` and `gc hook` output to identify
+     the project rig before reading or writing files.
+   - Do not rely on `gc formula show`; the routed step and prompt define the
+     current contract.
+   - For bead data, use `bd list`, `bd show <id>`, or `gc bd show <id>`.
+     `gc beads` is provider diagnostics, not the issue-list command.
 3. Read the latest `docs/plans/*.md` artifact.
 4. Read available project context and existing architecture decisions.
 5. Choose a short slug that matches the planner artifact when possible.
 6. Create `docs/architecture/` if needed and write
    `docs/architecture/<slug>.md`.
-7. Do not write to `docs/adr/`.
-8. Do not create downstream beads, do not relabel work, and do not run helper
+7. Do not create downstream beads, do not relabel work, and do not run helper
    commands to wake another agent.
 
 ## Output Format

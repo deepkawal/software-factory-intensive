@@ -66,15 +66,7 @@ lesson_run() {
 
   echo
   echo "[3/8] gc register L2 factory"
-  local register_out
-  register_out="$(cd "$WALK_L2_FACTORY" && gc register --name "$WALK_L2_CITY_NAME" . 2>&1)"
-  log "gc register output (first 10 lines):"
-  echo "$register_out" | head -10 | sed 's/^/    /' | tee -a "$WALK_LOG"
-  if echo "$register_out" | grep -q "Registered city '$WALK_L2_CITY_NAME'"; then
-    REGISTERED_CITY_PATHS+=("$WALK_L2_FACTORY")
-    step_pass "gc register --name $WALK_L2_CITY_NAME . registered city"
-  else
-    step_fail "gc register did not emit 'Registered city' marker"
+  if ! register_walkthrough_city "$WALK_L2_FACTORY" "$WALK_L2_CITY_NAME" "L2"; then
     fail "L2 factory register failed"
   fi
 

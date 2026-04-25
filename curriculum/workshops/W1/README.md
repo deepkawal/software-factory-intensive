@@ -516,19 +516,19 @@ You didn't run any `gc` commands this session — intentional. W1 is a design wo
 
 | Workflow Card Section | L1 & Beyond Equivalent |
 |-----------------------|------------------------|
-| Prompt Template | The `## Role` and `## Inputs` sections of `CLAUDE.md` — plus each agent pack's `prompts/<agent>.md` file |
+| Prompt Template | The `## Role` and `## Inputs` sections of `CLAUDE.md` — plus each lesson pack's `agents/<role>/prompt.template.md` file |
 | Context Reset Rule | Gas City `idle_timeout` in `city.toml`, plus per-agent session lifecycle rules |
 | Iteration Loop | The bead → sling → watch → review → iterate-config loop (L1 Step 4–7) |
 | Decision Checkpoint | Human-gate beads (`--requires-approval`) in W3; review policies in `docs/REVIEW_POLICY.md` |
 
-Skim [`packs/planner/agents/planner/prompt.template.md`](../../../packs/planner/agents/planner/prompt.template.md) to see the mature, per-agent form of a workflow card. Notice how it specifies Inputs, Output Format, Quality Gate, and Process — the same four axes you just wrote for yourself, but specialized to a single agent role.
+Skim [`packs/lessons/L2/agents/planner/prompt.template.md`](../../../packs/lessons/L2/agents/planner/prompt.template.md) to see the mature, per-agent form of a workflow card. Notice how it specifies Inputs, Output Format, Close Behavior, and Process — the same axes you just wrote for yourself, but specialized to a single agent role.
 
 The progression you'll see across the curriculum is:
 
 - **W1 (now):** one card, one project, one human in the loop.
 - **L1:** the same card, split into `CLAUDE.md` (role, rules, pipeline) for a single `claude` agent.
 - **L2–L4:** six agent packs, each with its own six-section prompt — but each pack's prompt is structurally the same as your card's four sections, scaled up.
-- **W3 / W4:** the orchestrator and feedback loops — which are just *the card's Iteration Loop*, promoted from "a thing you do manually" to "a thing the factory does automatically."
+- **W3 / W4:** formula design and feedback loops — which are just *the card's Iteration Loop*, promoted from "a thing you do manually" to "a thing the factory does automatically."
 
 If any of that feels abstract right now, good. It's meant to. Come back to this table after L2 and it'll read very differently.
 

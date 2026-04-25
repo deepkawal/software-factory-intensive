@@ -7,9 +7,6 @@
 # state.env so later lessons can chain off earlier ones (just like a
 # real student's factory state accumulates across sessions).
 #
-# V1 scope: positional-arg dispatch only; no --lesson/--from/--list
-# flags yet. Add those when we have >1 lesson to chain.
-#
 # Usage:
 #   bash test-harness/tutorial-walkthrough.sh <lesson>        # run one lesson
 #   bash test-harness/tutorial-walkthrough.sh                 # run all known lessons in order
@@ -27,6 +24,7 @@ set -uo pipefail
 
 repo_root="$(cd "$(dirname "$0")/.." && pwd)"
 WALK_REPO_ROOT="$repo_root"
+
 # Canonical path (resolve /tmp → /private/tmp on macOS). gc rig add's
 # server-reuse check compares process args as strings, so if gc register
 # canonicalizes the cwd to /private/tmp/... and we then invoke gc rig add
@@ -42,13 +40,9 @@ TUTORIAL_SCRATCH_ROOT="$(cd "$(mkdir -p /tmp/sfi-tutorial-walkthrough && echo /t
 # shellcheck source=lib/tutorial-common.sh
 source "$repo_root/test-harness/lib/tutorial-common.sh"
 
-# Canonical lesson order. Add new lessons here as they land.
-# Chaining order matches a real student's path through the curriculum:
-# my-factory sets up the factory; each lab builds on the prior lab's
-# state (work-package → ADR → design → code → review → release-gate).
-ALL_LESSONS=(my-factory L2 L3 L4 C1)
-# W1/L1/W2/W3/W4 intentionally skipped — see WORKSHOP_AUTHOR_NOTES.md
-# §10 (L1) and §12 (workshops).
+# Canonical live-runtime order. W1/L1/W2/W3/W4 are design/setup
+# sessions; the live FormulaV2 walkthroughs begin at L2.
+ALL_LESSONS=(L2 L3 L4 C1)
 
 # --- state -------------------------------------------------------------
 
@@ -81,8 +75,31 @@ walkthrough_cleanup() {
   fi
   # Best-effort stop of any factory the lessons spun up.
   if [ -n "${WALK_FACTORY:-}" ] && [ -d "${WALK_FACTORY:-}" ]; then
-    (cd "$WALK_FACTORY" 2>/dev/null && gc stop >/dev/null 2>&1) || true
+    (cd "$WALK_FACTORY" 2>/dev/null && run_bounded 20 gc stop >/dev/null 2>&1) || true
   fi
+  # Unregister before deleting scratch; gc unregister may need the city
+  # directory to tear down runtime providers cleanly.
+  for city_path in "${REGISTERED_CITY_PATHS[@]-}"; do
+    [ -n "$city_path" ] || continue
+    (cd "$city_path" 2>/dev/null && run_bounded 20 gc stop >/dev/null 2>&1) || true
+    run_bounded 30 gc unregister "$city_path" >/dev/null 2>&1 || prune_walkthrough_city_registry "$city_path"
+  done
+  REGISTERED_CITY_PATHS=()
+  run_bounded 15 gc supervisor reload >/dev/null 2>&1 || true
+  # Kill test-owned runtime processes rooted in this walkthrough's scratch tree.
+  # `gc stop` is best-effort; live agent sessions can otherwise leave Dolt,
+  # tmux, or provider CLIs alive after the walkthrough exits.
+  local walk_scratch_alt="$WALK_SCRATCH"
+  case "$walk_scratch_alt" in
+    /private/tmp/*) walk_scratch_alt="/tmp/${walk_scratch_alt#/private/tmp/}" ;;
+    /tmp/*) walk_scratch_alt="/private/tmp/${walk_scratch_alt#/tmp/}" ;;
+  esac
+  ps -axo pid,command \
+    | awk -v root="$WALK_SCRATCH" -v alt="$walk_scratch_alt" '
+        (index($0, root) > 0 || index($0, alt) > 0) && $0 ~ /dolt sql-server|tmux -u -L sfi-walkthrough-|claude --dangerously-skip-permissions|gc events --follow|gc nudge poll --city/ {
+          print $1
+        }' \
+    | xargs -r kill 2>/dev/null || true
   # Kill any tmux server rooted at our isolated TMUX_TMPDIR.
   if [ -n "${TMUX_TMPDIR:-}" ] && [ -d "${TMUX_TMPDIR:-}" ]; then
     tmux -S "$TMUX_TMPDIR/default" kill-server >/dev/null 2>&1 || true
@@ -98,7 +115,7 @@ walkthrough_cleanup() {
   fi
   # Library cleanup handles gc unregister per REGISTERED_CITY_PATHS and
   # prints the divergence summary, then exits with $rc.
-  cleanup
+  cleanup "$rc"
 }
 trap walkthrough_cleanup EXIT INT TERM
 

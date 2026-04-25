@@ -1,141 +1,96 @@
 # Fired Up Pizza
 
-Reference project for the Software Factory Intensive workshop. A pizza restaurant web app built entirely by a 6-agent Gas City software factory.
+Reference project for the Software Factory Intensive. It is a small pizza-ordering app with completed example artifacts from the workshop, labs, and capstone.
 
-## Quick Start
+The reference project is the input project. The capstone factory that operates on it lives in [`../../packs/lessons/C1`](../../packs/lessons/C1).
 
-### 1. Set up Gas City
+## Run It With The Capstone Factory
 
-```bash
-# Install Gas City (macOS)
-brew install gastownhall/gascity/gascity
-
-# Initialize a city
-gc init ~/pizza-factory
-```
-
-### 2. Add agents incrementally (or all at once)
-
-`gc rig add --include <pack>` applies only at **first-time rig registration**. Re-running it on an existing rig ignores `--include` and prints "edit city.toml to change." So pick one of the two options below before running any `gc rig add`, and use `city.toml` edits for subsequent changes.
+From the repository root:
 
 ```bash
-cd ~/pizza-factory
-
-# Option A: Register the rig with just the Planner pack (matches L2 progression).
-#          Add more packs later by editing city.toml — see below.
-gc rig add /path/to/fired-up-pizza --include /path/to/packs/planner
-
-# Option B: Register the rig with all 6 agents at once via the composition pack.
-gc rig add /path/to/fired-up-pizza --include /path/to/packs/fired-up-pizza
+cp my-factory/pack.toml.template my-factory/pack.toml
+cp my-factory/city.toml.template my-factory/city.toml
 ```
 
-To add more packs to an existing rig (Option A progression), edit `city.toml` directly:
+Set the active factory to C1:
 
 ```toml
-[[rigs]]
-name = "fired-up-pizza"
-# ...existing fields...
-
-[rigs.imports.architect]
-source = "/path/to/packs/architect"
-
-[rigs.imports.designer]
-source = "/path/to/packs/designer"
-
-# ... repeat for coder, reviewer, deployer as the labs progress
+[defaults.rig.imports.factory]
+source = "../packs/lessons/C1"
 ```
 
-### 3. Import the ticket backlog
+Register the city and add this project as the rig:
 
 ```bash
-cd /path/to/fired-up-pizza
-gc fired-up-pizza import-tickets tickets.md
-bd list
+cd my-factory
+gc register .
+gc rig add ../reference-project/fired-up-pizza
+gc --rig fired-up-pizza import remove factory
+gc --rig fired-up-pizza import add ../packs/lessons/C1 --name factory
+gc doctor --fix
 ```
 
-### 4. Run the factory
+Start an end-to-end run:
 
 ```bash
-# Sling the first ticket to the planner
-gc sling fired-up-pizza/planner <bead-id>
+gc sling fired-up-pizza/factory.planner \
+  "Add customer order history: customers can view prior orders by phone number" \
+  --on mol-release-delivery
+```
 
-# Watch the pipeline
+Watch progress:
+
+```bash
 gc events --follow
 gc session list
-gc session peek <agent>      # Watch an agent work
+gc session peek fired-up-pizza/factory.planner
 ```
 
-## Project Structure
+## Artifact Layout
 
-```
+```text
 fired-up-pizza/
-  src/                        # Application code (Coder output)
+  src/                         # app code
   docs/
-    PROJECT_OVERVIEW.md       # Loose brief written by the founder before the curriculum
-    PROJECT_MANIFEST.md       # Structured skeleton generated from the overview
-    factory-wiring.md         # W2 deliverable — per-agent table + integration points
-    gates/                    # W3 human-gate justification docs (e.g. approve_deploy.md)
-    adr/                      # Architecture Decision Records (Architect output)
-  workflow-card.md            # W1 deliverable — single-agent workflow discipline
-  orchestrator.yaml           # W3 deliverable — 6-stage pipeline with gates + on_reject
-  DECISIONS.md                # L1 log of CLAUDE.md rule evolutions
-  work-packages/              # Planner output (L2)
-  design/                     # Designer output (L3)
-  review-reports/             # Reviewer output (L4)
-  release-gates/              # Deployer output (L4)
-  feedback-loops/             # W4 deliverables — reactive, aggregate, external rules
-  factory-run-report.md       # C1 deliverable — end-to-end run record
-  retrospective-card.md       # C1 deliverable — keep / change / question
-  tickets.md                  # Initial feature backlog
-  CLAUDE.md                   # Agent instructions
-  package.json                # Node.js project
+    PROJECT_OVERVIEW.md
+    PROJECT_MANIFEST.md
+    factory-wiring.md
+    formula/                   # W3 graph design notes
+    plans/                     # Planner artifacts
+    architecture/              # Architect artifacts
+    designs/                   # Designer artifacts
+    validation/                # Validator artifacts, when present
+    reviews/                   # Reviewer artifacts
+    releases/                  # Release-gate artifacts
+    feedback/                  # Improvement signals
+  feedback-loops/              # W4 rule proposals
+  factory-run-report.md        # C1 run record
+  retrospective-card.md        # C1 retrospective
+  CLAUDE.md
+  DECISIONS.md
 ```
 
-## Reference Deliverables by Session
+## Reference Deliverables
 
-Each curriculum session has at least one concrete artifact participants produce. This project ships a completed example of each so participants can see the target shape before they start:
+| Session | Deliverable | Example |
+|---|---|---|
+| W1 | Workflow card | [`workflow-card.md`](workflow-card.md) |
+| L1 | Project instructions and decision log | [`CLAUDE.md`](CLAUDE.md), [`DECISIONS.md`](DECISIONS.md) |
+| W2 | Factory map | [`docs/factory-wiring.md`](docs/factory-wiring.md) |
+| L2 | Plan and architecture | [`docs/plans/loyalty-points-system.md`](docs/plans/loyalty-points-system.md), [`docs/architecture/loyalty-points-storage.md`](docs/architecture/loyalty-points-storage.md) |
+| L3 | Design and implementation | [`docs/designs/loyalty-points-spec.md`](docs/designs/loyalty-points-spec.md), [`src/main.tsx`](src/main.tsx) |
+| W3 | Formula design | [`docs/formula/loyalty-points-graph.yaml`](docs/formula/loyalty-points-graph.yaml) |
+| L4 | Review and release gate | [`docs/reviews/loyalty-points-review.md`](docs/reviews/loyalty-points-review.md), [`docs/releases/loyalty-points-gate.md`](docs/releases/loyalty-points-gate.md) |
+| W4 | Feedback-loop rules | [`feedback-loops/`](feedback-loops/) |
+| C1 | Run report and retrospective | [`factory-run-report.md`](factory-run-report.md), [`retrospective-card.md`](retrospective-card.md) |
 
-| Session | Deliverable | File in this project |
-|---------|-------------|----------------------|
-| W1 | Workflow card | [`workflow-card.md`](./workflow-card.md) |
-| W2 | Factory wiring | [`docs/factory-wiring.md`](./docs/factory-wiring.md) |
-| W3 | Orchestrator + gate justification | [`orchestrator.yaml`](./orchestrator.yaml), [`docs/gates/approve_deploy.md`](./docs/gates/approve_deploy.md) |
-| W4 | Feedback loops (reactive / aggregate / external) | [`feedback-loops/`](./feedback-loops/) |
-| L1 | Agent instructions + decision log | [`CLAUDE.md`](./CLAUDE.md), [`DECISIONS.md`](./DECISIONS.md) |
-| L2 | Work package + ADR | [`work-packages/loyalty-points-system.md`](./work-packages/loyalty-points-system.md), [`docs/adr/0001-loyalty-points-storage.md`](./docs/adr/0001-loyalty-points-storage.md) |
-| L3 | Design spec | [`design/loyalty-points-spec.md`](./design/loyalty-points-spec.md) |
-| L4 | Review report + release gate | [`review-reports/loyalty-points-review.md`](./review-reports/loyalty-points-review.md), [`release-gates/loyalty-points-gate.md`](./release-gates/loyalty-points-gate.md) |
-| C1 | Factory run report + retrospective | [`factory-run-report.md`](./factory-run-report.md), [`retrospective-card.md`](./retrospective-card.md) |
+## Formula Pipeline
 
-## The 6-Agent Pipeline
+The C1 lesson pack routes the capstone run through:
 
-| Stage | Agent | Input | Output |
-|-------|-------|-------|--------|
-| 1. Plan | Planner | Feature request | `work-packages/<slug>.md` |
-| 2. Architect | Architect | Work package | `docs/adr/NNNN-<slug>.md` |
-| 3. Design | Designer | Work package + ADR | `design/<slug>-spec.md` |
-| 4. Code | Coder | Component spec | `src/` implementation |
-| 5. Review | Reviewer | Code diff + spec | `review-reports/<slug>-review.md` |
-| 6. Deploy | Deployer | Review report | `release-gates/<slug>-gate.md` |
+```text
+Planner -> Architect -> Designer -> Builder -> Validator -> Reviewer -> Release Gate
+```
 
-## Adapting for Your Project
-
-This reference is designed to be forked and modified:
-
-1. Replace `docs/PROJECT_MANIFEST.md` with your project's tech stack and domain model
-2. Replace `tickets.md` with your feature backlog
-3. Adjust agent prompts in `packs/<agent>/agents/<agent>/prompt.template.md` (or `prompt.md`) for your conventions
-4. Update `docs/REVIEW_POLICY.md` and `docs/RELEASE_CRITERIA.md` for your standards
-5. Re-run the factory against your codebase
-
-The agent prompts, manifests, and policies are the config layer. Change behavior by editing these files — not by re-prompting agents.
-
-## Workshop Curriculum
-
-This project is used across the Software Factory Intensive:
-
-- **W1/L1**: Individual workflow optimization against this codebase
-- **W2/L2**: Deploy Planner + Architect agents (produces work packages + ADRs)
-- **L3**: Deploy Designer + Coder agents (produces specs + implementation)
-- **W3/L4**: Orchestration and Reviewer + Deployer agents
-- **C1**: Full factory run for a new feature (Order History page)
+The FormulaV2 graph lives at [`../../packs/lessons/C1/formulas/mol-release-delivery.toml`](../../packs/lessons/C1/formulas/mol-release-delivery.toml).
