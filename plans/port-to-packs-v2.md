@@ -90,6 +90,12 @@ Do not use stage labels such as `needs-design` as the primary routing
 mechanism. Formula routing resolves `gc.run_target`, stamps runtime routing
 metadata, and lets Gas City's work-query/reconciler path do the rest.
 
+Curriculum policy: active lesson formulas use FormulaV2 syntax from the first
+formula lesson. This avoids teaching FormulaV1 and then forcing a dialect switch
+when multi-agent routing appears. The course should still introduce FV2
+gradually: simple steps first, then dependencies, then `gc.run_target`, then
+larger graph features only when a lesson actually needs them.
+
 ## Issues in Current Material
 
 ### 1. The current plan is format-only
@@ -237,14 +243,15 @@ Examples still mention old syntax and old paths, including:
 
 - `includes = [ ... ]`
 - `[[agent]]`
+- `version = 1` lesson formulas
 - `prompts/<agent>.md.tmpl`
 - `overlays/default`
 - label-stage commands
 - manual `bd create --labels <stage>`
 - `gc all wake-downstream`
 
-New direction: rewrite student-facing docs around one PackV2 import and one
-entry command per lab.
+New direction: rewrite student-facing docs around one PackV2 import, FormulaV2
+lesson formulas, and one entry command per lab.
 
 ### 12. Status commands reinforce label queues
 
@@ -403,8 +410,9 @@ For every role pack:
   `bd ready --label=...`
 - update `agents/*/prompt.template.md` so the agent handles assigned/routed
   formula work and drains when idle instead of polling stage labels forever
-- update `formulas/*.toml` to FormulaV2 style where the lesson needs workflow,
-  using graph steps, dependencies, and `metadata."gc.run_target"`
+- update active `formulas/*.toml` to FormulaV2 syntax; use graph steps,
+  dependencies, and `metadata."gc.run_target"` where the pack remains in the
+  active lesson path
 - remove formula actions that create the next stage only by adding labels
 - remove formula actions that call `gc all wake-downstream`
 - update `orders/*.toml` so orders are not stage-label queue dispatchers
@@ -545,6 +553,7 @@ Update the dry-run checks so they fail when active lesson paths contain:
 - prompt instructions to poll labels forever
 - FormulaV2 files missing graph routing metadata where multi-agent routing is
   expected
+- active lesson formulas using `version = 1`
 - lesson packs with imports
 - lesson docs that omit the required `city.toml` lesson-pack switch
 
@@ -759,16 +768,35 @@ needs = ["build"]
 metadata = { "gc.run_target" = "reviewer" }
 ```
 
+Use FormulaV2 syntax even for the first simple formula lesson. The beginner
+formula may only have the header plus plain steps and `needs`; it does not need
+multi-agent routing until the lesson teaches multi-agent work.
+
+Teaching progression:
+
+- first formula lesson: `version = 2`, `contract = "graph.v2"`, simple steps
+- dependency lesson: add `needs = [...]`
+- multi-agent lesson: add `metadata = { "gc.run_target" = "planner" }`
+- larger workflow lesson: add `children` only if grouping makes inspection
+  clearer
+- validation lesson: add `check` or `retry` only if retry behavior is being
+  taught
+
 Use formula features before shell workarounds:
 
 - `needs` for stage order
-- `children` for inspectable subwork
-- `condition` for optional steps
-- `loop` for static repetition
-- `check` or `retry` for validation and retry behavior
 - `metadata.gc.run_target` for agent routing
-- `on_complete` only when the installed Gas City version supports the intended
-  runtime fan-out path reliably enough for classroom use
+- `children` for inspectable subwork when the graph is large enough to need it
+- `condition` for optional steps when the lesson needs a clear branch
+- `check` or `retry` for validation and retry behavior when that behavior is
+  being taught
+
+Avoid advanced FV2 constructs in the first pass:
+
+- `loop`
+- dynamic `on_complete` fanout
+- formula expansion or advice
+- scope/cleanup/control-dispatcher patterns
 
 Do not encode core flow through:
 
@@ -1064,12 +1092,13 @@ Recommended answer: no. Pack commands are useful, but rig-imported command
 exposure is currently limited. More importantly, putting handoff in a command
 teaches the wrong abstraction.
 
-Question: Should FormulaV2 be mandatory for all lesson packs?
+Question: Should FormulaV2 be mandatory for active lesson formulas?
 
-Recommended answer: use FormulaV2 for lessons that teach multi-step or
-multi-agent workflow. Single-agent introductory lessons can use simpler formulas
-if that reduces cognitive load, but the target path should lead toward
-`graph.v2`.
+Recommended answer: yes. Use FormulaV2 syntax from the first formula lesson so
+students do not learn FormulaV1 and then switch halfway through. Keep the early
+FormulaV2 formulas simple: header, steps, and `needs`. Add `gc.run_target`,
+`children`, `condition`, `check`, or `retry` only when the lesson needs that
+specific concept.
 
 Question: Should students edit `city.toml` every lesson?
 
@@ -1088,6 +1117,7 @@ The migration is on track when:
 - `packs/lessons/L2` exists and runs standalone
 - L2 docs use one active lesson pack import
 - L2 starts with one `gc sling` command
+- active L2 lesson formulas use `version = 2` and `contract = "graph.v2"`
 - no L2-critical flow uses `packs/all`
 - no L2-critical flow uses `gc all wake-downstream`
 - no L2-critical flow uses stage-label orders
@@ -1111,6 +1141,8 @@ The migration is complete when:
   marked as historical and excluded from active lessons
 - all pack scripts, doctors, orders, formulas, and prompts obey the same
   formula-native workflow model
+- all active lesson formulas use FormulaV2 syntax; FormulaV1 appears only in
+  legacy/reference material
 - all student-facing Markdown gives accurate, complete, step-by-step commands
   for the active lesson pack
 - dry-run/static checks enforce the content architecture
@@ -1161,11 +1193,19 @@ are fine.
 Formula routing checks:
 
 ```bash
-rg 'contract\s*=\s*"graph.v2"|gc.run_target|needs\s*=' packs/lessons
+rg 'version\s*=\s*2|contract\s*=\s*"graph.v2"|gc.run_target|needs\s*=' packs/lessons
 ```
 
-Every multi-agent lesson formula should show graph contract, dependencies, and
-routing metadata.
+Every active lesson formula should show FormulaV2 syntax. Every multi-agent
+lesson formula should also show dependencies and routing metadata.
+
+FormulaV1 should be absent from active lesson packs:
+
+```bash
+rg 'version\s*=\s*1' packs/lessons
+```
+
+Expected result: no matches.
 
 Runtime smoke test for each lesson:
 
@@ -1202,5 +1242,5 @@ label-dispatch workflow.
 - renaming `activites/` to `activities`
 - fixing upstream Gas City command exposure or skill materialization
 - remote pack imports
-- making every FormulaV2 feature part of the first lesson
+- making every FormulaV2 feature part of the first formula lesson
 - expanding the curriculum to new agent roles beyond the current lesson goals

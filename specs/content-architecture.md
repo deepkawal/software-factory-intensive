@@ -138,6 +138,49 @@ Current implementation details that affect lesson design:
 Design implication: core lesson workflow should not depend on pack commands.
 Commands are useful convenience tools, but formulas should carry the workflow.
 
+## Formula Version Policy
+
+Use FormulaV2 syntax for all active lesson formulas, starting with the first
+lesson that introduces formulas. Do not teach FormulaV1 as the beginner syntax
+and then ask students to switch halfway through the course.
+
+This is a curriculum policy, not a claim that every lesson needs every
+FormulaV2 feature. A simple FormulaV2 formula is only slightly more syntax than
+a simple FormulaV1 formula:
+
+```toml
+formula = "mol-l2-intake"
+version = 2
+contract = "graph.v2"
+
+[[steps]]
+id = "intake"
+title = "Read the request"
+
+[[steps]]
+id = "summarize"
+title = "Summarize the desired outcome"
+needs = ["intake"]
+```
+
+The teaching progression should add one concept at a time:
+
+- first formula lesson: `version = 2`, `contract = "graph.v2"`, simple steps
+- dependency lesson: `needs = [...]`
+- multi-agent lesson: `metadata = { "gc.run_target" = "planner" }`
+- larger workflow lesson: `children` only if grouping makes the graph clearer
+- validation/retry lesson: `check` or `retry` only if the lesson explicitly
+  teaches runtime validation
+- optional-path lesson: `condition` only if the lesson needs a clear branch
+
+Do not introduce `loop`, dynamic `on_complete` fanout, formula expansion,
+advice, scopes, cleanup controls, or dispatcher internals in the first pass.
+Those are advanced Gas City features, not prerequisites for understanding
+packs, formulas, agents, and beads.
+
+FormulaV1 can remain in historical or legacy reference material, but no active
+student lesson should require students to author new FormulaV1 files.
+
 ## Lesson Pack Contract
 
 Every runtime lesson pack should satisfy this contract:
@@ -146,6 +189,7 @@ Every runtime lesson pack should satisfy this contract:
 - has `README.md`
 - has every agent required for the lesson under `agents/`
 - has every formula required for the lesson under `formulas/`
+- uses FormulaV2 syntax for active lesson formulas
 - does not import shared packs
 - does not require `packs/all`
 - has doctor checks for lesson readiness
@@ -250,18 +294,21 @@ Do not tell agents to poll `bd ready --label=<stage>` forever.
 
 ## Formula-Native Workflow
 
-The long-term curriculum should teach formulas as the workflow language.
-Formula graphs should own:
+The curriculum should teach formulas as the workflow language from the first
+formula lesson. Formula graphs should own:
 
 - stage order
 - dependencies
 - parallelism
-- branching
-- retries
-- checks
-- gates
 - per-step routing
-- dynamic fanout when supported by the installed Gas City version
+
+Introduce advanced graph features only when the lesson needs them:
+
+- `condition` for simple optional paths
+- `children` for grouping larger graphs
+- `check` or `retry` for validation and retry behavior
+- gates or dynamic fanout only after the core factory concepts are already
+  clear and the installed Gas City version is reliable for the classroom path
 
 Formula step descriptions still contain judgment. The formula should not try to
 replace the agent's judgment. It should express the workflow structure around
@@ -302,12 +349,10 @@ metadata = { "gc.run_target" = "reviewer" }
 Use formula features before shell workarounds:
 
 - `needs` for dependencies
-- `children` for nested work
-- `condition` for optional steps
-- `loop` for static repetition
-- `check` or `retry` for validation and retry behavior
 - `metadata.gc.run_target` for agent routing
-- `on_complete` for runtime fanout only after classroom reliability is proven
+- `children` for nested work when it simplifies a large lesson graph
+- `condition` for optional steps when a lesson needs an explicit branch
+- `check` or `retry` for validation and retry behavior in lessons that teach it
 
 Avoid this pattern:
 
@@ -529,7 +574,7 @@ Teaching focus: first real factory with planner and architect.
 Recommended runtime:
 
 - one self-contained L2 pack
-- one entry formula
+- one FormulaV2 entry formula
 - planner and architect agents included locally
 - no `packs/all`
 - no activity-pack override instructions
@@ -613,6 +658,14 @@ rg 'gc all wake-downstream|bd ready --label|bd create .*--labels?|needs-plan|nee
 
 Allowed matches should be explicit historical comparison callouts only.
 
+Search for FormulaV1 in active lesson packs:
+
+```bash
+rg 'version\s*=\s*1' packs/lessons
+```
+
+Expected result: no matches.
+
 ## Acceptance Criteria
 
 This architecture is successful when:
@@ -621,6 +674,7 @@ This architecture is successful when:
 - students can inspect one folder and see all runtime definitions for that lab
 - switching lessons requires one documented import edit
 - starting a lesson requires one simple `gc sling` command
+- active lesson formulas use `version = 2` and `contract = "graph.v2"`
 - lesson packs do not depend on `packs/all`
 - stage progression is visible in formulas
 - labels remain metadata, not the workflow state machine
@@ -636,8 +690,9 @@ This spec does not require:
 - renaming `activites/`
 - fixing upstream Gas City command exposure
 - fixing upstream skill materialization
-- using every FormulaV2 feature in the first migrated lesson
-- rewriting every formula in one pass
+- using every FormulaV2 feature in the first formula lesson
+- rewriting every legacy/reference formula in one pass
 
 The first concrete step is to make lesson-pack composition explicit and
-self-contained. Formula-native cleanup can then happen lesson by lesson.
+self-contained. Active lesson formulas should be FormulaV2; legacy/reference
+formula cleanup can then happen lesson by lesson.
