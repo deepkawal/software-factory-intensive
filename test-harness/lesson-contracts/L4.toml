@@ -1,0 +1,47 @@
+[lesson]
+id = "L4"
+pack_dir = "packs/lessons/L4"
+entry_formula = "mol-l4-factory"
+entry_agent = "planner"
+roles = ["planner", "architect", "designer", "builder", "reviewer", "release-gate"]
+docs = [
+  "activities/labs/L4/README.md",
+  "curriculum/labs/L4/README.md",
+  "curriculum/labs/L4/PROMPT.md",
+]
+
+[[steps]]
+id = "plan"
+needs = []
+target = "lesson.planner"
+artifact = "docs/plans/<slug>.md"
+
+[[steps]]
+id = "architecture"
+needs = ["plan"]
+target = "lesson.architect"
+artifact = "docs/architecture/<slug>.md"
+
+[[steps]]
+id = "design"
+needs = ["architecture"]
+target = "lesson.designer"
+artifact = "docs/designs/<slug>.md"
+
+[[steps]]
+id = "build"
+needs = ["design"]
+target = "lesson.builder"
+artifact = "implementation commit"
+
+[[steps]]
+id = "review"
+needs = ["build"]
+target = "lesson.reviewer"
+artifact = "docs/reviews/<slug>.md"
+
+[[steps]]
+id = "release-check"
+needs = ["review"]
+target = "lesson.release-gate"
+artifact = "docs/releases/<slug>.md"

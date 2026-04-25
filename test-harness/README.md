@@ -1,15 +1,51 @@
 # Test Harness
 
-Every executable check for this repo lives here. Four harnesses at three layers of rigor:
+Every executable check for this repo lives here. Five harnesses at three layers of rigor:
 
 | Harness | Layer | What it proves | Live LLMs? | Runtime |
 |---|---|---|---|---|
+| `lesson-pack-lint.py` | Static | Active curriculum content satisfies `specs/content-architecture.md` lesson contracts | no | ~1 s |
 | `migration-check.sh` | Static | TOML + directory layout matches Pack v2 convention across all 23 `pack.toml` files | no | ~2 s |
 | `behavioral-smoke.sh` | Setup | A scratch factory boots and exposes every agent's doctor check + pack commands | no | ~60 s |
 | `tutorial-check.sh` | Setup | The README quickstart commands for `my-factory/`, W2 checkpoint, and L2 checkpoint all run end-to-end *up to* `gc start` | no | ~2–5 min |
 | `tutorial-walkthrough.sh` | Live | A real student flow produces real artifacts from real LLM agents against our factory | **yes** | ~5–15 min per lesson |
 
 Run them in that order for an incremental signal from "the files are correct" to "the factory actually does work." Each harness has its own README-like preamble at the top of the script.
+
+---
+
+## 0. `lesson-pack-lint.py` — content architecture lint
+
+This is the executable form of `specs/content-architecture.md`. It reads
+`test-harness/lesson-contracts/*.toml` and checks that each active lesson has:
+
+- a self-contained `packs/lessons/<lesson>/` pack
+- local rig-scoped role agents
+- a FormulaV2 `contract = "graph.v2"` entry formula
+- binding-qualified routes such as `lesson.planner`
+- artifact metadata for each graph step
+- graph-worker prompt sections
+- docs that show city-wide lesson selection, existing-rig import sync, and one
+  `gc sling <rig>/lesson.<agent>` entrypoint
+
+It also scans active curriculum paths for old label/manual-pack patterns such
+as `packs/all`, `default_rig_includes`, `bd ready --label`, and
+`gc all wake-downstream`.
+
+Use it as the red-green driver for the port:
+
+```bash
+test-harness/lesson-pack-lint.py --lesson L2 --no-repo-scan
+test-harness/lesson-pack-lint.py --lesson L2
+test-harness/lesson-pack-lint.py
+```
+
+The first command gives focused lesson-contract feedback. The second adds
+shared root/content checks. The third is the final all-lessons gate.
+
+The current repo is expected to be red until the lesson packs and docs are
+ported. That is intentional; the linter is the migration checklist, not a
+statement that the pre-port content is already compliant.
 
 ---
 

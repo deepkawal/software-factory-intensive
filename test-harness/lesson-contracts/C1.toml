@@ -1,0 +1,53 @@
+[lesson]
+id = "C1"
+pack_dir = "packs/lessons/C1"
+entry_formula = "mol-c1-factory"
+entry_agent = "planner"
+roles = ["planner", "architect", "designer", "builder", "validator", "reviewer", "release-gate"]
+docs = [
+  "activities/capstone/C1/README.md",
+  "curriculum/capstone/C1/README.md",
+  "curriculum/capstone/C1/PROMPT.md",
+]
+
+[[steps]]
+id = "plan"
+needs = []
+target = "lesson.planner"
+artifact = "docs/plans/<slug>.md"
+
+[[steps]]
+id = "architecture"
+needs = ["plan"]
+target = "lesson.architect"
+artifact = "docs/architecture/<slug>.md"
+
+[[steps]]
+id = "design"
+needs = ["architecture"]
+target = "lesson.designer"
+artifact = "docs/designs/<slug>.md"
+
+[[steps]]
+id = "build"
+needs = ["design"]
+target = "lesson.builder"
+artifact = "implementation commit"
+
+[[steps]]
+id = "validate"
+needs = ["build"]
+target = "lesson.validator"
+artifact = "test report"
+
+[[steps]]
+id = "review"
+needs = ["validate"]
+target = "lesson.reviewer"
+artifact = "docs/reviews/<slug>.md"
+
+[[steps]]
+id = "release"
+needs = ["review"]
+target = "lesson.release-gate"
+artifact = "docs/releases/<slug>.md"

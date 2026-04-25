@@ -714,6 +714,29 @@ The harness must test the content architecture, not preserve the old journey.
 
 ### Dry-run/static checks
 
+Add `test-harness/lesson-pack-lint.py` as the executable architecture check.
+It should read `test-harness/lesson-contracts/*.toml` and produce actionable
+curriculum findings for:
+
+- missing or non-self-contained lesson packs
+- stale root factory wiring
+- missing local role agents
+- prompts that do not use the shared graph-worker sections
+- formulas that are not FormulaV2 `graph.v2`
+- unqualified `gc.run_target` routes
+- missing per-step artifact contracts
+- docs that omit city-wide lesson selection, existing-rig sync, or the
+  binding-qualified `gc sling` entrypoint
+- active content that still teaches label/manual-pack workflow
+
+Use the linter as the red-green migration driver:
+
+```bash
+test-harness/lesson-pack-lint.py --lesson L2 --no-repo-scan
+test-harness/lesson-pack-lint.py --lesson L2
+test-harness/lesson-pack-lint.py
+```
+
 Update the dry-run checks so they fail when active lesson paths contain:
 
 - `packs/all` as a runtime dependency
@@ -881,7 +904,6 @@ packs/lessons/L3/
       command.toml
   skills/
   template-fragments/
-  examples/
 ```
 
 Rules:

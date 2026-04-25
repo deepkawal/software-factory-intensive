@@ -258,7 +258,6 @@ packs/lessons/L3/
       run.sh
   skills/
   template-fragments/
-  examples/
 ```
 
 ## `pack.toml` Shape
@@ -832,7 +831,22 @@ Minimum formula graph:
 
 ## Maintenance Checks
 
-Add checks that enforce the teaching architecture:
+Add checks that enforce the teaching architecture. The primary static guard is
+the lesson-pack linter:
+
+```bash
+test-harness/lesson-pack-lint.py --lesson L2 --no-repo-scan
+test-harness/lesson-pack-lint.py --lesson L2
+test-harness/lesson-pack-lint.py
+```
+
+The linter reads `test-harness/lesson-contracts/*.toml` and validates the
+lesson pack shape, FormulaV2 graph, binding-qualified routes, artifact
+contracts, graph-worker prompt sections, root lesson selection, existing-rig
+sync docs, and stale label/manual-pack patterns. Use it as the red-green driver
+for each lesson migration.
+
+Supporting checks should still enforce pack layout:
 
 ```bash
 find packs/lessons -name pack.toml -print
@@ -899,6 +913,7 @@ This spec does not require:
 - renaming `activites/`
 - fixing upstream Gas City command exposure
 - fixing upstream skill materialization
+- remote pack imports
 - using every FormulaV2 feature in the first formula lesson
 - performing the full migration in one atomic commit
 
