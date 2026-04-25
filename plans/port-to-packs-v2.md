@@ -41,7 +41,7 @@ sling downstream agent -> downstream prompt polls label queue
 ## What PackV2 and FormulaV2 Actually Want
 
 PackV2 is convention-loaded. A pack is a directory with a `pack.toml` plus
-standard subdirectories such as:
+standard definition subdirectories such as:
 
 ```text
 agents/
@@ -52,13 +52,16 @@ doctor/
 overlay/
 skills/
 mcp/
-template-fragments/
-assets/
 ```
 
 The pack directory is the definition. `agents/foo/` defines an agent. A formula
 file in `formulas/` defines a formula. Top-level `orders/*.toml` defines
 orders. Students should be able to inspect one pack folder and see what runs.
+
+`template-fragments/` and `assets/` are supporting resources with different
+semantics. Template fragments are prompt resources referenced by prompt config.
+Assets are opaque files reached by explicit references. Neither should be
+described as a standalone runtime definition like agents or formulas.
 
 FormulaV2 is graph-capable. It supports dependencies, children, loops,
 conditions, checks, retries, dynamic follow-on bonding, graph routing, and
@@ -79,6 +82,18 @@ and the city needs:
 [daemon]
 formula_v2 = true
 ```
+
+This is a one-time city prerequisite in `my-factory/city.toml`, not a
+per-lesson opt-in. The lesson import belongs in the city root
+`my-factory/pack.toml`:
+
+```toml
+[defaults.rig.imports.lesson]
+source = "../packs/lessons/L3"
+```
+
+Supported pack scopes are `city` and `rig`; do not document a `workspace`
+scope. Do not use `default_rig_includes` in new student-facing material.
 
 For routing a graph step to an agent, prefer:
 
@@ -172,9 +187,8 @@ gc all wake-downstream &
 ```
 
 That command scans stage labels and slings one matching bead per downstream
-agent. It exists partly because rig-imported pack commands are not exposed in
-the current Gas City implementation, so `packs/all` is imported at both
-workspace and rig scope.
+agent. Older docs used `packs/all` as both a city-level composition pack and a
+rig import to make that custom scheduler available.
 
 New direction: remove this command from lesson-critical flow. Graph formulas
 should make downstream steps ready directly.
@@ -190,15 +204,23 @@ sleep 60 && bd ready --label=needs-plan
 and never stop polling.
 
 That is not the graph-worker model. For graph-first formulas, agents should
-work the ready bead assigned or routed to them, close it with outcome metadata,
+work the ready bead assigned or routed to them, close the current step when it
+is done, record pass/fail or request-changes details in metadata or artifacts,
 briefly check for more assigned work, then drain when idle.
 
 New direction: lesson agents should use GraphV2-style prompt guidance:
 
 - inspect assigned/routed work
 - do the current step
-- close with pass/fail metadata
-- let formula/control flow unlock next work
+- close the current step
+- record pass/fail metadata or artifacts for humans and checks
+- let closed prerequisites make dependent steps ready
+
+Important runtime fact: dependency readiness is based on closed prerequisite
+beads, not pass/fail outcome. A failed or request-changes review does not
+automatically choose a different graph path. Branching, validation, retry, or
+rework must be expressed through explicit `check`, `retry`, `condition`, or a
+documented student-driven re-sling loop.
 
 ### 7. Formulas manually create and relabel beads
 
@@ -225,8 +247,8 @@ The capstone tells students to manually create one bead for each stage and
 attach a stage label.
 
 New direction: capstone should start with one request. The capstone formula
-should create or unlock the planner, architect, designer, builder, reviewer,
-and release steps.
+should instantiate or attach the planner, architect, designer, builder,
+validator, reviewer, and release steps.
 
 ### 10. Activities teach pack override mechanics
 
@@ -278,8 +300,40 @@ label-driven patterns. It can be preserved temporarily for historical
 checkpoint compatibility, but it should not define the new student runtime
 path.
 
-New direction: migrate active teaching to `packs/lessons/*`. Retire checkpoint
-runtime dependency after lesson packs exist.
+New direction: freeze `activites/` as historical checkpoint material now.
+Active teaching moves to `packs/lessons/*`; docs and tests should stop treating
+checkpoint copies as a parallel runtime hierarchy.
+
+### 15. Root factory wiring is stale
+
+Current material still talks about `default_rig_includes`, `workspace scope`,
+and future support for `[defaults.rig.imports]`.
+
+New direction:
+
+- `my-factory/city.toml` contains permanent `[daemon] formula_v2 = true`
+- `my-factory/pack.toml` contains the active
+  `[defaults.rig.imports.lesson]`
+- no active student path uses `default_rig_includes`
+- docs use `city` and `rig` for scopes
+
+### 16. FormulaV2 porting is new graph authoring
+
+Current formulas are v1-style inline shell workflows with label handoffs. A
+FormulaV2 `graph.v2` lesson formula is a declarative step graph with
+dependencies and routing metadata. This is not a schema bump.
+
+New direction: reuse lesson intent, agent roles, and artifact names where they
+are still useful, but author new graph formulas for the active lesson packs.
+
+### 17. W3 and reference-project deliverables are under-specified
+
+W3 needs a concrete formula-design deliverable, not a vague "fill in a TOML"
+exercise. `reference-project/` artifacts also need a migration phase because
+they should match the FormulaV2 output format students see.
+
+New direction: define W3 as a FormulaV2 graph design activity and update
+reference artifacts alongside the lesson formulas that produce them.
 
 ## Full Implementation Scope
 
@@ -290,8 +344,8 @@ The migration must update all active file families:
 
 - canonical packs under `packs/`
 - new self-contained lesson packs under `packs/lessons/`
-- checkpoint pack copies under `activites/` if they remain reachable from docs
-  or tests
+- checkpoint pack copies under `activites/` only to freeze or quarantine them
+  from the active student path
 - scripts embedded in pack commands, doctors, orders, formulas, and assets
 - `my-factory/city.toml` and `my-factory/pack.toml`
 - all student-facing Markdown in `README.md`, `activities/`, `curriculum/`,
@@ -429,9 +483,10 @@ command should be deleted from active packs. If kept for comparison, it belongs
 in a clearly named legacy/reference location and every reference to it must say
 that it demonstrates the older label-dispatch approach.
 
-`packs/fired-up-pizza` should either become the capstone's self-contained
-lesson pack source or be reduced to project fixtures and optional import
-helpers. It must not be the place where the workflow secretly lives.
+`reference-project/fired-up-pizza` is the capstone input project. The C1
+factory belongs in `packs/lessons/C1`. Any remaining `packs/fired-up-pizza`
+content should be retired, moved to fixtures, or marked as legacy/reference; it
+must not be the place where the workflow secretly lives.
 
 `packs/workshop` may keep environment doctors and external tracker sync helpers,
 but those helpers are support tools. They should not be required to understand
@@ -439,16 +494,22 @@ normal lesson flow.
 
 ### Checkpoint pack copies
 
-The `activites/` tree contains checkpoint copies of packs. For every checkpoint
-that remains documented or tested:
+The `activites/` tree contains checkpoint copies of packs. Freeze it as
+historical material immediately instead of maintaining a second pack hierarchy
+during the migration.
 
-- update the copied pack to the same formula-native behavior as the lesson pack
-- remove stage-label orders and label-polling prompts
-- remove `gc all wake-downstream`
-- keep any differences limited to the lesson checkpoint's intended exercise
+Required work:
+
+- remove checkpoint packs from active docs and walkthroughs
+- mark any remaining checkpoint README as historical if students can still find
+  it
+- exclude checkpoint copies from new lesson-pack conformance unless a test is
+  explicitly checking legacy comparison material
+- do not port checkpoint copies in parallel with `packs/lessons/*`
 
 Recommended end state: active lessons use `packs/lessons/*`; checkpoint pack
-copies are either deleted later or marked as frozen historical artifacts.
+copies are either deleted later or preserved only as labeled historical
+artifacts.
 
 ### Pack scripts
 
@@ -483,12 +544,13 @@ external tracker tags. They must not be the state machine.
 
 Every student-facing Markdown file must show the same lesson model:
 
-1. select the lesson's self-contained pack in `my-factory/city.toml`
-2. restart or reload Gas City
-3. run the lesson's simplest `gc sling` command
-4. inspect the formula, graph state, artifacts, and beads that were produced
-5. make the lesson-specific edit or observation
-6. rerun the same simple entrypoint or the lesson's documented verification
+1. ensure FormulaV2 is enabled once in `my-factory/city.toml`
+2. select the lesson's self-contained pack in `my-factory/pack.toml`
+3. restart or reload Gas City
+4. run the lesson's simplest `gc sling` command
+5. inspect the formula, graph state, artifacts, and beads that were produced
+6. make the lesson-specific edit or observation
+7. rerun the same simple entrypoint or the lesson's documented verification
 
 The docs should minimize CLI surface area. Prefer pack-defined behavior over
 long command sequences. When students need to use a CLI, use the fewest commands
@@ -498,6 +560,8 @@ with the simplest arguments:
 gc restart
 gc doctor
 gc sling <entry-target> "lesson request"
+gc events --follow
+gc graph <bead-id>
 bd list
 bd show <id>
 ```
@@ -509,11 +573,12 @@ Required doc updates:
 
 - `README.md`: describe lesson-pack switching, not `packs/all` as the default
   factory
-- `my-factory/README.md`: show the active lesson import, one `gc sling`
-  entrypoint, and formula/artifact inspection
-- `my-factory/city.toml`: default to the current starting lesson pack, not
-  `../packs/all`
-- `my-factory/pack.toml`: remove inherited `packs/all` comments and old
+- `my-factory/README.md`: show permanent FormulaV2 setup, the active lesson
+  import, one `gc sling` entrypoint, and formula/artifact inspection
+- `my-factory/city.toml`: include `[daemon] formula_v2 = true` and no
+  lesson-specific import
+- `my-factory/pack.toml`: use `[defaults.rig.imports.lesson]` for the active
+  lesson, remove inherited `packs/all` comments, and remove old
   `wake-downstream` command guidance
 - `activities/README.md`: remove the pack-copy override model as the main path;
   teach lesson packs as the runtime surface
@@ -555,7 +620,11 @@ Update the dry-run checks so they fail when active lesson paths contain:
   expected
 - active lesson formulas using `version = 1`
 - lesson packs with imports
-- lesson docs that omit the required `city.toml` lesson-pack switch
+- lesson docs that omit `[defaults.rig.imports.lesson]`
+- `default_rig_includes`
+- `workspace scope` or `scope = "workspace"`
+- `append_fragments = ["graph-worker"]`
+- `bd dep graph`
 
 The dry-run should also verify positive structure:
 
@@ -566,6 +635,9 @@ The dry-run should also verify positive structure:
 - every lesson README contains the one-command sling entrypoint
 - every lesson's expected artifacts are named consistently between docs,
   formulas, and tests
+- `my-factory/city.toml` contains `[daemon] formula_v2 = true`
+- `my-factory/pack.toml` contains exactly one active
+  `[defaults.rig.imports.lesson]`
 
 ### Walkthrough scripts
 
@@ -581,6 +653,23 @@ helpers that:
 - inspect generated artifacts
 - assert that no label-scanning handoff command was required
 - assert that the tutorial transcript matches the Markdown commands
+
+Concrete helper design:
+
+```bash
+ensure_formula_v2_enabled
+use_lesson_pack <lesson>
+run_lesson_sling <target> <request>
+capture_gc_events <output-file>
+wait_for_formula_step <root-bead-id> <step-id>
+assert_formula_has_route <formula-file> <step-id> <run-target>
+assert_no_label_dispatch <path>
+assert_doc_command_present <markdown-file> <command-regex>
+```
+
+The helpers should edit only the root factory files needed by the lesson:
+`my-factory/city.toml` for permanent FormulaV2 setup and `my-factory/pack.toml`
+for `[defaults.rig.imports.lesson]`.
 
 Update these walkthroughs:
 
@@ -600,10 +689,12 @@ Update behavioral smoke expectations from label handoff to formula handoff.
 Instead of proving that planner relabels work and `wake-downstream` slings the
 next agent, prove that:
 
-- the lesson's entry sling attaches or cooks the expected formula
+- the lesson's entry sling instantiates or attaches the expected formula
 - formula graph steps become visible
 - ready work is routed to the intended agent targets
-- pass/fail outcomes unlock the next graph step or branch
+- closing prerequisite work makes dependent steps ready
+- pass/fail outcomes affect graph path only when an explicit `check`, `retry`,
+  or `condition` is part of the lesson
 - artifacts are written to the documented locations
 - the run completes without `gc all wake-downstream`
 
@@ -660,9 +751,6 @@ packs/lessons/L3/
       overlay/
   formulas/
     mol-l3-factory.toml
-    mol-l3-plan.toml
-    mol-l3-design.toml
-    mol-l3-build.toml
   doctor/
     lesson-ready/
       run.sh
@@ -719,7 +807,7 @@ The current Gas City runtime applies only a narrow set of agent defaults
 reliably. Use defaults where they reduce student commands:
 
 - `default_sling_formula`
-- `append_fragments`
+- `append_fragments`, but only for actual local template fragment files
 
 Keep essential per-agent values in `agents/<name>/agent.toml`:
 
@@ -734,6 +822,9 @@ nudge = "Run gc prime, then work the assigned formula step."
 Avoid teaching `work_query` and `sling_query` unless the lesson is specifically
 about routing internals. Default routing is good enough for the student path.
 
+Do not use `append_fragments = ["graph-worker"]`. Graph worker behavior is a
+built-in FormulaV2 fallback, not a template fragment.
+
 ## Formula Pattern
 
 A lesson should have one visible entry formula:
@@ -742,7 +833,7 @@ A lesson should have one visible entry formula:
 formula = "mol-l3-factory"
 version = 2
 contract = "graph.v2"
-description = "Run the L3 factory from feature request to reviewed change."
+description = "Run the L3 factory from feature request to implemented change."
 
 [[steps]]
 id = "plan"
@@ -750,9 +841,15 @@ title = "Break the feature into implementation work"
 metadata = { "gc.run_target" = "planner" }
 
 [[steps]]
+id = "architecture"
+title = "Choose the technical approach"
+needs = ["plan"]
+metadata = { "gc.run_target" = "architect" }
+
+[[steps]]
 id = "design"
 title = "Design the UI and interaction changes"
-needs = ["plan"]
+needs = ["architecture"]
 metadata = { "gc.run_target" = "designer" }
 
 [[steps]]
@@ -760,12 +857,6 @@ id = "build"
 title = "Implement the approved design"
 needs = ["design"]
 metadata = { "gc.run_target" = "builder" }
-
-[[steps]]
-id = "review"
-title = "Review the implementation"
-needs = ["build"]
-metadata = { "gc.run_target" = "reviewer" }
 ```
 
 Use FormulaV2 syntax even for the first simple formula lesson. The beginner
@@ -805,6 +896,57 @@ Do not encode core flow through:
 - `gc all wake-downstream`
 - `bd ready --label <stage>`
 
+## Minimum Lesson Graphs
+
+Each active lesson pack needs at least one FormulaV2 entry graph with concrete
+step IDs, dependencies, and routing metadata. These are the minimum shapes; the
+implementation may add artifact fields, descriptions, or checks where the
+lesson explicitly teaches them.
+
+L2:
+
+| step id | needs | `gc.run_target` |
+| --- | --- | --- |
+| `plan` | none | `planner` |
+| `architecture` | `plan` | `architect` |
+
+L3:
+
+| step id | needs | `gc.run_target` |
+| --- | --- | --- |
+| `plan` | none | `planner` |
+| `architecture` | `plan` | `architect` |
+| `design` | `architecture` | `designer` |
+| `build` | `design` | `builder` |
+
+L4:
+
+| step id | needs | `gc.run_target` |
+| --- | --- | --- |
+| `plan` | none | `planner` |
+| `architecture` | `plan` | `architect` |
+| `design` | `architecture` | `designer` |
+| `build` | `design` | `builder` |
+| `review` | `build` | `reviewer` |
+| `release-check` | `review` | `release-gate` |
+
+L4's rework loop is student-driven unless the lesson explicitly teaches
+FormulaV2 branching. The reviewer records pass/request-changes output; the
+student reads it, adjusts the builder configuration or artifact, and re-slings
+the same entry formula.
+
+C1:
+
+| step id | needs | `gc.run_target` |
+| --- | --- | --- |
+| `plan` | none | `planner` |
+| `architecture` | `plan` | `architect` |
+| `design` | `architecture` | `designer` |
+| `build` | `design` | `builder` |
+| `validate` | `build` | `validator` |
+| `review` | `validate` | `reviewer` |
+| `release` | `review` | `release-gate` |
+
 ## Simplest Student CLI
 
 The lesson pack should carry enough defaults that students do not need to know
@@ -837,40 +979,38 @@ factory.
 
 ## City Switching
 
-Current compatibility shape:
+FormulaV2 is enabled once in `my-factory/city.toml`:
 
 ```toml
-[workspace]
-default_rig_includes = ["../packs/lessons/L3"]
+[daemon]
+formula_v2 = true
 ```
 
-If lesson pack commands must be exposed as `gc <binding> <cmd>`, add the same
-lesson pack at workspace scope:
-
-```toml
-[imports.lesson]
-source = "../packs/lessons/L3"
-```
-
-That dual import is a current Gas City implementation workaround. It should not
-be needed for core lesson flow if the lesson uses formulas and doctors rather
-than pack commands for handoff.
-
-Future PackV2 target shape:
+Students switch lessons by editing `my-factory/pack.toml`:
 
 ```toml
 [defaults.rig.imports.lesson]
 source = "../packs/lessons/L3"
 ```
 
-Student-facing docs should present exactly one line to change per lesson.
+If lesson pack commands must be exposed as `gc <binding> <cmd>`, add an
+explicit city import as an exception:
+
+```toml
+[imports.lesson]
+source = "../packs/lessons/L3"
+```
+
+The normal lesson path should not need this exception. Student-facing docs
+should present exactly one lesson import to change and should not mention
+`default_rig_includes`.
 
 ## Commands and Doctors
 
 Use `doctor/` for readiness checks:
 
 - required binaries
-- `formula_v2` enabled where needed
+- `formula_v2` enabled in `city.toml`
 - expected agents present
 - expected formulas present
 - project has beads initialized
@@ -911,6 +1051,10 @@ the workflow graph.
 
 ### Phase 1: Lock The Architecture Contract
 
+Status: complete once this revision lands. Future implementation work should
+treat `specs/content-architecture.md` as the source of truth and this file as
+the execution plan.
+
 Update:
 
 - `plans/port-to-packs-v2.md`
@@ -947,11 +1091,11 @@ duplicating work across L3/L4/C1.
 
 Update L2 docs and walkthrough so students:
 
-1. choose `../packs/lessons/L2`
-2. run `gc restart`
-3. run one `gc sling` command
-4. inspect `packs/lessons/L2`
-5. inspect formula-created workflow state
+1. confirm `[daemon] formula_v2 = true` in `my-factory/city.toml`
+2. set `[defaults.rig.imports.lesson]` to `../packs/lessons/L2`
+3. run `gc restart`
+4. run one `gc sling` command
+5. inspect `gc events`, `gc graph`, `bd show`, and lesson artifacts
 
 Update at the same time:
 
@@ -986,6 +1130,9 @@ For each lesson, update all three layers in the same change:
 - Markdown lesson content
 - dry-run and walkthrough coverage
 
+Also update `reference-project/` artifacts in the same phase when a lesson's
+formula output contract changes.
+
 ### Phase 5: Convert Canonical Packs Or Quarantine Them
 
 Update the canonical role packs so they no longer teach label-dispatch, or move
@@ -1012,9 +1159,13 @@ Replace `orchestrator.yaml` as the main runtime concept.
 
 Recommended teaching move:
 
-- W3 students design or review a formula graph
-- gates are formula steps or check/retry/gate constructs
-- rejection paths are formula branches or explicit review outcomes
+- W3 students produce a FormulaV2 graph design
+- the deliverable includes step IDs, `needs`, `gc.run_target`, artifact names,
+  and a short rationale for any `check`, `retry`, `condition`, or `children`
+- gates are formula steps or check/retry constructs when runtime validation is
+  part of the exercise
+- rejection paths are explicit formula branches or a documented student-driven
+  re-sling loop
 
 Keep `orchestrator.yaml` only as a comparison artifact if the lesson explicitly
 contrasts external orchestration with formula-native orchestration.
@@ -1046,11 +1197,11 @@ Rewrite harness expectations to enforce the new architecture:
 
 ### Phase 9: Clean Checkpoints And Legacy References
 
-Decide whether `activites/` checkpoints are still needed.
+Freeze `activites/` checkpoints as historical now; later decide whether they
+should be deleted.
 
-Recommended answer: keep them only until lesson packs cover the same learning
-goals. Then replace checkpoint runtime instructions with lesson pack pointers
-and mark any remaining checkpoint copy as historical.
+Required outcome: checkpoint runtime instructions are replaced with lesson pack
+pointers, and any remaining checkpoint copy is clearly marked historical.
 
 ## Grill-Me Decision Tree
 
@@ -1079,7 +1230,7 @@ lesson.
 Question: Should the capstone still create one bead per stage?
 
 Recommended answer: no. Capstone should start from one user request. The
-capstone formula creates or unlocks the staged work.
+capstone formula instantiates or attaches the staged work.
 
 Question: Should we use `default_sling_formula`?
 
@@ -1102,8 +1253,9 @@ specific concept.
 
 Question: Should students edit `city.toml` every lesson?
 
-Recommended answer: yes, but only one documented import line. Anything more is
-too much configuration ceremony for a lesson switch.
+Recommended answer: no. `city.toml` gets the one-time
+`[daemon] formula_v2 = true` setting. Per-lesson switching happens in
+`my-factory/pack.toml` by changing `[defaults.rig.imports.lesson]`.
 
 Question: Should students learn `bd create` early?
 
@@ -1115,7 +1267,8 @@ seen Gas City create and route work from a simple `gc sling` command.
 The migration is on track when:
 
 - `packs/lessons/L2` exists and runs standalone
-- L2 docs use one active lesson pack import
+- L2 docs use one active lesson pack import in `my-factory/pack.toml`
+- `my-factory/city.toml` enables FormulaV2 permanently
 - L2 starts with one `gc sling` command
 - active L2 lesson formulas use `version = 2` and `contract = "graph.v2"`
 - no L2-critical flow uses `packs/all`
@@ -1137,8 +1290,8 @@ The migration is complete when:
   formulas
 - canonical packs are either formula-native or clearly marked as legacy and
   excluded from active lessons
-- checkpoint copies under `activites/` are either formula-native or clearly
-  marked as historical and excluded from active lessons
+- checkpoint copies under `activites/` are frozen or clearly marked as
+  historical and excluded from active lessons
 - all pack scripts, doctors, orders, formulas, and prompts obey the same
   formula-native workflow model
 - all active lesson formulas use FormulaV2 syntax; FormulaV1 appears only in
@@ -1166,12 +1319,28 @@ comparison callouts.
 Static checks for old pack composition:
 
 ```bash
-rg 'packs/all|default_rig_includes = \["../packs/all"\]|wake-downstream' \
+rg 'packs/all|default_rig_includes|wake-downstream' \
   README.md curriculum activities activites my-factory packs reference-project test-harness
 ```
 
 Any match must be either deleted from the student path or marked as historical
 comparison.
+
+Static checks for stale PackV2/CLI claims:
+
+```bash
+rg 'workspace scope|scope = "workspace"|bd dep graph|append_fragments = \["graph-worker"\]' \
+  README.md curriculum activities activites my-factory packs reference-project test-harness
+```
+
+Expected result: no active student-path matches.
+
+Root factory wiring checks:
+
+```bash
+rg '^\[daemon\]|formula_v2\s*=\s*true' my-factory/city.toml
+rg '^\[defaults\.rig\.imports\.lesson\]|source\s*=\s*"\.\./packs/lessons/' my-factory/pack.toml
+```
 
 Pack shape checks:
 
@@ -1218,7 +1387,7 @@ gc sling <rig>/<entry-agent> "Small feature request"
 
 Then verify:
 
-- the lesson formula is attached or cooked
+- the lesson formula is instantiated or attached
 - graph steps are visible
 - routed steps target the intended agents
 - no label-scanning handoff command is needed
