@@ -84,7 +84,10 @@ fi
 # activites/. Checkpoint factories are verified by their own smoke tests
 # (see plan's Verification §6).
 echo "[2] every migrated canonical pack's doctor check is present"
-mapfile -t MIGRATED_AGENT_PACKS < <(
+MIGRATED_AGENT_PACKS=()
+while IFS= read -r pack_name; do
+  MIGRATED_AGENT_PACKS+=("$pack_name")
+done < <(
   for pt in $(find packs -name pack.toml 2>/dev/null); do
     if grep -q '^schema = 2' "$pt" && [ -d "$(dirname "$pt")/agents" ]; then
       grep -E '^name = ' "$pt" | head -1 | sed -E 's/^name = "([^"]+)".*/\1/'

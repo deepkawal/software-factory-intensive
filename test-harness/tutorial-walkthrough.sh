@@ -75,6 +75,7 @@ walkthrough_cleanup() {
     ev_pid="$(cat "$WALK_SCRATCH/events.pid" 2>/dev/null)"
     if [ -n "$ev_pid" ] && kill -0 "$ev_pid" 2>/dev/null; then
       kill "$ev_pid" 2>/dev/null || true
+      wait "$ev_pid" 2>/dev/null || true
     fi
     rm -f "$WALK_SCRATCH/events.pid"
   fi

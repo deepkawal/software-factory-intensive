@@ -27,9 +27,10 @@ fail() {
 }
 
 # Enumerate every pack.toml under the canonical + checkpoint trees.
-mapfile -t PACK_TOMLS < <(
-  find packs activites/workshops activites/labs -name pack.toml 2>/dev/null | sort
-)
+PACK_TOMLS=()
+while IFS= read -r pack_toml; do
+  PACK_TOMLS+=("$pack_toml")
+done < <(find packs activites/workshops activites/labs -name pack.toml 2>/dev/null | sort)
 
 MIGRATED_PACK_DIRS=()
 for pt in "${PACK_TOMLS[@]}"; do

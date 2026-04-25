@@ -105,6 +105,7 @@ stop_event_stream() {
     pid="$(cat "$pid_file")"
     if [ -n "$pid" ] && kill -0 "$pid" 2>/dev/null; then
       kill "$pid" 2>/dev/null || true
+      wait "$pid" 2>/dev/null || true
       # Give the jq pipe a beat to flush.
       sleep 1
     fi
