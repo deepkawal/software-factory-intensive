@@ -139,7 +139,7 @@ lesson_run() {
     --on mol-feature-delivery 2>&1)"
   log "gc sling rig/factory.planner --on mol-feature-delivery:"
   echo "$sling_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
-  if ! echo "$sling_out" | grep -qiE 'Slung|dispatched|created'; then
+  if ! echo "$sling_out" | grep -q 'Attached workflow'; then
     step_fail "gc sling did not report a routed formula run"
     stop_event_stream
     fail "L3 formula sling failed"
@@ -203,44 +203,42 @@ lesson_run() {
     '^## Interface' '^## Behavior' '^## Edge Cases' '^## Test Plan'
 
   echo
-  echo "[10/10] config-over-chat: add MCP overlay + edit designer prompt + re-sling"
-  log "config-over-chat: adding MCP config to designer overlay and project-specific rule to prompt"
+  echo "[10/10] config-over-chat: add skill to builder + re-sling"
+  log "config-over-chat: adding testing-conventions skill to builder"
 
-  # README step 7: add MCP to designer overlay
-  local overlay_file="$WALK_L3_SCRATCH/packs/lessons/L3/agents/designer/overlay/.claude/settings.json"
-  cat > "$overlay_file" <<'OVERLAY'
-{
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "permissions": {
-    "allow": [
-      "Bash(gc:*)", "Bash(bd:*)", "Bash(git:*)", "Bash(cat:*)",
-      "Bash(ls:*)", "Bash(mkdir:*)", "Bash(find:*)", "Bash(grep:*)",
-      "Bash(jq:*)", "Bash(node:*)", "Bash(npm:*)", "Bash(sed:*)",
-      "Bash(pwd:*)", "Read", "Write", "Edit", "Glob", "Grep"
-    ],
-    "deny": ["Bash(bd init:*)"]
-  },
-  "mcpServers": {
-    "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"]
-    }
-  }
-}
-OVERLAY
-  step_pass "MCP config added to designer overlay"
+  # README step 7: add a skill to the builder's skills/ directory (PackV2 convention)
+  local skill_dir="$WALK_L3_SCRATCH/packs/lessons/L3/agents/builder/skills/testing-conventions"
+  mkdir -p "$skill_dir"
+  cat > "$skill_dir/SKILL.md" <<'SKILL'
+---
+name: testing-conventions
+description: Project-specific testing conventions for the calculator.
+---
 
-  # README step 7: edit prompt to reference the capability
-  local designer_prompt="$WALK_L3_SCRATCH/packs/lessons/L3/agents/designer/prompt.template.md"
-  printf '\n- When available, use the Context7 MCP to check up-to-date framework docs before designing.\n' >> "$designer_prompt"
-  printf '\n- Design specs must include the specific test file path for each edge case.\n' >> "$designer_prompt"
-  step_pass "designer prompt updated with MCP reference and project rule"
+These rules are mandatory for all test files in this project:
+
+- Import `assert` from `node:assert/strict` and use `assert.strictEqual` for every comparison. Never use `assert.equal` or `assert.ok` for value checks.
+- Structure every test file with `describe()` blocks. Each exported function gets its own `describe('functionName', () => { ... })` block. Do NOT use bare `test()` calls at the top level.
+- Inside each `describe()` block, use `it()` for individual test cases, not `test()`.
+- Include at least one edge case per function: zero input, negative input, and boundary values.
+- Each `it()` description must state the expected behavior (e.g., "returns zero when input is zero"), not the implementation detail.
+SKILL
+  step_pass "testing-conventions skill added to builder skills/"
+
+  # README step 7: edit prompt to reference the skill
+  local builder_prompt="$WALK_L3_SCRATCH/packs/lessons/L3/agents/builder/prompt.template.md"
+  printf '\n- Before writing tests, read the testing-conventions skill and follow its rules for assert methods, describe blocks, and edge cases.\n' >> "$builder_prompt"
+  step_pass "builder prompt updated with skill reference"
 
   # README step 7: restart and re-sling
   (cd "$WALK_L3_FACTORY" && gc restart >/dev/null 2>&1) || true
   wait_for "supervisor responsive after restart" \
     "cd '$WALK_L3_FACTORY' && gc status >/dev/null 2>&1" 120 3 \
     || { stop_event_stream; fail "supervisor unresponsive after config-over-chat restart"; }
+
+  # Snapshot commit count before re-sling so we can detect a genuinely new commit
+  local pre_resling_commit_count
+  pre_resling_commit_count="$(cd "$WALK_L3_RIG" && git log --all --oneline | wc -l | tr -d ' ')"
 
   local sling2_out
   sling2_out="$(cd "$WALK_L3_FACTORY" && gc sling rig/factory.planner \
@@ -249,27 +247,40 @@ OVERLAY
   log "config-over-chat re-sling:"
   echo "$sling2_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
 
-  local design2_check='count=$(find "'"$WALK_L3_RIG"'/docs/designs" -maxdepth 1 -type f -name "*.md" 2>/dev/null | wc -l | tr -d " "); [ "$count" -ge 2 ]'
-  if wait_for "second design artifact from config-over-chat re-sling" "$design2_check" 900 20 "" "rig/factory.designer" "$WALK_L3_FACTORY"; then
-    step_pass "config-over-chat produced a second design artifact"
+  local expected_commits=$(( pre_resling_commit_count + 1 ))
+  local commit2_check='cd "'"$WALK_L3_RIG"'" && [ "$(git log --all --oneline | wc -l | tr -d " ")" -ge '"$expected_commits"' ]'
+  if wait_for "second builder commit from skill re-sling" "$commit2_check" 900 20 "" "rig/factory.builder" "$WALK_L3_FACTORY"; then
+    step_pass "skill re-sling produced a new builder commit"
+    # Verify the skill had causal impact on the NEW commit's tests
+    local second_branch
+    second_branch="$(cd "$WALK_L3_RIG" && git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/heads/ | head -1)"
+    (cd "$WALK_L3_RIG" && git checkout -q "$second_branch" 2>&1) || true
+    if grep -r 'assert\.strictEqual\|assert/strict' "$WALK_L3_RIG/test" >/dev/null 2>&1; then
+      step_pass "skill impact verified: tests use assert.strictEqual"
+    else
+      log "WARN: second commit does not use assert.strictEqual — skill may not have had impact"
+    fi
+    if grep -r 'describe(' "$WALK_L3_RIG/test" >/dev/null 2>&1; then
+      step_pass "skill impact verified: tests use describe() blocks"
+    else
+      log "WARN: second commit does not use describe() blocks — skill may not have had impact"
+    fi
   else
-    log "WARN: config-over-chat re-sling did not produce a second design within timeout (non-fatal)"
+    log "WARN: skill re-sling did not produce a new builder commit within timeout (non-fatal)"
   fi
 
   log "what L3 produced (rig tree diff since lesson start):"
   (cd "$WALK_L3_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort \
     | diff "$WALK_L3_SCRATCH/rig-tree-before.txt" - | grep '^>' | sed 's/^> /      + /') | tee -a "$WALK_LOG"
 
-  # Save snapshots for validate-lesson-content skill
+  # Save ALL artifacts — every file the agents produced
   save_snapshot "L3" "gc-sling.txt" "$sling_out"
-  save_snapshot_file "L3" "plan-artifact.md" "$WALK_L3_PLAN"
-  save_snapshot_file "L3" "architecture-artifact.md" "$WALK_L3_ARCHITECTURE"
-  save_snapshot_file "L3" "design-artifact.md" "$WALK_L3_DESIGN"
-  save_artifact_sections "L3" "plan-sections.txt" "$WALK_L3_PLAN"
-  save_artifact_sections "L3" "architecture-sections.txt" "$WALK_L3_ARCHITECTURE"
-  save_artifact_sections "L3" "design-sections.txt" "$WALK_L3_DESIGN"
+  save_all_artifacts "L3" "plans" "$WALK_L3_RIG/docs/plans"
+  save_all_artifacts "L3" "architecture" "$WALK_L3_RIG/docs/architecture"
+  save_all_artifacts "L3" "designs" "$WALK_L3_RIG/docs/designs"
   save_snapshot "L3" "node-test.txt" "$test_out"
   save_snapshot "L3" "builder-commit.txt" "$WALK_L3_CODE_COMMITTED"
+  save_agent_sessions "L3" "$WALK_L3_FACTORY"
 
   save_state WALK_L3_PLAN WALK_L3_ARCHITECTURE WALK_L3_DESIGN WALK_L3_CODE_COMMITTED
   stop_event_stream

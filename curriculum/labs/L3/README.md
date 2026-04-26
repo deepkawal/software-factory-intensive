@@ -123,23 +123,49 @@ Expected outputs:
 - a new implementation commit
 - passing tests
 
-## 7. Attach a Capability to Designer or Builder
+## 7. Add a Skill to the Builder
 
-L3 adds two new agents. Ground one of them in a real external system — the same config-over-chat exercise from L2, targeting the new roles.
+L2 taught MCP integration (external tool access). L3 teaches skill integration — project-specific instructions that shape how an agent works.
 
-| Capability | Agent | What It Adds |
-|-----------|-------|-------------|
-| GitHub MCP | Builder | Create branches, read existing files |
-| Sentry MCP | Builder | Check existing errors before coding |
-| Context7 MCP | Designer | Up-to-date framework docs for design |
+PackV2 packs have a `skills/` directory. Each skill is a subdirectory with a `SKILL.md` file.
 
-Follow the same 5-step process from L2:
+1. Create a testing-conventions skill for the builder:
 
-1. Inspect `packs/workshop/overlay/.claude/settings.json` for examples.
-2. Add the MCP to the agent's overlay under `packs/lessons/L3/agents/<agent>/overlay/.claude/settings.json`.
-3. Edit the agent's `prompt.template.md` to name the capability in the Inputs section.
-4. `gc restart` and re-sling with a different feature request.
-5. Compare artifacts. Record what changed.
+       mkdir -p packs/lessons/L3/agents/builder/skills/testing-conventions
+       $EDITOR packs/lessons/L3/agents/builder/skills/testing-conventions/SKILL.md
+
+   Contents:
+
+   ```markdown
+   ---
+   name: testing-conventions
+   description: Project-specific testing conventions for the calculator.
+   ---
+
+   These rules are mandatory for all test files in this project:
+
+   - Import `assert` from `node:assert/strict` and use `assert.strictEqual` for every comparison. Never use `assert.equal` or `assert.ok` for value checks.
+   - Structure every test file with `describe()` blocks. Each exported function gets its own `describe('functionName', () => { ... })` block. Do NOT use bare `test()` calls at the top level.
+   - Inside each `describe()` block, use `it()` for individual test cases, not `test()`.
+   - Include at least one edge case per function: zero input, negative input, and boundary values.
+   - Each `it()` description must state the expected behavior, not the implementation detail.
+   ```
+
+2. Edit the builder prompt to reference the skill:
+
+       $EDITOR packs/lessons/L3/agents/builder/prompt.template.md
+
+   Add to the Inputs section: "Before writing tests, read the testing-conventions skill and follow its rules for assert methods, describe blocks, and edge cases."
+
+3. Restart and re-sling with a different feature:
+
+       gc restart
+       gc sling <rig>/factory.planner "Add a <different feature>" \
+         --on mol-feature-delivery
+
+4. Compare the builder's test code from the two commits. The second commit should use `assert.strictEqual` (not `assert.equal`), `describe()` blocks, and explicit edge case tests — because the skill told it to.
+
+MCPs give agents access to external data. Skills give agents project-specific instructions. Both are config, not chat.
 
 ## Exit Criteria
 
@@ -147,4 +173,4 @@ Follow the same 5-step process from L2:
 - No stage labels or manual downstream beads were used.
 - The graph routed all four roles.
 - The builder committed the implementation and tests.
-- One capability attached to designer or builder with a visible artifact change.
+- Testing-conventions skill added to builder with visible impact on test code (assert.strictEqual, describe blocks).

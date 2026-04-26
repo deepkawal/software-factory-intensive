@@ -1,8 +1,8 @@
-# Clamp Operation Work Package
+# Undo/Redo History Work Package
 ## Goal
 ## User Stories
 ## Acceptance Criteria
 ## Scope Boundary
 ## Dependencies
 ## Open Questions
-## Handoff
+## Architect Handoff

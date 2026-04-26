@@ -413,6 +413,44 @@ save_snapshot_file() {
   fi
 }
 
+# save_all_artifacts <lesson> <prefix> <dir> [<pattern>]
+# Saves every file matching <pattern> (default *.md) from <dir> into
+# walkthrough-snapshots/<lesson>/<prefix>-<filename> plus a sections file.
+save_all_artifacts() {
+  local lesson="$1" prefix="$2" dir="$3" pattern="${4:-*.md}"
+  local snap_dir="$WALK_SNAPSHOTS_DIR/$lesson"
+  mkdir -p "$snap_dir"
+  shopt -s nullglob
+  local files=( "$dir"/$pattern )
+  shopt -u nullglob
+  for f in "${files[@]}"; do
+    local base
+    base="$(basename "$f")"
+    cp "$f" "$snap_dir/${prefix}-${base}"
+    log "snapshot saved: walkthrough-snapshots/$lesson/${prefix}-${base}"
+    grep -E '^##? ' "$f" > "$snap_dir/${prefix}-${base%.md}-sections.txt" 2>/dev/null || true
+    log "snapshot saved: walkthrough-snapshots/$lesson/${prefix}-${base%.md}-sections.txt"
+  done
+}
+
+# save_agent_sessions <lesson> <factory-path>
+# Captures the session peek output for every agent that ran during the lesson.
+# This records the agent's conversation including tool calls, MCP usage, and
+# skill references — evidence that config changes materially affected output.
+save_agent_sessions() {
+  local lesson="$1" factory="$2"
+  local snap_dir="$WALK_SNAPSHOTS_DIR/$lesson/sessions"
+  mkdir -p "$snap_dir"
+  local sessions
+  sessions="$(cd "$factory" && gc session list 2>/dev/null)" || return 0
+  echo "$sessions" | awk 'NR>1 && $2 ~ /^rig\/factory\./ {print $1, $2}' | while read -r sid template; do
+    local agent_name
+    agent_name="$(echo "$template" | sed 's|rig/factory\.||')"
+    (cd "$factory" && gc session peek "$sid" 2>&1) > "$snap_dir/${agent_name}.txt" 2>/dev/null || true
+    log "snapshot saved: walkthrough-snapshots/$lesson/sessions/${agent_name}.txt"
+  done
+}
+
 save_artifact_sections() {
   local lesson="$1" name="$2" artifact="$3"
   if [ -f "$artifact" ]; then

@@ -51,7 +51,7 @@ Inspect the workshop pack to see what integrations are available:
 
 ```bash
 ls packs/workshop/orders/
-ls packs/workshop/overlay/
+ls packs/workshop/mcp/
 ```
 
 Compare your inventory to a lesson pack:
@@ -62,7 +62,7 @@ find packs/lessons/L3 -maxdepth 3 -type f | sort
 
 Map which tools would strengthen which roles in your factory-map.md.
 
-MCP servers give agents tool access to external systems (GitHub, Sentry, issue trackers). The workshop pack at `packs/workshop/` pre-configures common integrations. In L2 and L3, you will add MCP servers to lesson pack agent overlays yourself. See `packs/workshop/overlay/.claude/settings.json` for examples.
+MCP servers give agents tool access to external systems (GitHub, Sentry, issue trackers). Skills give agents project-specific instructions. In L2 you add an MCP server to an agent's `mcp/` directory. In L3 you add a skill to an agent's `skills/` directory.
 
 ## 2. Map Roles To Artifacts
 

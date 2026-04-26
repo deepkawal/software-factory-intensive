@@ -139,7 +139,7 @@ lesson_run() {
     --on mol-delivery-review 2>&1)"
   log "gc sling rig/factory.planner --on mol-delivery-review:"
   echo "$sling_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
-  if ! echo "$sling_out" | grep -qiE 'Slung|dispatched|created'; then
+  if ! echo "$sling_out" | grep -q 'Attached workflow'; then
     step_fail "gc sling did not report a routed formula run"
     stop_event_stream
     fail "L4 formula sling failed"
@@ -283,24 +283,17 @@ MANIFEST
   (cd "$WALK_L4_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort \
     | diff "$WALK_L4_SCRATCH/rig-tree-before.txt" - | grep '^>' | sed 's/^> /      + /') | tee -a "$WALK_LOG"
 
-  # Save snapshots for validate-lesson-content skill
+  # Save ALL artifacts — every file the agents produced, both runs
   save_snapshot "L4" "gc-sling.txt" "$sling_out"
-  save_snapshot_file "L4" "plan-artifact.md" "$WALK_L4_PLAN"
-  save_snapshot_file "L4" "architecture-artifact.md" "$WALK_L4_ARCHITECTURE"
-  save_snapshot_file "L4" "design-artifact.md" "$WALK_L4_DESIGN"
-  save_snapshot_file "L4" "review-artifact.md" "$WALK_L4_REVIEW"
-  save_snapshot_file "L4" "release-artifact.md" "$WALK_L4_RELEASE"
-  save_artifact_sections "L4" "plan-sections.txt" "$WALK_L4_PLAN"
-  save_artifact_sections "L4" "architecture-sections.txt" "$WALK_L4_ARCHITECTURE"
-  save_artifact_sections "L4" "design-sections.txt" "$WALK_L4_DESIGN"
-  save_artifact_sections "L4" "review-sections.txt" "$WALK_L4_REVIEW"
-  save_artifact_sections "L4" "release-sections.txt" "$WALK_L4_RELEASE"
+  save_all_artifacts "L4" "plans" "$WALK_L4_RIG/docs/plans"
+  save_all_artifacts "L4" "architecture" "$WALK_L4_RIG/docs/architecture"
+  save_all_artifacts "L4" "designs" "$WALK_L4_RIG/docs/designs"
+  save_all_artifacts "L4" "reviews" "$WALK_L4_RIG/docs/reviews"
+  save_all_artifacts "L4" "releases" "$WALK_L4_RIG/docs/releases"
   save_snapshot "L4" "node-test.txt" "$test_out"
   save_snapshot "L4" "builder-commit.txt" "$WALK_L4_CODE_COMMITTED"
-  if [ -n "${WALK_L4_REVIEW2:-}" ]; then
-    save_snapshot_file "L4" "review2-artifact.md" "$WALK_L4_REVIEW2"
-    save_artifact_sections "L4" "review2-sections.txt" "$WALK_L4_REVIEW2"
-  fi
+  save_snapshot_file "L4" "PROJECT_MANIFEST.md" "$WALK_L4_RIG/docs/PROJECT_MANIFEST.md"
+  save_agent_sessions "L4" "$WALK_L4_FACTORY"
 
   save_state WALK_L4_PLAN WALK_L4_ARCHITECTURE WALK_L4_DESIGN WALK_L4_CODE_COMMITTED WALK_L4_REVIEW WALK_L4_RELEASE
   stop_event_stream

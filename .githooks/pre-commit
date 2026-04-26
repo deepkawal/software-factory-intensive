@@ -91,6 +91,9 @@ if [ "$need_migration" = "1" ]; then
 fi
 
 if [ "$need_smoke" = "1" ]; then
+  # behavioral-smoke.sh already includes lint + migration-check + dry-run
+  # walkthroughs, so there's no need to also run tutorial-check.sh (which
+  # runs the same dry-run). Running both concurrently corrupts Dolt state.
   echo "── behavioral-smoke.sh ──"
   if bash test-harness/behavioral-smoke.sh; then
     echo "✓ behavioral-smoke passed"
@@ -99,9 +102,7 @@ if [ "$need_smoke" = "1" ]; then
     rc=1
   fi
   echo
-fi
-
-if [ "$need_tutorial" = "1" ]; then
+elif [ "$need_tutorial" = "1" ]; then
   echo "── tutorial-check.sh ──"
   if bash test-harness/tutorial-check.sh; then
     echo "✓ tutorial-check passed"

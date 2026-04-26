@@ -54,7 +54,7 @@ for pack_dir in "${MIGRATED_PACK_DIRS[@]}"; do
 done
 
 # --- Invariant 2: migrated agent-bearing packs have required v2 agent structure ---
-echo "[2] migrated agent-bearing packs have agents/<n>/{agent.toml, prompt*.md, overlay/.claude}"
+echo "[2] migrated agent-bearing packs have agents/<n>/{agent.toml, prompt*.md}"
 for pack_dir in "${MIGRATED_PACK_DIRS[@]}"; do
   [ -d "$pack_dir/agents" ] || continue
   for agent_dir in "$pack_dir"/agents/*/; do
@@ -63,10 +63,6 @@ for pack_dir in "${MIGRATED_PACK_DIRS[@]}"; do
     # Accept either prompt.template.md or prompt.md (plain) per v2 convention.
     if [ ! -f "$agent_dir/prompt.template.md" ] && [ ! -f "$agent_dir/prompt.md" ]; then
       fail "$agent_dir missing prompt.template.md or prompt.md"
-    fi
-    # Overlay with .claude/ subdir is where Claude Code finds settings+skills.
-    if [ ! -d "$agent_dir/overlay/.claude" ]; then
-      fail "$agent_dir missing overlay/.claude/"
     fi
   done
 done

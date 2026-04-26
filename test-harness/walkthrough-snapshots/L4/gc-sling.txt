@@ -1,2 +1,0 @@
-Created rig-2e9 — "Add a clamp operation: clamp(x, lo, hi) returns x bounded to [lo, hi]"
-Attached workflow rig-n8j6 (formula "mol-delivery-review") to rig-n8j6

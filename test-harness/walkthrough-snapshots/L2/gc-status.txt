@@ -1,6 +1,6 @@
-sfi-walkthrough-L2-1777163539-13263  /private/tmp/sfi-tutorial-walkthrough/1777163539-13249/L2/my-factory
-  Controller: supervisor-managed (PID 4681)
-  Authority: supervisor process PID 4681
+sfi-walkthrough-L2-1777180049-63118  /private/tmp/sfi-tutorial-walkthrough/1777180049-63101/L2/my-factory
+  Controller: supervisor-managed (PID 61570)
+  Authority: supervisor process PID 61570
   Suspended:  no
 
 Agents:
@@ -20,6 +20,6 @@ Named sessions:
   rig/control-dispatcher  awake (always)
 
 Rigs:
-  rig                     /private/tmp/sfi-tutorial-walkthrough/1777163539-13249/L2/rig
+  rig                     /private/tmp/sfi-tutorial-walkthrough/1777180049-63101/L2/rig
 
 Sessions: 3 active, 0 suspended

@@ -139,7 +139,7 @@ lesson_run() {
     --on mol-release-delivery 2>&1)"
   log "gc sling rig/factory.planner --on mol-release-delivery:"
   echo "$sling_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
-  if ! echo "$sling_out" | grep -qiE 'Slung|dispatched|created'; then
+  if ! echo "$sling_out" | grep -q 'Attached workflow'; then
     step_fail "gc sling did not report a routed formula run"
     stop_event_stream
     fail "C1 formula sling failed"
@@ -278,23 +278,18 @@ RETRO
   (cd "$WALK_C1_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort \
     | diff "$WALK_C1_SCRATCH/rig-tree-before.txt" - | grep '^>' | sed 's/^> /      + /') | tee -a "$WALK_LOG"
 
-  # Save snapshots for validate-lesson-content skill
+  # Save ALL artifacts — every file the agents produced
   save_snapshot "C1" "gc-sling.txt" "$sling_out"
-  save_snapshot_file "C1" "plan-artifact.md" "$WALK_C1_PLAN"
-  save_snapshot_file "C1" "architecture-artifact.md" "$WALK_C1_ARCHITECTURE"
-  save_snapshot_file "C1" "design-artifact.md" "$WALK_C1_DESIGN"
-  save_snapshot_file "C1" "validation-artifact.md" "$WALK_C1_VALIDATION"
-  save_snapshot_file "C1" "review-artifact.md" "$WALK_C1_REVIEW"
-  save_snapshot_file "C1" "release-artifact.md" "$WALK_C1_RELEASE"
-  save_artifact_sections "C1" "plan-sections.txt" "$WALK_C1_PLAN"
-  save_artifact_sections "C1" "architecture-sections.txt" "$WALK_C1_ARCHITECTURE"
-  save_artifact_sections "C1" "design-sections.txt" "$WALK_C1_DESIGN"
-  save_artifact_sections "C1" "validation-sections.txt" "$WALK_C1_VALIDATION"
-  save_artifact_sections "C1" "review-sections.txt" "$WALK_C1_REVIEW"
-  save_artifact_sections "C1" "release-sections.txt" "$WALK_C1_RELEASE"
+  save_all_artifacts "C1" "plans" "$WALK_C1_RIG/docs/plans"
+  save_all_artifacts "C1" "architecture" "$WALK_C1_RIG/docs/architecture"
+  save_all_artifacts "C1" "designs" "$WALK_C1_RIG/docs/designs"
+  save_all_artifacts "C1" "validation" "$WALK_C1_RIG/docs/validation"
+  save_all_artifacts "C1" "reviews" "$WALK_C1_RIG/docs/reviews"
+  save_all_artifacts "C1" "releases" "$WALK_C1_RIG/docs/releases"
   save_snapshot "C1" "node-test.txt" "$test_out"
   save_snapshot "C1" "builder-commit.txt" "$WALK_C1_CODE_COMMITTED"
   save_snapshot_file "C1" "retrospective.md" "$WALK_C1_RETROSPECTIVE"
+  save_agent_sessions "C1" "$WALK_C1_FACTORY"
 
   save_state WALK_C1_PLAN WALK_C1_ARCHITECTURE WALK_C1_DESIGN WALK_C1_CODE_COMMITTED WALK_C1_VALIDATION WALK_C1_REVIEW WALK_C1_RELEASE
   stop_event_stream

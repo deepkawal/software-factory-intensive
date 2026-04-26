@@ -1,2 +1,0 @@
-Created rig-2zk — "Add a percent operation: percent(whole, fraction) returns whole*fraction/100"
-Attached workflow rig-dp2v (formula "mol-feature-delivery") to rig-dp2v

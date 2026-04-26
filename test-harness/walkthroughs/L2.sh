@@ -131,7 +131,7 @@ lesson_run() {
     --on mol-feature-intake 2>&1)"
   log "gc sling rig/factory.planner --on mol-feature-intake:"
   echo "$sling_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
-  if ! echo "$sling_out" | grep -qiE 'Slung|dispatched|created'; then
+  if ! echo "$sling_out" | grep -q 'Attached workflow'; then
     step_fail "gc sling did not report a routed formula run"
     stop_event_stream
     fail "L2 formula sling failed"
@@ -185,37 +185,23 @@ lesson_run() {
   step_pass "observability commands returned data"
 
   echo
-  echo "[10/10] config-over-chat: add MCP overlay + edit prompt + re-sling"
-  log "config-over-chat: adding MCP config to planner overlay and project-specific rule to prompt"
+  echo "[10/10] config-over-chat: add MCP server + edit prompt + re-sling"
+  log "config-over-chat: adding MCP config to planner mcp/ and project-specific rule to prompt"
 
-  # README Part 5 step 2: add MCP to agent overlay
-  local overlay_file="$WALK_L2_SCRATCH/packs/lessons/L2/agents/planner/overlay/.claude/settings.json"
-  cat > "$overlay_file" <<'OVERLAY'
-{
-  "$schema": "https://json.schemastore.org/claude-code-settings.json",
-  "permissions": {
-    "allow": [
-      "Bash(gc:*)", "Bash(bd:*)", "Bash(git:*)", "Bash(cat:*)",
-      "Bash(ls:*)", "Bash(mkdir:*)", "Bash(find:*)", "Bash(grep:*)",
-      "Bash(jq:*)", "Bash(node:*)", "Bash(npm:*)", "Bash(sed:*)",
-      "Bash(pwd:*)", "Read", "Write", "Edit", "Glob", "Grep"
-    ],
-    "deny": ["Bash(bd init:*)"]
-  },
-  "mcpServers": {
-    "context7": {
-      "command": "npx",
-      "args": ["-y", "@upstash/context7-mcp"]
-    }
-  }
-}
-OVERLAY
-  step_pass "MCP config added to planner overlay"
+  # README Part 5 step 2: add MCP to agent's mcp/ directory (PackV2 convention)
+  local mcp_dir="$WALK_L2_SCRATCH/packs/lessons/L2/agents/planner/mcp"
+  mkdir -p "$mcp_dir"
+  cat > "$mcp_dir/context7.toml" <<'MCP'
+name = "context7"
+description = "Up-to-date library documentation via Context7"
+command = "npx"
+args = ["-y", "@upstash/context7-mcp"]
+MCP
+  step_pass "MCP config added to planner mcp/context7.toml"
 
   # README Part 5 step 3: edit prompt to reference the capability
   local prompt_file="$WALK_L2_SCRATCH/packs/lessons/L2/agents/planner/prompt.template.md"
-  printf '\n- When available, use the Context7 MCP to check up-to-date library docs before scoping work.\n' >> "$prompt_file"
-  printf '\n- When the project uses a test runner, acceptance criteria must reference the test command from CLAUDE.md.\n' >> "$prompt_file"
+  printf '\n- Before writing acceptance criteria, use the Context7 MCP to look up the latest node:test API. Reference specific node:test features (describe, it, assert methods) in the acceptance criteria so the builder uses the correct API.\n' >> "$prompt_file"
   step_pass "planner prompt updated with MCP reference and project rule"
 
   # README Part 5 step 4: restart and re-sling
@@ -245,15 +231,14 @@ OVERLAY
   (cd "$WALK_L2_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort \
     | diff "$WALK_L2_SCRATCH/rig-tree-before.txt" - | grep '^>' | sed 's/^> /      + /') | tee -a "$WALK_LOG"
 
-  # Save snapshots for validate-lesson-content skill
+  # Save ALL artifacts — every file the agents produced, not just the first
   save_snapshot "L2" "gc-sling.txt" "$sling_out"
-  save_snapshot_file "L2" "plan-artifact.md" "$WALK_L2_WORK_PACKAGE"
-  save_snapshot_file "L2" "architecture-artifact.md" "$WALK_L2_ARCHITECTURE"
-  save_artifact_sections "L2" "plan-sections.txt" "$WALK_L2_WORK_PACKAGE"
-  save_artifact_sections "L2" "architecture-sections.txt" "$WALK_L2_ARCHITECTURE"
+  save_all_artifacts "L2" "plans" "$WALK_L2_RIG/docs/plans"
+  save_all_artifacts "L2" "architecture" "$WALK_L2_RIG/docs/architecture"
   local status_snap
   status_snap="$(cd "$WALK_L2_FACTORY" && gc status 2>&1)"
   save_snapshot "L2" "gc-status.txt" "$status_snap"
+  save_agent_sessions "L2" "$WALK_L2_FACTORY"
 
   save_state WALK_L2_WORK_PACKAGE WALK_L2_ARCHITECTURE
   stop_event_stream

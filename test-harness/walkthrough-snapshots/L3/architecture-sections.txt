@@ -1,7 +1,0 @@
-# Percent Operation Architecture
-## Context
-## Options Considered
-## Decision
-## Consequences
-## Risks
-## References

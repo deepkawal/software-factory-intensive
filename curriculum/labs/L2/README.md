@@ -161,68 +161,60 @@ ls docs/architecture
 
 The plan should include:
 
-- goal
-- user stories
-- acceptance criteria
-- scope boundary
-- architect handoff notes
+- Goal
+- User Stories
+- Acceptance Criteria
+- Scope Boundary
+- Dependencies
+- Open Questions
+- Architect Handoff
 
 The architecture artifact should include:
 
-- context
-- at least two options
-- a decision
-- consequences
-- risks
-- reference back to the plan
+- Context
+- Options Considered
+- Decision
+- Consequences
+- Risks
+- References
 
 ## Part 5: Attach a Real Capability
 
 The planner and architect currently work from project context alone. Ground one of them in a real external system.
 
-### Choose one capability to attach
+### Add an MCP server to the planner
 
-| Capability | Agent | What It Adds |
-|-----------|-------|-------------|
-| GitHub MCP | Architect | Read existing code, PRs, issues |
-| Linear/Jira MCP | Planner | Pull real tickets as input |
-| Context7 MCP | Architect | Up-to-date library docs |
-| `actual status` CLI | Planner | Project health data |
+PackV2 packs have a `mcp/` directory for MCP server definitions. Each server is a TOML file.
 
-### Wire it up
+1. Create the MCP config:
 
-1. Inspect the workshop pack for examples:
+       mkdir -p packs/lessons/L2/agents/planner/mcp
+       $EDITOR packs/lessons/L2/agents/planner/mcp/context7.toml
 
-       cat packs/workshop/overlay/.claude/settings.json | head -20
+   Contents:
 
-2. Add the MCP to your chosen agent's overlay:
+   ```toml
+   name = "context7"
+   description = "Up-to-date library documentation via Context7"
+   command = "npx"
+   args = ["-y", "@upstash/context7-mcp"]
+   ```
 
-       $EDITOR packs/lessons/L2/agents/planner/overlay/.claude/settings.json
+   Context7 requires no credentials. For MCP servers that need auth (GitHub, Sentry, Linear), add an `[env]` section to the TOML — see `packs/workshop/orders/sync-linear.toml` for an example of env var usage.
 
-   Add an mcpServers section. Example for GitHub:
-
-       "mcpServers": {
-         "github": {
-           "type": "http",
-           "url": "https://api.githubcopilot.com/mcp/",
-           "headers": { "Authorization": "Bearer ${GITHUB_TOKEN}" }
-         }
-       }
-
-3. Edit the agent's prompt to name the new capability:
+2. Edit the planner prompt to use the MCP:
 
        $EDITOR packs/lessons/L2/agents/planner/prompt.template.md
 
-   Add one line to the Inputs section, e.g.: "When available, use the GitHub MCP to check existing code before scoping work."
+   Add to the Inputs section: "Before writing acceptance criteria, use the Context7 MCP to look up the latest node:test API. Reference specific node:test features (describe, it, assert methods) in the acceptance criteria."
 
-4. Restart and re-sling:
+3. Restart and re-sling:
 
-       export GITHUB_TOKEN=<your-token>  # or whichever credential
        gc restart
        gc sling <rig>/factory.planner "Plan <another feature>" \
          --on mol-feature-intake
 
-5. Compare the two plan artifacts. Did the external tool change the output? Record what you changed in activities/labs/L2/notes.md.
+4. Compare the two plan artifacts. The second plan should reference specific node:test API details (assert.strictEqual, describe blocks) that came from Context7 — not generic knowledge.
 
 MCPs are the bridge between LLM knowledge and project-specific reality. Without them, agents invent reality. With them, agents check reality.
 
