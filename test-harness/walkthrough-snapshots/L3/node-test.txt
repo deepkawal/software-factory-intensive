@@ -1,0 +1,18 @@
+✔ add returns the sum of two numbers (0.786625ms)
+✔ subtract returns the difference of two numbers (0.081875ms)
+✔ percent returns 15% of 200 (0.048917ms)
+✔ percent of zero whole returns zero (0.044ms)
+✔ percent with zero fraction returns zero (0.054541ms)
+✔ percent with 100% returns the whole (0.046167ms)
+✔ percent with negative whole propagates sign (0.049125ms)
+✔ percent with negative fraction propagates sign (0.060333ms)
+✔ percent with both negative yields positive (0.07275ms)
+✔ percent returns fractional result (0.103125ms)
+ℹ tests 10
+ℹ suites 0
+ℹ pass 10
+ℹ fail 0
+ℹ cancelled 0
+ℹ skipped 0
+ℹ todo 0
+ℹ duration_ms 125.737417
