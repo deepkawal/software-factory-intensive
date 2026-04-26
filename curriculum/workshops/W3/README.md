@@ -57,6 +57,22 @@ For each judgment, choose the right home:
 
 Dependency closure alone does not mean success. If a failed step should change the path, encode that with an explicit check, condition, retry, or manual re-run rule.
 
+## 3a. Define Decision Boundaries
+
+For each category, decide what stays with you and what goes to agents:
+
+| Decision | Human or Agent? | Rationale |
+|----------|----------------|-----------|
+| Database schema changes | Human | Irreversible |
+| New dependencies | Human | Security burden |
+| API contract changes | Human | Cross-system |
+| Function internals | Agent (Builder) | Contained in scope |
+| Test case design | Agent (Builder) | Follows acceptance criteria |
+| Review severity | Agent (Reviewer) | Follows Review Standards |
+| Release verdict | Agent (Release Gate) | Follows Release Criteria |
+
+Customize for your project and add to `formula-design.md`. Connect this to your W1 Decision Checkpoint — same concept, factory-level scope.
+
 ## 4. Specify Step Contracts
 
 For each step in your graph, record:
@@ -111,12 +127,44 @@ Compare it with your design note. Mark:
 - one step you would simplify
 - one check you would add for your real project
 
+## 7. Orders as External Triggers
+
+Formula graphs handle step-to-step coordination inside a factory run. External events — new tickets arriving, periodic health checks — need orders.
+
+Inspect the workshop pack's tracker sync:
+
+```bash
+cat packs/workshop/orders/sync-linear.toml
+```
+
+Notice the structure:
+
+- `gate = "cooldown"` — fires after an interval elapses
+- `interval = "5m"` — every 5 minutes
+- `exec = "bd linear sync || true"` — the command to run
+
+Orders are for real external triggers, not for passing work between formula steps. In your `formula-design.md`, identify one external trigger your factory would need and describe it as an order.
+
+## Coordination Beyond Graphs
+
+For observing and debugging agent work:
+
+| Tool | Purpose |
+|------|---------|
+| `gc session peek <id>` | See what an agent is doing now |
+| `gc events --follow` | Stream factory events |
+| `gc graph <bead-id>` | Inspect formula step states |
+
+These are observability tools, not workflow dispatch.
+
 ## Exit Criteria
 
 - [ ] `activities/workshops/W3/formula-design.md` exists.
 - [ ] It lists step IDs, targets, dependencies, artifacts, and close behavior.
 - [ ] It explains where success/failure judgment lives.
 - [ ] It avoids using metadata labels as the primary routing mechanism.
+- [ ] Decision boundaries are documented in `formula-design.md`.
+- [ ] One external trigger is described as an order spec.
 
 ## Next
 

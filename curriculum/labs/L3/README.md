@@ -101,6 +101,8 @@ You should see the formula advance through:
 factory.planner -> factory.architect -> factory.designer -> factory.builder
 ```
 
+Use all six observability commands from L2. Watch the four-agent handoff.
+
 ## 6. Inspect Outputs
 
 In your project rig, verify:
@@ -121,9 +123,28 @@ Expected outputs:
 - a new implementation commit
 - passing tests
 
+## 7. Attach a Capability to Designer or Builder
+
+L3 adds two new agents. Ground one of them in a real external system — the same config-over-chat exercise from L2, targeting the new roles.
+
+| Capability | Agent | What It Adds |
+|-----------|-------|-------------|
+| GitHub MCP | Builder | Create branches, read existing files |
+| Sentry MCP | Builder | Check existing errors before coding |
+| Context7 MCP | Designer | Up-to-date framework docs for design |
+
+Follow the same 5-step process from L2:
+
+1. Inspect `packs/workshop/overlay/.claude/settings.json` for examples.
+2. Add the MCP to the agent's overlay under `packs/lessons/L3/agents/<agent>/overlay/.claude/settings.json`.
+3. Edit the agent's `prompt.template.md` to name the capability in the Inputs section.
+4. `gc restart` and re-sling with a different feature request.
+5. Compare artifacts. Record what changed.
+
 ## Exit Criteria
 
 - The run started with one `gc sling <rig>/factory.planner ... --on mol-feature-delivery`.
 - No stage labels or manual downstream beads were used.
 - The graph routed all four roles.
 - The builder committed the implementation and tests.
+- One capability attached to designer or builder with a visible artifact change.

@@ -50,12 +50,12 @@ lesson_run() {
   local lesson_rc=0
 
   echo
-  echo "[1/9] pre-flight"
+  echo "[1/10] pre-flight"
   assert_walkthrough_preflight
   purge_stranded_walkthrough_cities
 
   echo
-  echo "[2/9] scratch setup"
+  echo "[2/10] scratch setup"
   WALK_C1_SCRATCH="$WALK_SCRATCH/C1"
   WALK_C1_FACTORY="$WALK_C1_SCRATCH/my-factory"
   WALK_C1_CITY_NAME="sfi-walkthrough-C1-$run_id"
@@ -66,13 +66,13 @@ lesson_run() {
   save_state WALK_C1_FACTORY WALK_C1_CITY_NAME
 
   echo
-  echo "[3/9] gc register C1 factory"
+  echo "[3/10] gc register C1 factory"
   if ! register_walkthrough_city "$WALK_C1_FACTORY" "$WALK_C1_CITY_NAME" "C1"; then
     fail "C1 factory register failed"
   fi
 
   echo
-  echo "[4/9] project rig + gc rig add"
+  echo "[4/10] project rig + gc rig add"
   WALK_C1_RIG="$WALK_C1_SCRATCH/rig"
   cp -r "$WALK_REPO_ROOT/test-harness/tutorial-walkthrough-rig" "$WALK_C1_RIG"
   (
@@ -95,7 +95,7 @@ lesson_run() {
   export WALK_FACTORY="$WALK_C1_FACTORY" WALK_RIG="$WALK_C1_RIG"
 
   echo
-  echo "[5/9] sync existing rig factory import"
+  echo "[5/10] sync existing rig factory import"
   local import_out
   import_out="$(cd "$WALK_C1_FACTORY" && gc --rig rig import remove factory 2>&1 || true)"
   log "gc --rig rig import remove factory:"
@@ -111,7 +111,7 @@ lesson_run() {
   fi
 
   echo
-  echo "[6/9] factory up"
+  echo "[6/10] factory up"
   (cd "$WALK_C1_FACTORY" && gc doctor --fix >/dev/null 2>&1) || true
   if ! wait_for "supervisor responsive" \
     "cd '$WALK_C1_FACTORY' && gc status >/dev/null 2>&1" 120 3; then
@@ -120,7 +120,7 @@ lesson_run() {
   step_pass "factory up"
 
   echo
-  echo "[7/9] dry-run boundary"
+  echo "[7/10] dry-run boundary"
   if [ "$WALK_DRY_RUN" = "1" ]; then
     step_pass "dry run validated C1 factory selection, rig sync, and formula entrypoint shape"
     return 0
@@ -129,7 +129,7 @@ lesson_run() {
   start_event_stream "$WALK_C1_FACTORY"
 
   echo
-  echo "[8/9] gc sling C1 formula"
+  echo "[8/10] gc sling C1 formula"
   local rig_tree_before sling_out
   rig_tree_before="$(cd "$WALK_C1_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort)"
   echo "$rig_tree_before" > "$WALK_C1_SCRATCH/rig-tree-before.txt"
@@ -193,7 +193,7 @@ lesson_run() {
   step_pass "Release gate produced release record: $WALK_C1_RELEASE"
 
   echo
-  echo "[9/9] verify artifacts and tests"
+  echo "[9/10] verify artifacts and tests"
   local builder_branch test_out test_rc
   builder_branch="$(cd "$WALK_C1_RIG" && git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/heads/ | head -1)"
   (cd "$WALK_C1_RIG" && git checkout -q "$builder_branch" 2>&1) | sed 's/^/    /' | tee -a "$WALK_LOG" || true
@@ -232,9 +232,69 @@ lesson_run() {
   assert_file_contains_at_least "$WALK_C1_RELEASE" 1 \
     "release gate: explicit PASS/FAIL verdict" '\b(PASS|FAIL)\b'
 
+  echo
+  echo "[10/10] retrospective"
+  log "creating retrospective from C1 run"
+  local retro_dir="$WALK_C1_SCRATCH/activities-capstone-C1"
+  mkdir -p "$retro_dir"
+  cat > "$retro_dir/retrospective.md" <<RETRO
+# Factory Run Retrospective
+
+## Run Summary
+- Feature: multiply operation
+- Root bead: ${WALK_ROOT_BEAD_ID:-unknown}
+- Formula: mol-release-delivery
+- Stages completed: plan, architecture, design, build, validate, review, release
+
+## What Worked
+- All seven formula steps completed without manual intervention.
+- Artifacts landed in the expected docs/ subdirectories.
+
+## What Didn't Work
+- (none observed in automated walkthrough)
+
+## W4 Improvement Criteria Applied
+| Rule | Signal Observed? | Metric Before | Metric After |
+|------|-----------------|---------------|--------------|
+| (walkthrough does not have prior W4 rules to evaluate) | N/A | N/A | N/A |
+
+## Config Changes Made During This Run
+| File | Change | Why |
+|------|--------|-----|
+| (none — walkthrough used stock prompts) | — | — |
+
+## What I Would Change Before the Next Run
+- Add project-specific Review Standards to PROJECT_MANIFEST.md.
+RETRO
+  if [ -f "$retro_dir/retrospective.md" ]; then
+    step_pass "retrospective created: $retro_dir/retrospective.md"
+  else
+    step_fail "retrospective was not created"
+  fi
+  WALK_C1_RETROSPECTIVE="$retro_dir/retrospective.md"
+  save_state WALK_C1_RETROSPECTIVE
+
   log "what C1 produced (rig tree diff since lesson start):"
   (cd "$WALK_C1_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort \
     | diff "$WALK_C1_SCRATCH/rig-tree-before.txt" - | grep '^>' | sed 's/^> /      + /') | tee -a "$WALK_LOG"
+
+  # Save snapshots for validate-lesson-content skill
+  save_snapshot "C1" "gc-sling.txt" "$sling_out"
+  save_snapshot_file "C1" "plan-artifact.md" "$WALK_C1_PLAN"
+  save_snapshot_file "C1" "architecture-artifact.md" "$WALK_C1_ARCHITECTURE"
+  save_snapshot_file "C1" "design-artifact.md" "$WALK_C1_DESIGN"
+  save_snapshot_file "C1" "validation-artifact.md" "$WALK_C1_VALIDATION"
+  save_snapshot_file "C1" "review-artifact.md" "$WALK_C1_REVIEW"
+  save_snapshot_file "C1" "release-artifact.md" "$WALK_C1_RELEASE"
+  save_artifact_sections "C1" "plan-sections.txt" "$WALK_C1_PLAN"
+  save_artifact_sections "C1" "architecture-sections.txt" "$WALK_C1_ARCHITECTURE"
+  save_artifact_sections "C1" "design-sections.txt" "$WALK_C1_DESIGN"
+  save_artifact_sections "C1" "validation-sections.txt" "$WALK_C1_VALIDATION"
+  save_artifact_sections "C1" "review-sections.txt" "$WALK_C1_REVIEW"
+  save_artifact_sections "C1" "release-sections.txt" "$WALK_C1_RELEASE"
+  save_snapshot "C1" "node-test.txt" "$test_out"
+  save_snapshot "C1" "builder-commit.txt" "$WALK_C1_CODE_COMMITTED"
+  save_snapshot_file "C1" "retrospective.md" "$WALK_C1_RETROSPECTIVE"
 
   save_state WALK_C1_PLAN WALK_C1_ARCHITECTURE WALK_C1_DESIGN WALK_C1_CODE_COMMITTED WALK_C1_VALIDATION WALK_C1_REVIEW WALK_C1_RELEASE
   stop_event_stream

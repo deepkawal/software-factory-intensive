@@ -386,6 +386,41 @@ assert_artifact_has_sections() {
   fi
 }
 
+# --- Snapshot helpers --------------------------------------------------
+#
+# save_snapshot saves walkthrough output to test-harness/walkthrough-snapshots/<lesson>/
+# so the validate-lesson-content skill can harvest it and update READMEs.
+
+WALK_SNAPSHOTS_DIR="$WALK_REPO_ROOT/test-harness/walkthrough-snapshots"
+
+save_snapshot() {
+  local lesson="$1" name="$2" content="$3"
+  local dir="$WALK_SNAPSHOTS_DIR/$lesson"
+  mkdir -p "$dir"
+  printf '%s\n' "$content" > "$dir/$name"
+  log "snapshot saved: walkthrough-snapshots/$lesson/$name"
+}
+
+save_snapshot_file() {
+  local lesson="$1" name="$2" src="$3"
+  local dir="$WALK_SNAPSHOTS_DIR/$lesson"
+  mkdir -p "$dir"
+  if [ -f "$src" ]; then
+    cp "$src" "$dir/$name"
+    log "snapshot saved: walkthrough-snapshots/$lesson/$name (from $src)"
+  else
+    log "snapshot skipped: $src does not exist"
+  fi
+}
+
+save_artifact_sections() {
+  local lesson="$1" name="$2" artifact="$3"
+  if [ -f "$artifact" ]; then
+    grep -E '^##? ' "$artifact" > "$WALK_SNAPSHOTS_DIR/$lesson/$name" 2>/dev/null || true
+    log "snapshot saved: walkthrough-snapshots/$lesson/$name (section headers)"
+  fi
+}
+
 # --- Pre-flight helpers ------------------------------------------------
 
 # Clean up any sfi-walkthrough-* cities left behind by prior killed runs.

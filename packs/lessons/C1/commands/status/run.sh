@@ -3,14 +3,17 @@ set -euo pipefail
 
 echo "Release-delivery factory"
 echo
-echo "Formula:"
-echo "  mol-release-delivery"
+echo "Formula: mol-release-delivery"
+echo "Agents:  factory.planner, factory.architect, factory.designer, factory.builder, factory.validator, factory.reviewer, factory.release-gate"
 echo
-echo "Agents:"
-echo "  factory.planner"
-echo "  factory.architect"
-echo "  factory.designer"
-echo "  factory.builder"
-echo "  factory.validator"
-echo "  factory.reviewer"
-echo "  factory.release-gate"
+echo "Artifacts:"
+for dir in docs/plans docs/architecture docs/designs docs/validation docs/reviews docs/releases; do
+  echo "  $(basename "$dir"):"
+  find "$dir" -maxdepth 1 -type f -name '*.md' 2>/dev/null | sort | sed 's/^/    /' || true
+done
+echo
+echo "Recent work:"
+bd list --limit 5 2>/dev/null || echo "  (no beads yet)"
+echo
+echo "Active sessions:"
+gc session list 2>/dev/null | head -10 || echo "  (none)"

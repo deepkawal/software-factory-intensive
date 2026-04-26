@@ -111,9 +111,44 @@ Expected outputs:
 - review report with severity-labelled findings
 - release gate with a clear `PASS` or `FAIL`
 
+## 7. Write the Retrospective
+
+Create `activities/capstone/C1/retrospective.md`:
+
+```markdown
+# Factory Run Retrospective
+
+## Run Summary
+- Feature:
+- Root bead:
+- Formula: mol-release-delivery
+- Stages completed:
+
+## What Worked
+- [observation with artifact evidence]
+
+## What Didn't Work
+- [observation with root cause]
+
+## W4 Improvement Criteria Applied
+
+Revisit your W4 feedback rules. For each rule you applied:
+
+| Rule | Signal Observed? | Metric Before | Metric After |
+|------|-----------------|---------------|--------------|
+
+## Config Changes Made During This Run
+| File | Change | Why |
+|------|--------|-----|
+
+## What I Would Change Before the Next Run
+```
+
 ## Exit Criteria
 
 - The run started with one `gc sling <rig>/factory.planner ... --on mol-release-delivery`.
 - No stage labels or manual downstream beads were used.
 - The formula routed all seven roles.
 - The release gate includes an explicit verdict backed by validation and review evidence.
+- Retrospective exists with at least one W4 criterion evaluated.
+- At least one config change is documented with file and reason.

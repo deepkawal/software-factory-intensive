@@ -43,3 +43,5 @@ Gate docs should explain:
 - [ ] Every step has a target, dependency list, artifact, and close condition.
 - [ ] Human gates are justified in `gates/`.
 - [ ] The design can be translated directly into a FormulaV2 `[[steps]]` graph.
+- [ ] Decision boundaries are documented in `formula-design.md`.
+- [ ] One external trigger is described as an order spec.

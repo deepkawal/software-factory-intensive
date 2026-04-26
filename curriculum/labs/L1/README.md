@@ -1,20 +1,25 @@
-# L1 · Build a Structured Development Loop
+# L1 · Set Up the Factory Runtime
 
-L1 turns a normal project into a project that a factory can work on. You are not running the multi-agent flow yet. You are creating the project context that later FormulaV2 lesson packs will read.
+L1 converts the workflow card from W1 into agent-readable config and registers your project with Gas City. You are not running agents yet — that starts in L2.
+
+| | |
+|---|---|
+| **Estimated duration** | ~15 minutes |
+| **Type** | LAB |
+| **Deliverable** | A registered Gas City city with your project rig ready for L2 |
 
 ## Goal
 
-By the end of L1, your project rig has:
+By the end of L1:
 
-- clear agent instructions
-- a decision log
-- a project manifest
-- a registered Gas City city
-- FormulaV2 enabled permanently
+- Your W1 workflow card is converted to a `CLAUDE.md`
+- A minimal project manifest is in place
+- Gas City is registered with FormulaV2 enabled
+- Your project rig is ready for L2
 
-## 1. Create Project Instructions
+## 1. Convert Your Workflow Card to CLAUDE.md (~5 min)
 
-In your project repo, create the instruction file your CLI agent uses:
+Your W1 workflow card already contains your project rules. Convert it into the file your CLI agent reads:
 
 ```bash
 cd /path/to/your-project
@@ -23,58 +28,36 @@ $EDITOR CLAUDE.md
 
 If you use another agent that reads `AGENTS.md`, use that filename instead.
 
-Include:
+Map from your workflow card:
 
-- project purpose
-- tech stack
-- build, test, lint, and format commands
-- source layout
-- coding standards
-- review standards
-- release criteria
-- files or directories agents must not edit
+| W1 Section | CLAUDE.md Equivalent |
+|------------|---------------------|
+| Prompt Template | Project purpose, tech stack, build/test/lint commands |
+| Context Reset Rule | Session lifecycle notes |
+| Iteration Loop | Coding standards, source layout |
+| Decision Checkpoint | Files agents must not edit, decisions requiring approval |
 
-## 2. Record Decisions
+Keep it concrete. Every bullet should name a file, command, or specific rule — the same specificity discipline from W1.
 
-In this repo, create the L1 decision log:
+## 2. Create a Minimal Project Manifest (~3 min)
 
 ```bash
 cd /path/to/software-factory-intensive
-mkdir -p activities/labs/L1
-$EDITOR activities/labs/L1/DECISIONS.md
-```
-
-For every rule you add to the project instructions, write:
-
-- date
-- rule
-- why it exists
-- how to verify it later
-
-## 3. Fill In The Project Manifest
-
-Copy the template and fill in the sections the later factories need:
-
-```bash
 cp curriculum/PROJECT_MANIFEST_TEMPLATE.md my-factory/PROJECT_MANIFEST.md
 $EDITOR my-factory/PROJECT_MANIFEST.md
 ```
 
-Minimum sections:
+Fill in only these sections now:
 
 - overview
-- users
 - tech stack
 - project structure
-- acceptance criteria style
-- review standards
-- release criteria
 
-The Planner and Architect in L2 will use this file to ground their output.
+You will add Review Standards before L4 and Release Criteria before C1, when the agents that read them are introduced. The manifest grows incrementally across the course.
 
-## 4. Prepare The Gas City City
+## 3. Register the City (~5 min)
 
-Create local runtime config:
+Create local runtime config from templates:
 
 ```bash
 cp my-factory/pack.toml.template my-factory/pack.toml
@@ -95,7 +78,7 @@ The default `my-factory/pack.toml` selects the first runnable lesson factory:
 source = "../packs/lessons/L2"
 ```
 
-## 5. Register The City And Add The Rig
+Register and add your project rig:
 
 ```bash
 cd my-factory
@@ -107,32 +90,27 @@ gc status
 
 This creates the project rig. Later labs keep using the same rig so artifacts accumulate naturally.
 
-## 6. Sanity Check The Rig
+## 4. Verify (~2 min)
 
 From the project repo:
 
 ```bash
+cd /path/to/your-project
 git status --short
-```
-
-Run the commands you wrote in the instruction file:
-
-```bash
 npm test
 # or your project's equivalent
 ```
 
-If a command fails, fix the command or document the correct one before moving on. Later agents will rely on these instructions.
+If a command fails, fix `CLAUDE.md` before moving on. Later agents will rely on these instructions.
 
 ## Exit Criteria
 
-- [ ] `CLAUDE.md` or `AGENTS.md` exists in the project rig.
-- [ ] `activities/labs/L1/DECISIONS.md` explains the instruction rules.
-- [ ] `my-factory/PROJECT_MANIFEST.md` is filled in.
+- [ ] `CLAUDE.md` or `AGENTS.md` exists in the project rig with project-specific rules.
+- [ ] `my-factory/PROJECT_MANIFEST.md` has overview, tech stack, and project structure.
 - [ ] `my-factory/city.toml` permanently enables FormulaV2.
 - [ ] `my-factory/pack.toml` selects `../packs/lessons/L2` as `factory`.
 - [ ] `gc status` shows your city and project rig.
 
 ## Next
 
-In L2, you keep this same rig, sync it to the L2 factory pack, and sling one feature request to `factory.planner` on `mol-feature-intake`.
+L2 is next. You keep this same rig, sync it to the L2 factory pack, and sling your first feature request to `factory.planner` on `mol-feature-intake`.

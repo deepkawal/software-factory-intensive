@@ -33,7 +33,7 @@ Handed to Claude Code as CLAUDE.md (L1)
       ↓
 Split across 6 agent prompts in packs/ (L2-L4)
       ↓
-Enforced by orchestrator + feedback rules (W3/W4)
+Enforced by formula graphs + feedback rules (W3/W4)
 ```
 
 The card is a single markdown file, ~50–100 lines, committed to your project repo. It has exactly four sections. It is scoped to *one* project — not a universal AI-assistant manifesto. When you pick up a second project, you'll write a second card.
@@ -817,7 +817,7 @@ After L1, the progression continues:
 - **W2** — map the six-agent factory to your project's domain. Your workflow card's Decision Checkpoint becomes the starting point for agent-role boundaries.
 - **L2** — install Planner + Architect. Each one gets its own six-section prompt, structurally identical to your four-section card.
 - **L3** — install Designer + Coder. Now four agents are reading your conventions; the card's Stack constraints field is the common spine.
-- **L4** — install Reviewer + Deployer. The Iteration Loop you wrote becomes the orchestrator's schedule.
-- **W3 / W4 / C1** — orchestrator, feedback loops, and capstone. The card hasn't gone anywhere; it's just been promoted from a document you read to a system you run.
+- **L4** — install Reviewer + Release Gate. The Iteration Loop you wrote becomes the formula graph's schedule.
+- **W3 / W4 / C1** — formula design, feedback loops, and capstone. The card hasn't gone anywhere; it's just been promoted from a document you read to a system you run.
 
 Every session from here builds on this one. Keep the card open in a tab.

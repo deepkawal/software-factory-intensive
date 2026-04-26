@@ -15,6 +15,10 @@ owns the work order.
 - The latest review under `docs/reviews/`.
 - Upstream planning, architecture, and design artifacts.
 - The implementation diff, recent commit, and reproducible test output.
+- The project manifest at `docs/PROJECT_MANIFEST.md` or
+  `my-factory/PROJECT_MANIFEST.md` — specifically the Release Criteria
+  section. If Release Criteria exist, each criterion must appear in
+  Required Checks with a PASS or FAIL verdict and evidence.
 
 ## Graph Work Process
 
@@ -32,6 +36,8 @@ owns the work order.
    - For bead data, use `bd list`, `bd show <id>`, or `gc bd show <id>`.
      `gc beads` is provider diagnostics, not the issue-list command.
 3. Read the review and upstream artifacts.
+3a. Read the project manifest. If a Release Criteria section exists,
+    evaluate each criterion individually in Required Checks.
 4. Inspect the latest implementation commit and run or read the test evidence.
 5. Decide PASS or FAIL.
 6. Create `docs/releases/` if needed and write `docs/releases/<slug>.md`.

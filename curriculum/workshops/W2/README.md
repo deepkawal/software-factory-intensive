@@ -34,6 +34,36 @@ doctor/factory-ready/
 
 That folder is the factory. It contains the roles and the graph that coordinates them.
 
+## 1a. Inventory Your Current Capabilities
+
+Before mapping roles, catalog what your factory can use:
+
+| Category | What You Have | Relevant Roles |
+|----------|---------------|----------------|
+| AI Models | Claude via Claude Code | All agents |
+| CLI Tools | npm, gh, your test runner | Builder, Release Gate |
+| MCP Servers | GitHub, Sentry, etc. | Reviewer, Architect |
+| Project Instructions | CLAUDE.md, AGENTS.md | All agents |
+| Knowledge Sources | PROJECT_MANIFEST.md, ADRs | Planner, Architect |
+| External Services | Linear, Jira, etc. | Planner (via orders) |
+
+Inspect the workshop pack to see what integrations are available:
+
+```bash
+ls packs/workshop/orders/
+ls packs/workshop/overlay/
+```
+
+Compare your inventory to a lesson pack:
+
+```bash
+find packs/lessons/L3 -maxdepth 3 -type f | sort
+```
+
+Map which tools would strengthen which roles in your factory-map.md.
+
+MCP servers give agents tool access to external systems (GitHub, Sentry, issue trackers). The workshop pack at `packs/workshop/` pre-configures common integrations. In L2 and L3, you will add MCP servers to lesson pack agent overlays yourself. See `packs/workshop/overlay/.claude/settings.json` for examples.
+
 ## 2. Map Roles To Artifacts
 
 Create the activity deliverable:

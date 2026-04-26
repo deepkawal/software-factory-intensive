@@ -20,6 +20,7 @@ Include these sections:
 - target agents such as `factory.planner`
 - dependencies between steps
 - done criteria for each artifact
+- `capabilities.md` or a capabilities section in `factory-map.md` — inventory of tools, MCPs, and knowledge sources mapped to factory roles
 
 ## Reference Packs To Inspect
 

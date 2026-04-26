@@ -40,9 +40,9 @@ TUTORIAL_SCRATCH_ROOT="$(cd "$(mkdir -p /tmp/sfi-tutorial-walkthrough && echo /t
 # shellcheck source=lib/tutorial-common.sh
 source "$repo_root/test-harness/lib/tutorial-common.sh"
 
-# Canonical live-runtime order. W1/L1/W2/W3/W4 are design/setup
-# sessions; the live FormulaV2 walkthroughs begin at L2.
-ALL_LESSONS=(L2 L3 L4 C1)
+# Canonical lesson order. L1 is setup-only (city + rig registration);
+# the live FormulaV2 walkthroughs begin at L2.
+ALL_LESSONS=(L1 L2 L3 L4 C1)
 
 # --- state -------------------------------------------------------------
 

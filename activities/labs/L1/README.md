@@ -1,16 +1,15 @@
-# L1 · Build a Structured Development Loop — Activity
+# L1 · Set Up the Factory Runtime — Activity
 
 **Walkthrough:** [`../../../curriculum/labs/L1/README.md`](../../../curriculum/labs/L1/README.md)
 
-L1 prepares the project that later lesson factories will operate on. It does not install a multi-agent runtime yet.
+L1 converts your W1 workflow card into agent-readable config and registers your project with Gas City.
 
 ## Deliverables
 
 Create or update these files:
 
-- `CLAUDE.md` or `AGENTS.md` in your project rig with project-specific rules, commands, release criteria, and safety boundaries.
-- `DECISIONS.md` in this activity folder with one entry per rule change.
-- `../../../my-factory/PROJECT_MANIFEST.md` with the project overview, tech stack, structure, review standards, and release criteria.
+- `CLAUDE.md` or `AGENTS.md` in your project rig — converted from your W1 workflow card with project-specific rules, commands, and safety boundaries.
+- `../../../my-factory/PROJECT_MANIFEST.md` with overview, tech stack, and project structure. Review Standards and Release Criteria are added before L4 and C1 respectively.
 
 ## Factory State After L1
 
@@ -23,11 +22,12 @@ gc rig add /path/to/your-project
 gc doctor --fix
 ```
 
-No normal feature workflow runs in L1. The first runnable formula flow starts in L2 after the L2 factory pack is selected and synced to the existing rig.
+No feature workflow runs in L1. The first runnable formula flow starts in L2.
 
 ## Exit Criteria
 
-- [ ] Project instructions file exists in the rig and contains at least five project-specific rules.
-- [ ] `DECISIONS.md` records why each rule was added or changed.
-- [ ] `PROJECT_MANIFEST.md` is filled in enough for Planner and Architect agents to ground their output.
+- [ ] `CLAUDE.md` or `AGENTS.md` exists in the project rig with project-specific rules.
+- [ ] `my-factory/PROJECT_MANIFEST.md` has overview, tech stack, and project structure.
+- [ ] `my-factory/city.toml` permanently enables FormulaV2.
+- [ ] `my-factory/pack.toml` selects `../packs/lessons/L2` as `factory`.
 - [ ] `gc status` from `../../../my-factory/` shows the city and rig.

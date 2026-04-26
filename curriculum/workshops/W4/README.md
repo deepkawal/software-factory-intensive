@@ -93,9 +93,31 @@ git add packs/lessons/C1/agents/builder/prompt.template.md
 git commit -m "Teach builder async error handling rule"
 ```
 
+## 5. Measure One Improvement
+
+A rule that doesn't change behavior isn't a rule yet. Pick one measurable signal from your feedback rules:
+
+1. Record the before-state from your most recent L4 or C1 run (e.g., reviewer finding count, release gate verdict, test pass rate).
+2. Apply the config change (step 4).
+3. Re-sling the same formula with a similar feature request.
+4. Record the after-state.
+
+| Metric | Before | After | Change Applied | File |
+|--------|--------|-------|----------------|------|
+| | | | | |
+
+Add a Measurement section to your feedback rule files after Verification:
+
+```markdown
+## Measurement
+
+What metric did you check? What was the before/after?
+```
+
 ## Exit Criteria
 
 - [ ] At least three feedback rule files exist.
 - [ ] Each rule has signal, trigger, target, proposed change, verification, and rollback.
 - [ ] One rule has been applied to the active lesson pack or project instructions.
 - [ ] The runtime change is portable and does not mention the workshop.
+- [ ] At least one rule includes before/after measurement from a factory run.

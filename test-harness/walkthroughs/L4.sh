@@ -50,12 +50,12 @@ lesson_run() {
   local lesson_rc=0
 
   echo
-  echo "[1/9] pre-flight"
+  echo "[1/11] pre-flight"
   assert_walkthrough_preflight
   purge_stranded_walkthrough_cities
 
   echo
-  echo "[2/9] scratch setup"
+  echo "[2/11] scratch setup"
   WALK_L4_SCRATCH="$WALK_SCRATCH/L4"
   WALK_L4_FACTORY="$WALK_L4_SCRATCH/my-factory"
   WALK_L4_CITY_NAME="sfi-walkthrough-L4-$run_id"
@@ -66,13 +66,13 @@ lesson_run() {
   save_state WALK_L4_FACTORY WALK_L4_CITY_NAME
 
   echo
-  echo "[3/9] gc register L4 factory"
+  echo "[3/11] gc register L4 factory"
   if ! register_walkthrough_city "$WALK_L4_FACTORY" "$WALK_L4_CITY_NAME" "L4"; then
     fail "L4 factory register failed"
   fi
 
   echo
-  echo "[4/9] project rig + gc rig add"
+  echo "[4/11] project rig + gc rig add"
   WALK_L4_RIG="$WALK_L4_SCRATCH/rig"
   cp -r "$WALK_REPO_ROOT/test-harness/tutorial-walkthrough-rig" "$WALK_L4_RIG"
   (
@@ -95,7 +95,7 @@ lesson_run() {
   export WALK_FACTORY="$WALK_L4_FACTORY" WALK_RIG="$WALK_L4_RIG"
 
   echo
-  echo "[5/9] sync existing rig factory import"
+  echo "[5/11] sync existing rig factory import"
   local import_out
   import_out="$(cd "$WALK_L4_FACTORY" && gc --rig rig import remove factory 2>&1 || true)"
   log "gc --rig rig import remove factory:"
@@ -111,7 +111,7 @@ lesson_run() {
   fi
 
   echo
-  echo "[6/9] factory up"
+  echo "[6/11] factory up"
   (cd "$WALK_L4_FACTORY" && gc doctor --fix >/dev/null 2>&1) || true
   if ! wait_for "supervisor responsive" \
     "cd '$WALK_L4_FACTORY' && gc status >/dev/null 2>&1" 120 3; then
@@ -120,7 +120,7 @@ lesson_run() {
   step_pass "factory up"
 
   echo
-  echo "[7/9] dry-run boundary"
+  echo "[7/11] dry-run boundary"
   if [ "$WALK_DRY_RUN" = "1" ]; then
     step_pass "dry run validated L4 factory selection, rig sync, and formula entrypoint shape"
     return 0
@@ -129,7 +129,7 @@ lesson_run() {
   start_event_stream "$WALK_L4_FACTORY"
 
   echo
-  echo "[8/9] gc sling L4 formula"
+  echo "[8/11] gc sling L4 formula"
   local rig_tree_before sling_out
   rig_tree_before="$(cd "$WALK_L4_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort)"
   echo "$rig_tree_before" > "$WALK_L4_SCRATCH/rig-tree-before.txt"
@@ -187,7 +187,7 @@ lesson_run() {
   step_pass "Release gate produced release record: $WALK_L4_RELEASE"
 
   echo
-  echo "[9/9] verify artifacts and tests"
+  echo "[9/11] verify artifacts and tests"
   local builder_branch test_out test_rc
   builder_branch="$(cd "$WALK_L4_RIG" && git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/heads/ | head -1)"
   (cd "$WALK_L4_RIG" && git checkout -q "$builder_branch" 2>&1) | sed 's/^/    /' | tee -a "$WALK_LOG" || true
@@ -222,9 +222,85 @@ lesson_run() {
   assert_file_contains_at_least "$WALK_L4_RELEASE" 1 \
     "release gate: explicit PASS/FAIL verdict" '\b(PASS|FAIL)\b'
 
+  echo
+  echo "[10/11] manifest load-bearing proof"
+  log "writing Review Standards and Release Criteria to PROJECT_MANIFEST.md"
+  mkdir -p "$WALK_L4_RIG/docs"
+  cat > "$WALK_L4_RIG/docs/PROJECT_MANIFEST.md" <<'MANIFEST'
+# Project Manifest
+
+## Overview
+Calculator library with basic arithmetic operations.
+
+## Tech Stack
+Node.js, native test runner.
+
+## Review Standards
+
+| Category | Rule | Severity |
+|----------|------|----------|
+| Style | All exported functions must have JSDoc comments | Medium |
+| Security | No hardcoded credentials or secrets | Critical |
+| Correctness | All error paths must be handled explicitly | High |
+| Testing | New public functions must have corresponding test cases | High |
+
+## Release Criteria
+
+| Criterion | Gate |
+|-----------|------|
+| All tests pass | PASS/FAIL |
+| No Critical review findings | PASS/FAIL |
+| Implementation matches design spec | PASS/FAIL |
+| Code committed to a branch | PASS/FAIL |
+| Review verdict is not REQUEST_CHANGES | PASS/FAIL |
+| No TODO comments in new code | PASS/FAIL |
+MANIFEST
+  (cd "$WALK_L4_RIG" && git add -A && git commit -qm "add project manifest with review standards" >/dev/null 2>&1) || true
+
+  local sling2_out
+  sling2_out="$(cd "$WALK_L4_FACTORY" && gc sling rig/factory.planner \
+    "Add a modulo operation: mod(a, b) returns a%b" \
+    --on mol-delivery-review 2>&1)"
+  log "manifest proof re-sling:"
+  echo "$sling2_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
+
+  local review2_check='count=$(find "'"$WALK_L4_RIG"'/docs/reviews" -maxdepth 1 -type f -name "*.md" 2>/dev/null | wc -l | tr -d " "); [ "$count" -ge 2 ]'
+  if wait_for "second review artifact citing Review Standards" "$review2_check" 900 20 "" "rig/factory.reviewer" "$WALK_L4_FACTORY"; then
+    WALK_L4_REVIEW2="$(find "$WALK_L4_RIG/docs/reviews" -maxdepth 1 -type f -name '*.md' 2>/dev/null | sort | tail -1)"
+    step_pass "manifest proof: second review produced: $WALK_L4_REVIEW2"
+    if grep -qi 'review standard\|JSDoc\|hardcoded\|error path' "$WALK_L4_REVIEW2" 2>/dev/null; then
+      step_pass "manifest is load-bearing — review cited standards"
+    else
+      log "WARN: review exists but does not explicitly cite Review Standards (check prompt wiring)"
+    fi
+  else
+    log "WARN: manifest proof re-sling did not produce a second review within timeout (non-fatal)"
+  fi
+
+  echo
+  echo "[11/11] rig tree diff"
   log "what L4 produced (rig tree diff since lesson start):"
   (cd "$WALK_L4_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort \
     | diff "$WALK_L4_SCRATCH/rig-tree-before.txt" - | grep '^>' | sed 's/^> /      + /') | tee -a "$WALK_LOG"
+
+  # Save snapshots for validate-lesson-content skill
+  save_snapshot "L4" "gc-sling.txt" "$sling_out"
+  save_snapshot_file "L4" "plan-artifact.md" "$WALK_L4_PLAN"
+  save_snapshot_file "L4" "architecture-artifact.md" "$WALK_L4_ARCHITECTURE"
+  save_snapshot_file "L4" "design-artifact.md" "$WALK_L4_DESIGN"
+  save_snapshot_file "L4" "review-artifact.md" "$WALK_L4_REVIEW"
+  save_snapshot_file "L4" "release-artifact.md" "$WALK_L4_RELEASE"
+  save_artifact_sections "L4" "plan-sections.txt" "$WALK_L4_PLAN"
+  save_artifact_sections "L4" "architecture-sections.txt" "$WALK_L4_ARCHITECTURE"
+  save_artifact_sections "L4" "design-sections.txt" "$WALK_L4_DESIGN"
+  save_artifact_sections "L4" "review-sections.txt" "$WALK_L4_REVIEW"
+  save_artifact_sections "L4" "release-sections.txt" "$WALK_L4_RELEASE"
+  save_snapshot "L4" "node-test.txt" "$test_out"
+  save_snapshot "L4" "builder-commit.txt" "$WALK_L4_CODE_COMMITTED"
+  if [ -n "${WALK_L4_REVIEW2:-}" ]; then
+    save_snapshot_file "L4" "review2-artifact.md" "$WALK_L4_REVIEW2"
+    save_artifact_sections "L4" "review2-sections.txt" "$WALK_L4_REVIEW2"
+  fi
 
   save_state WALK_L4_PLAN WALK_L4_ARCHITECTURE WALK_L4_DESIGN WALK_L4_CODE_COMMITTED WALK_L4_REVIEW WALK_L4_RELEASE
   stop_event_stream

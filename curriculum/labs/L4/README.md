@@ -88,6 +88,8 @@ You should see:
 factory.planner -> factory.architect -> factory.designer -> factory.builder -> factory.reviewer -> factory.release-gate
 ```
 
+Use the observability commands from L2. Watch for review findings and release verdicts in the event stream.
+
 ## 6. Inspect Outputs
 
 In your project rig:
@@ -109,9 +111,31 @@ Expected outputs:
 - review report with severity-labelled findings
 - release gate with a clear `PASS` or `FAIL`
 
+## 7. Prove the Manifest is Load-Bearing
+
+Before this step, flesh out `my-factory/PROJECT_MANIFEST.md`:
+
+- Add at least 4 Review Standards with checkable rules and severity mapping
+- Add at least 6 Release Criteria with binary PASS/FAIL gates and evidence sources
+
+Then re-sling with a new feature:
+
+```bash
+gc sling <rig>/factory.planner \
+  "Add a <different feature>" --on mol-delivery-review
+```
+
+Compare the review and release-gate artifacts from this run to the previous run:
+
+- The reviewer should cite your Review Standards by name
+- The release gate should evaluate each Release Criterion individually
+
+If the manifest change produced no visible difference, the reviewer or release-gate prompt needs to reference the manifest more explicitly — which is itself a W4 feedback rule.
+
 ## Exit Criteria
 
 - The run started with one `gc sling <rig>/factory.planner ... --on mol-delivery-review`.
 - No stage labels or manual downstream beads were used.
 - The formula routed all six roles.
 - The release gate includes an explicit verdict backed by evidence.
+- Manifest load-bearing test completed — reviewer cited Review Standards from PROJECT_MANIFEST.md.

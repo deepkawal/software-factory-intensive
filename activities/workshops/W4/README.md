@@ -36,3 +36,4 @@ Keep lesson framing out of the pack internals. The activity can explain why the 
 - [ ] At least one aggregate rule is written.
 - [ ] At least one external-signal rule is written.
 - [ ] Each rule names the exact file it would change and how to verify it worked.
+- [ ] At least one rule includes before/after measurement evidence.

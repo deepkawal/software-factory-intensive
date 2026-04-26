@@ -50,12 +50,12 @@ lesson_run() {
   local lesson_rc=0
 
   echo
-  echo "[1/9] pre-flight"
+  echo "[1/10] pre-flight"
   assert_walkthrough_preflight
   purge_stranded_walkthrough_cities
 
   echo
-  echo "[2/9] scratch setup"
+  echo "[2/10] scratch setup"
   WALK_L3_SCRATCH="$WALK_SCRATCH/L3"
   WALK_L3_FACTORY="$WALK_L3_SCRATCH/my-factory"
   WALK_L3_CITY_NAME="sfi-walkthrough-L3-$run_id"
@@ -66,13 +66,13 @@ lesson_run() {
   save_state WALK_L3_FACTORY WALK_L3_CITY_NAME
 
   echo
-  echo "[3/9] gc register L3 factory"
+  echo "[3/10] gc register L3 factory"
   if ! register_walkthrough_city "$WALK_L3_FACTORY" "$WALK_L3_CITY_NAME" "L3"; then
     fail "L3 factory register failed"
   fi
 
   echo
-  echo "[4/9] project rig + gc rig add"
+  echo "[4/10] project rig + gc rig add"
   WALK_L3_RIG="$WALK_L3_SCRATCH/rig"
   cp -r "$WALK_REPO_ROOT/test-harness/tutorial-walkthrough-rig" "$WALK_L3_RIG"
   (
@@ -95,7 +95,7 @@ lesson_run() {
   export WALK_FACTORY="$WALK_L3_FACTORY" WALK_RIG="$WALK_L3_RIG"
 
   echo
-  echo "[5/9] sync existing rig factory import"
+  echo "[5/10] sync existing rig factory import"
   local import_out
   import_out="$(cd "$WALK_L3_FACTORY" && gc --rig rig import remove factory 2>&1 || true)"
   log "gc --rig rig import remove factory:"
@@ -111,7 +111,7 @@ lesson_run() {
   fi
 
   echo
-  echo "[6/9] factory up"
+  echo "[6/10] factory up"
   (cd "$WALK_L3_FACTORY" && gc doctor --fix >/dev/null 2>&1) || true
   if ! wait_for "supervisor responsive" \
     "cd '$WALK_L3_FACTORY' && gc status >/dev/null 2>&1" 120 3; then
@@ -120,7 +120,7 @@ lesson_run() {
   step_pass "factory up"
 
   echo
-  echo "[7/9] dry-run boundary"
+  echo "[7/10] dry-run boundary"
   if [ "$WALK_DRY_RUN" = "1" ]; then
     step_pass "dry run validated L3 factory selection, rig sync, and formula entrypoint shape"
     return 0
@@ -129,7 +129,7 @@ lesson_run() {
   start_event_stream "$WALK_L3_FACTORY"
 
   echo
-  echo "[8/9] gc sling L3 formula"
+  echo "[8/10] gc sling L3 formula"
   local rig_tree_before sling_out
   rig_tree_before="$(cd "$WALK_L3_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort)"
   echo "$rig_tree_before" > "$WALK_L3_SCRATCH/rig-tree-before.txt"
@@ -175,7 +175,7 @@ lesson_run() {
   step_pass "Builder committed: $WALK_L3_CODE_COMMITTED"
 
   echo
-  echo "[9/9] verify artifacts and tests"
+  echo "[9/10] verify artifacts and tests"
   local builder_branch test_out test_rc
   builder_branch="$(cd "$WALK_L3_RIG" && git for-each-ref --sort=-committerdate --format='%(refname:short)' refs/heads/ | head -1)"
   (cd "$WALK_L3_RIG" && git checkout -q "$builder_branch" 2>&1) | sed 's/^/    /' | tee -a "$WALK_LOG" || true
@@ -202,9 +202,45 @@ lesson_run() {
   assert_artifact_has_sections "$WALK_L3_DESIGN" \
     '^## Interface' '^## Behavior' '^## Edge Cases' '^## Test Plan'
 
+  echo
+  echo "[10/10] config-over-chat: edit designer prompt + re-sling"
+  log "config-over-chat: adding project-specific rule to designer prompt"
+  local designer_prompt="$WALK_L3_SCRATCH/packs/lessons/L3/agents/designer/prompt.template.md"
+  printf '\n- Design specs must include the specific test file path for each edge case.\n' >> "$designer_prompt"
+
+  (cd "$WALK_L3_FACTORY" && gc restart >/dev/null 2>&1) || true
+  wait_for "supervisor responsive after restart" \
+    "cd '$WALK_L3_FACTORY' && gc status >/dev/null 2>&1" 120 3 \
+    || { stop_event_stream; fail "supervisor unresponsive after config-over-chat restart"; }
+
+  local sling2_out
+  sling2_out="$(cd "$WALK_L3_FACTORY" && gc sling rig/factory.planner \
+    "Add a negate operation: negate(x) returns -x" \
+    --on mol-feature-delivery 2>&1)"
+  log "config-over-chat re-sling:"
+  echo "$sling2_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
+
+  local design2_check='count=$(find "'"$WALK_L3_RIG"'/docs/designs" -maxdepth 1 -type f -name "*.md" 2>/dev/null | wc -l | tr -d " "); [ "$count" -ge 2 ]'
+  if wait_for "second design artifact from config-over-chat re-sling" "$design2_check" 900 20 "" "rig/factory.designer" "$WALK_L3_FACTORY"; then
+    step_pass "config-over-chat produced a second design artifact"
+  else
+    log "WARN: config-over-chat re-sling did not produce a second design within timeout (non-fatal)"
+  fi
+
   log "what L3 produced (rig tree diff since lesson start):"
   (cd "$WALK_L3_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort \
     | diff "$WALK_L3_SCRATCH/rig-tree-before.txt" - | grep '^>' | sed 's/^> /      + /') | tee -a "$WALK_LOG"
+
+  # Save snapshots for validate-lesson-content skill
+  save_snapshot "L3" "gc-sling.txt" "$sling_out"
+  save_snapshot_file "L3" "plan-artifact.md" "$WALK_L3_PLAN"
+  save_snapshot_file "L3" "architecture-artifact.md" "$WALK_L3_ARCHITECTURE"
+  save_snapshot_file "L3" "design-artifact.md" "$WALK_L3_DESIGN"
+  save_artifact_sections "L3" "plan-sections.txt" "$WALK_L3_PLAN"
+  save_artifact_sections "L3" "architecture-sections.txt" "$WALK_L3_ARCHITECTURE"
+  save_artifact_sections "L3" "design-sections.txt" "$WALK_L3_DESIGN"
+  save_snapshot "L3" "node-test.txt" "$test_out"
+  save_snapshot "L3" "builder-commit.txt" "$WALK_L3_CODE_COMMITTED"
 
   save_state WALK_L3_PLAN WALK_L3_ARCHITECTURE WALK_L3_DESIGN WALK_L3_CODE_COMMITTED
   stop_event_stream

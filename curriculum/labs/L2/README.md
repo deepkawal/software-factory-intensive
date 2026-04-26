@@ -96,6 +96,17 @@ Confirm three things:
 - `plan` routes to `factory.planner`.
 - `architecture` depends on `plan` and routes to `factory.architect`.
 
+Compare the planner prompt to your W1 workflow card:
+
+| Your Workflow Card | Planner Prompt Section |
+|-------------------|----------------------|
+| Prompt Template | `## Inputs` — what context the agent reads |
+| Context Reset Rule | `wake_mode = "fresh"` in agent.toml |
+| Iteration Loop | `## Graph Work Process` — the work loop |
+| Decision Checkpoint | `## Role` — scope of authority, what to escalate |
+
+Your workflow card described how *you* work with one agent. The planner prompt describes how *the planner agent* works inside a factory. Same structure, different scope.
+
 ## Part 3: Run The Formula
 
 From `my-factory`, sling one request to the lesson Planner:
@@ -124,6 +135,21 @@ Expected graph:
 | `plan` | `factory.planner` | `docs/plans/<slug>.md` |
 | `architecture` | `factory.architect` | `docs/architecture/<slug>.md` |
 
+## Observability Commands
+
+These are your windows into a running factory. Practice all six while L2 runs:
+
+| Command | What It Shows |
+|---------|---------------|
+| `gc events --follow` | Live event stream (agent wakes, step transitions) |
+| `gc session list` | Active and recent agent sessions |
+| `gc session peek <id>` | Live view of what an agent is doing now |
+| `gc graph <bead-id>` | Formula step state graph |
+| `bd list` | All beads in the current rig |
+| `bd show <id>` | Detailed bead state and metadata |
+
+You will use these throughout L3, L4, and C1.
+
 ## Part 4: Inspect The Artifacts
 
 In your project rig, inspect:
@@ -150,7 +176,57 @@ The architecture artifact should include:
 - risks
 - reference back to the plan
 
-## Part 5: Record Notes
+## Part 5: Attach a Real Capability
+
+The planner and architect currently work from project context alone. Ground one of them in a real external system.
+
+### Choose one capability to attach
+
+| Capability | Agent | What It Adds |
+|-----------|-------|-------------|
+| GitHub MCP | Architect | Read existing code, PRs, issues |
+| Linear/Jira MCP | Planner | Pull real tickets as input |
+| Context7 MCP | Architect | Up-to-date library docs |
+| `actual status` CLI | Planner | Project health data |
+
+### Wire it up
+
+1. Inspect the workshop pack for examples:
+
+       cat packs/workshop/overlay/.claude/settings.json | head -20
+
+2. Add the MCP to your chosen agent's overlay:
+
+       $EDITOR packs/lessons/L2/agents/planner/overlay/.claude/settings.json
+
+   Add an mcpServers section. Example for GitHub:
+
+       "mcpServers": {
+         "github": {
+           "type": "http",
+           "url": "https://api.githubcopilot.com/mcp/",
+           "headers": { "Authorization": "Bearer ${GITHUB_TOKEN}" }
+         }
+       }
+
+3. Edit the agent's prompt to name the new capability:
+
+       $EDITOR packs/lessons/L2/agents/planner/prompt.template.md
+
+   Add one line to the Inputs section, e.g.: "When available, use the GitHub MCP to check existing code before scoping work."
+
+4. Restart and re-sling:
+
+       export GITHUB_TOKEN=<your-token>  # or whichever credential
+       gc restart
+       gc sling <rig>/factory.planner "Plan <another feature>" \
+         --on mol-feature-intake
+
+5. Compare the two plan artifacts. Did the external tool change the output? Record what you changed in activities/labs/L2/notes.md.
+
+MCPs are the bridge between LLM knowledge and project-specific reality. Without them, agents invent reality. With them, agents check reality.
+
+## Part 6: Record Notes
 
 Create `activities/labs/L2/notes.md`:
 
@@ -176,4 +252,5 @@ Commit the generated artifacts and your notes.
 - The formula route targets are `factory.planner` and `factory.architect`.
 - The project rig contains a plan under `docs/plans/`.
 - The project rig contains an architecture artifact under `docs/architecture/`.
-- `activities/labs/L2/notes.md` records the root bead and artifact paths.
+- One prompt edit or MCP addition produced a visible artifact change.
+- `activities/labs/L2/notes.md` records the root bead, artifact paths, and config changes.

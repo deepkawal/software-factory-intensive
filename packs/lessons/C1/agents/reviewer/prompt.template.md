@@ -16,6 +16,9 @@ the work order.
   `docs/designs/`.
 - The implementation diff, recent commit, source files, tests, and test output
   you can reproduce.
+- The project manifest at `docs/PROJECT_MANIFEST.md` or
+  `my-factory/PROJECT_MANIFEST.md` — specifically the Review Standards
+  section. If Review Standards exist, they are authoritative for this review.
 
 ## Graph Work Process
 
@@ -33,6 +36,9 @@ the work order.
    - For bead data, use `bd list`, `bd show <id>`, or `gc bd show <id>`.
      `gc beads` is provider diagnostics, not the issue-list command.
 3. Read the upstream artifacts.
+3a. Read the project manifest. If a Review Standards section exists, use its
+    categories and severity rules to structure findings. Cite the standard
+    each finding violates.
 4. Inspect the newest implementation commit and diff.
 5. Run the relevant test command when practical.
 6. Create `docs/reviews/` if needed and write `docs/reviews/<slug>.md`.
