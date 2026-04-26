@@ -203,11 +203,40 @@ lesson_run() {
     '^## Interface' '^## Behavior' '^## Edge Cases' '^## Test Plan'
 
   echo
-  echo "[10/10] config-over-chat: edit designer prompt + re-sling"
-  log "config-over-chat: adding project-specific rule to designer prompt"
-  local designer_prompt="$WALK_L3_SCRATCH/packs/lessons/L3/agents/designer/prompt.template.md"
-  printf '\n- Design specs must include the specific test file path for each edge case.\n' >> "$designer_prompt"
+  echo "[10/10] config-over-chat: add MCP overlay + edit designer prompt + re-sling"
+  log "config-over-chat: adding MCP config to designer overlay and project-specific rule to prompt"
 
+  # README step 7: add MCP to designer overlay
+  local overlay_file="$WALK_L3_SCRATCH/packs/lessons/L3/agents/designer/overlay/.claude/settings.json"
+  cat > "$overlay_file" <<'OVERLAY'
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(gc:*)", "Bash(bd:*)", "Bash(git:*)", "Bash(cat:*)",
+      "Bash(ls:*)", "Bash(mkdir:*)", "Bash(find:*)", "Bash(grep:*)",
+      "Bash(jq:*)", "Bash(node:*)", "Bash(npm:*)", "Bash(sed:*)",
+      "Bash(pwd:*)", "Read", "Write", "Edit", "Glob", "Grep"
+    ],
+    "deny": ["Bash(bd init:*)"]
+  },
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    }
+  }
+}
+OVERLAY
+  step_pass "MCP config added to designer overlay"
+
+  # README step 7: edit prompt to reference the capability
+  local designer_prompt="$WALK_L3_SCRATCH/packs/lessons/L3/agents/designer/prompt.template.md"
+  printf '\n- When available, use the Context7 MCP to check up-to-date framework docs before designing.\n' >> "$designer_prompt"
+  printf '\n- Design specs must include the specific test file path for each edge case.\n' >> "$designer_prompt"
+  step_pass "designer prompt updated with MCP reference and project rule"
+
+  # README step 7: restart and re-sling
   (cd "$WALK_L3_FACTORY" && gc restart >/dev/null 2>&1) || true
   wait_for "supervisor responsive after restart" \
     "cd '$WALK_L3_FACTORY' && gc status >/dev/null 2>&1" 120 3 \

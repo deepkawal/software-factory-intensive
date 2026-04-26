@@ -119,7 +119,10 @@ walkthrough_cleanup() {
 }
 trap walkthrough_cleanup EXIT INT TERM
 
-rm -rf "$TUTORIAL_SCRATCH_ROOT"
+# Only clean up our own run_id scratch, not the entire parent — another
+# walkthrough (e.g., a live run while pre-commit does a dry-run) may be
+# using a sibling directory under the same TUTORIAL_SCRATCH_ROOT.
+rm -rf "$WALK_SCRATCH"
 mkdir -p "$WALK_SCRATCH"
 : > "$DIVERGENCES_LOG"
 : > "$WALK_STATE_ENV"

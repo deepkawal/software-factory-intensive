@@ -185,11 +185,40 @@ lesson_run() {
   step_pass "observability commands returned data"
 
   echo
-  echo "[10/10] config-over-chat: edit prompt + re-sling"
-  log "config-over-chat: adding project-specific rule to planner prompt"
-  local prompt_file="$WALK_L2_SCRATCH/packs/lessons/L2/agents/planner/prompt.template.md"
-  printf '\n- When the project uses a test runner, acceptance criteria must reference the test command from CLAUDE.md.\n' >> "$prompt_file"
+  echo "[10/10] config-over-chat: add MCP overlay + edit prompt + re-sling"
+  log "config-over-chat: adding MCP config to planner overlay and project-specific rule to prompt"
 
+  # README Part 5 step 2: add MCP to agent overlay
+  local overlay_file="$WALK_L2_SCRATCH/packs/lessons/L2/agents/planner/overlay/.claude/settings.json"
+  cat > "$overlay_file" <<'OVERLAY'
+{
+  "$schema": "https://json.schemastore.org/claude-code-settings.json",
+  "permissions": {
+    "allow": [
+      "Bash(gc:*)", "Bash(bd:*)", "Bash(git:*)", "Bash(cat:*)",
+      "Bash(ls:*)", "Bash(mkdir:*)", "Bash(find:*)", "Bash(grep:*)",
+      "Bash(jq:*)", "Bash(node:*)", "Bash(npm:*)", "Bash(sed:*)",
+      "Bash(pwd:*)", "Read", "Write", "Edit", "Glob", "Grep"
+    ],
+    "deny": ["Bash(bd init:*)"]
+  },
+  "mcpServers": {
+    "context7": {
+      "command": "npx",
+      "args": ["-y", "@upstash/context7-mcp"]
+    }
+  }
+}
+OVERLAY
+  step_pass "MCP config added to planner overlay"
+
+  # README Part 5 step 3: edit prompt to reference the capability
+  local prompt_file="$WALK_L2_SCRATCH/packs/lessons/L2/agents/planner/prompt.template.md"
+  printf '\n- When available, use the Context7 MCP to check up-to-date library docs before scoping work.\n' >> "$prompt_file"
+  printf '\n- When the project uses a test runner, acceptance criteria must reference the test command from CLAUDE.md.\n' >> "$prompt_file"
+  step_pass "planner prompt updated with MCP reference and project rule"
+
+  # README Part 5 step 4: restart and re-sling
   (cd "$WALK_L2_FACTORY" && gc restart >/dev/null 2>&1) || true
   wait_for "supervisor responsive after restart" \
     "cd '$WALK_L2_FACTORY' && gc status >/dev/null 2>&1" 120 3 \
