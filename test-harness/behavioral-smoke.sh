@@ -19,7 +19,7 @@ bash test-harness/migration-check.sh
 
 echo
 echo "[3] student command flow dry-run"
-TUTORIAL_WALKTHROUGH_DRY_RUN=1 bash test-harness/tutorial-walkthrough.sh L2 L3 L4 C1
+TUTORIAL_WALKTHROUGH_DRY_RUN=1 bash test-harness/tutorial-walkthrough.sh L1 L2 L3 L4 C1
 
 echo
 echo "✓ behavioral smoke passes"
