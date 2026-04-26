@@ -1,0 +1,2 @@
+Created rig-05f — "Plan the memory feature: store, recall, and clear calculator memory"
+Attached workflow rig-fqle (formula "mol-feature-intake") to rig-fqle
