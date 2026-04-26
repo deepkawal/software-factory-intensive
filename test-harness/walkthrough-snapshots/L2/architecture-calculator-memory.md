@@ -2,121 +2,85 @@
 
 ## Context
 
-The calculator project needs a memory feature (store, recall, clear) as
-described in `docs/plans/calculator-memory.md`. The existing codebase is a
-minimal CommonJS project with pure functions exported from `src/calculator.js`.
-No classes, no shared state, no build tooling.
-
-The planner identified three decisions the architect must resolve: state
-strategy, input validation, and module boundary.
+The calculator currently exports two pure, stateless functions (`add`, `subtract`)
+from `src/calculator.js`. The planner's work package asks for single-slot memory
+(store, recall, clear) — the first stateful behavior in the module. Three
+architectural questions need resolution before implementation: state management
+approach, API surface shape, and test isolation strategy.
 
 ## Options Considered
 
-### 1. State Strategy
+### State Management
 
-**Option A — Module-level variable (singleton)**
+| Option | Description | Pros | Cons |
+|--------|-------------|------|------|
+| **A. Module-scoped variable** | A single `let _memory = 0` at module level, mutated by the three functions. | Minimal change; matches the existing flat-function style; no new patterns to learn. | State is a module-level singleton — two callers in the same process share one slot. Tests must explicitly reset. |
+| **B. Factory / closure** | Export a `createMemory()` that returns `{ store, recall, clear }` bound to a private variable. | Each call gets independent state; trivially testable in isolation. | Introduces a new pattern (factory) not present in the codebase; callers must manage the instance; conflicts with the project rule "prefer small pure functions over classes". |
 
-A `let` variable inside `src/memory.js` holds the stored value. The three
-exported functions read and write that variable directly.
+### API Surface
 
-| Pro | Con |
-|-----|-----|
-| Simplest possible implementation | Singleton — tests share state unless each test calls `memoryClear()` |
-| Matches the style of `src/calculator.js` (stateless module, plain functions) | Cannot support multiple independent memory slots later without refactoring |
-| Zero ceremony for callers | |
+| Option | Description | Pros | Cons |
+|--------|-------------|------|------|
+| **A. Three flat functions** | Export `memoryStore`, `memoryRecall`, `memoryClear` alongside `add` and `subtract`. | Consistent with existing export style; destructured import works identically to current tests. | Five top-level exports — acceptable for this module size but would not scale if many more features are added. |
+| **B. Namespaced object** | Export a `memory` object with `.store()`, `.recall()`, `.clear()` methods. | Groups related operations; keeps the top-level export list short. | Breaks the established pattern; requires `const { memory } = require(...)` followed by `memory.store(...)`, adding a level of indirection. |
 
-**Option B — Factory function returning a memory object**
+### Test Isolation
 
-Export a `createMemory()` factory that returns `{ store, recall, clear }`,
-each closing over its own private variable.
-
-| Pro | Con |
-|-----|-----|
-| Tests get isolated instances for free | More ceremony: callers must call `createMemory()` first |
-| Supports multiple memory contexts without refactoring | Breaks the project's convention of exporting plain functions |
-| Encapsulation is explicit | Overkill for current scope (single-slot, no persistence) |
-
-### 2. Input Validation
-
-**Option A — Accept any JS number (including Infinity and NaN)**
-
-`memoryStore` accepts whatever `typeof value === 'number'` passes.
-
-| Pro | Con |
-|-----|-----|
-| Simple, predictable, no surprises | Storing `NaN` then recalling it may confuse downstream code |
-| Matches how JS arithmetic already behaves (add returns NaN/Infinity freely) | |
-
-**Option B — Throw on non-finite or non-number input**
-
-`memoryStore` throws a `TypeError` for non-numbers and a `RangeError` for
-`Infinity`/`NaN`.
-
-| Pro | Con |
-|-----|-----|
-| Catches bugs early | Adds validation code and tests for error paths |
-| Clear contract | `src/calculator.js` does not validate inputs — inconsistent |
-
-### 3. Module Boundary
-
-**Option A — Separate `src/memory.js` module**
-
-| Pro | Con |
-|-----|-----|
-| Single-responsibility; memory is independent of arithmetic | One more file in a small project |
-| No risk of breaking existing `calculator.js` exports or tests | |
-
-**Option B — Add memory functions to `src/calculator.js`**
-
-| Pro | Con |
-|-----|-----|
-| Fewer files | Mixes stateful memory with stateless arithmetic |
-| | Existing tests must not break; risk of accidental coupling |
-| | Violates separation of concerns |
+| Option | Description | Pros | Cons |
+|--------|-------------|------|------|
+| **A. `memoryClear()` in setup** | Each test (or a `beforeEach`) calls `memoryClear()` to reset shared state. | Uses the public API; no magic; easy to read. | Tests are order-dependent if a developer forgets the reset call. |
+| **B. Fresh `require` per test** | Delete `require.cache` entry and re-import the module in each test to get a fresh variable. | Guaranteed isolation without any public reset API. | Brittle; couples tests to Node's module caching internals; unconventional. |
 
 ## Decision
 
-1. **State strategy: Option A — module-level variable.** The project
-   convention is small pure functions with no classes. A singleton `let`
-   variable is the simplest approach that satisfies every acceptance criterion.
-   Tests can call `memoryClear()` in setup to isolate state. If the project
-   later needs multiple memory contexts, the refactor to a factory is
-   mechanical and low-risk.
+**Module-scoped variable + three flat functions + `memoryClear()` reset in tests.**
 
-2. **Input validation: Option A — accept any JS number.** The existing
-   `calculator.js` performs no input validation; adding strict checks only in
-   the memory module would be inconsistent. `Infinity` and `NaN` are valid JS
-   numbers and can be stored without special handling. The planner's open
-   question recommended this approach for simplicity.
+Rationale:
 
-3. **Module boundary: Option A — separate `src/memory.js`.** Memory introduces
-   mutable state, which is a different concern from the pure arithmetic
-   functions in `calculator.js`. A separate module avoids coupling and keeps
-   both files easy to reason about.
+1. **Module-scoped variable (Option A)** — The project is a minimal, single-user
+   calculator. Singleton state is appropriate and keeps the implementation to a
+   one-line variable declaration. The factory pattern adds complexity without a
+   real-world benefit for this scope.
+
+2. **Three flat functions (Option A)** — `memoryStore`, `memoryRecall`, and
+   `memoryClear` export alongside `add` and `subtract` using the same
+   `module.exports = { ... }` pattern. No new abstractions. The acceptance
+   criteria already name these functions, so this avoids any naming mismatch.
+
+3. **`memoryClear()` reset (Option A)** — Each test calls `memoryClear()` at the
+   top (or in a `beforeEach` block). This is explicit, uses the public API, and
+   keeps tests self-documenting. The risk of forgetting a reset is low given the
+   small test surface.
+
+On the planner's open questions:
+
+- **Input validation** — Out of scope. The existing `add` and `subtract` do no
+  validation. Memory functions should follow the same convention.
+- **Memory isolation across tests** — Resolved by the `memoryClear()` reset
+  strategy above.
 
 ## Consequences
 
-- A new `src/memory.js` exports `memoryStore`, `memoryRecall`, `memoryClear`.
-- A new `test/memory.test.js` covers every acceptance criterion (at least 5
-  tests).
-- No changes to `src/calculator.js` or `test/calculator.test.js`.
-- Module-level state means a single memory slot per process; tests must call
-  `memoryClear()` before or after each test to avoid leaking state.
-- The public API accepts any JS number; callers are responsible for checking
-  `NaN`/`Infinity` if that matters to their use case.
+- `src/calculator.js` gains one module-level `let` and three exported functions.
+  The export object grows from two to five entries.
+- `test/calculator.test.js` gains memory-specific tests, each starting with a
+  `memoryClear()` call. Existing `add`/`subtract` tests are unaffected.
+- No new files, dependencies, or patterns are introduced.
+- Future expansion (M+/M−, multi-slot) would require revisiting the module-scope
+  decision, but that is explicitly out of scope per the plan.
 
 ## Risks
 
-- **Shared test state:** If a test forgets to clear memory, later tests may
-  see stale values. Mitigation: document the pattern and include
-  `memoryClear()` in a `beforeEach` in the test file.
-- **Singleton limits:** If the project later needs multiple memory slots or
-  server-side isolation per request, the singleton must be refactored.
-  Mitigation: the refactor is small (wrap in a factory, re-export convenience
-  singleton) and the plan explicitly defers multi-slot to a future request.
+1. **Shared mutable state** — If the calculator module is ever imported by
+   concurrent callers (e.g., a future HTTP handler), the singleton memory slot
+   would be shared. Mitigation: the project scope is a single-user CLI/test
+   exercise; this risk is accepted.
+2. **Test ordering sensitivity** — A missing `memoryClear()` call could cause
+   a test to pass or fail depending on execution order. Mitigation: use
+   `beforeEach` in the test file to make the reset automatic and visible.
 
 ## References
 
 - Planning artifact: `docs/plans/calculator-memory.md`
-- Project conventions: `CLAUDE.md`
-- Existing implementation: `src/calculator.js`
+- Existing source: `src/calculator.js`
+- Project conventions: `CLAUDE.md` (root of rig)

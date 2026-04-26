@@ -1,0 +1,71 @@
+⏺ Good, the directory exists. Let me also check the existing design for
+  conventions.
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ Now I have a clear template. Writing the design artifact.
+
+⏺ Write(/private/tmp/sfi-tutorial-walkthrough/1777185209-23781/L3/rig/docs/desig
+       ns/negate.md)
+  ⎿  Wrote 106 lines to ../../../../../rig/docs/designs/negate.md
+       2 # Negate Operation Design
+       3 ## Interface
+       4
+       5 Add `negate` to `src/calculator.js` alongside `add`, `subtract`,
+          and `percent`.
+       6
+       7 ```js
+       8 function negate(x) { ... }
+       9
+      10 module.exports = { add, subtract, percent, negate };
+     … +126 lines (ctrl+o to expand)
+
+⏺ Design artifact written. Now closing the current formula step.
+
+⏺ Bash(cd /private/tmp/sfi-tutorial-walkthrough/1777185209-23781/L3/my-factory
+      && gc close rig-rwkh --reason "Design artifact written at
+      docs/designs/negate.md. Specif…)
+  ⎿  Error: Exit code 1
+     gc: unknown flag: --reason
+
+     Usage:
+       gc [flags]
+       gc [command]
+
+     Available Commands:
+       agent           Manage agent configuration
+       bd              Run bd in the correct rig directory
+     … +52 lines (ctrl+o to expand)
+
+⏺ Bash(cd /private/tmp/sfi-tutorial-walkthrough/1777185209-23781/L3/my-factory
+      && bd close --help 2>&1)
+  ⎿  Close one or more issues.
+
+     If no issue ID is provided, closes the last touched issue (from most r
+     … +26 lines (ctrl+o to expand)
+  ⎿  Shell cwd was reset to /private/tmp/sfi-tutorial-walkthrough/177718520
+     9-23781/L3/my-factory/.gc/agents/rig/feature-delivery-designer
+
+⏺ Bash(cd /private/tmp/sfi-tutorial-walkthrough/1777185209-23781/L3/my-factory
+      && bd close rig-rwkh -r "Design artifact written at
+      docs/designs/negate.md. Specifies ne…)
+  ⎿  ✓ Closed rig-rwkh — Write the implementation design: Design artifact w
+     ritten at docs/designs/negate.md. Specifies negate(x) interface, behav
+     ior, edge-case table, test plan (5 required + 1 recommended), and buil
+     d notes targeting src/calculator.js and test/calculator.test.js.
+  ⎿  Shell cwd was reset to /private/tmp/sfi-tutorial-walkthrough/177718520
+     9-23781/L3/my-factory/.gc/agents/rig/feature-delivery-designer
+
+⏺ Design step complete. Wrote docs/designs/negate.md covering the negate(x)
+  function — interface signature, behavior rules, a 10-row edge-case table, a
+  6-test plan, and build notes pointing the builder at src/calculator.js (lines
+  11–13) and test/calculator.test.js (line 3 + after line 35). Step rig-rwkh is
+  now closed.
+
+✻ Sautéed for 1m 59s
+
+────────────────────────────────────────────────────────────────────────────────
+❯ 
+────────────────────────────────────────────────────────────────────────────────
+  /private/tmp/sfi-tutorial-walkthrough/1777185209-23781/L3/my-factory/.gc/ag…
+  ⏵⏵ bypass permissions on (shift+tab to cycle)

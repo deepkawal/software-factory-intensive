@@ -1,2 +1,2 @@
-Created rig-34j — "Plan the memory feature: store, recall, and clear calculator memory"
-Attached workflow rig-3b8l (formula "mol-feature-intake") to rig-3b8l
+Created rig-id7 — "Plan the memory feature: store, recall, and clear calculator memory"
+Attached workflow rig-xfmf (formula "mol-feature-intake") to rig-xfmf

@@ -22,4 +22,8 @@ echo "[3] student command flow dry-run"
 TUTORIAL_WALKTHROUGH_DRY_RUN=1 bash test-harness/tutorial-walkthrough.sh L1 L2 L3 L4 C1
 
 echo
+echo "[4] walkthrough cleanup ownership"
+bash test-harness/walkthrough-cleanup-test.sh
+
+echo
 echo "✓ behavioral smoke passes"

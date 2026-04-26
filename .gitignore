@@ -11,6 +11,10 @@
 # Claude Code local settings. Pack overlays may intentionally contain
 # overlay/.claude/settings.json and should be tracked.
 .claude/
+!.claude/
+.claude/*
+!.claude/skills/
+!.claude/skills/**
 !**/overlay/.claude/
 !**/overlay/.claude/**
 .vscode/settings.json

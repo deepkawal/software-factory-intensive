@@ -23,6 +23,7 @@ source "$WALK_REPO_ROOT/test-harness/lib/tutorial-common.sh"
 
 WALK_LOG="$WALK_SCRATCH/$WALK_LESSON_NAME.log"
 : > "$WALK_LOG"
+LESSON_CLEANED_UP=0
 
 log() {
   # Append to per-lesson log and stderr. Writing to stderr (not stdout)
@@ -40,6 +41,39 @@ fail() {
   echo "$(date +%H:%M:%S) FAIL: $*" >> "$WALK_LOG"
   exit 1
 }
+
+lesson_cleanup() {
+  [ "${LESSON_CLEANED_UP:-0}" -eq 0 ] || return 0
+  LESSON_CLEANED_UP=1
+
+  stop_event_stream
+
+  local city_path
+  for city_path in "${REGISTERED_CITY_PATHS[@]-}"; do
+    [ -n "$city_path" ] || continue
+    (cd "$city_path" 2>/dev/null && run_bounded 20 gc stop >/dev/null 2>&1) || true
+    run_bounded 30 gc unregister "$city_path" >/dev/null 2>&1 || prune_walkthrough_city_registry "$city_path"
+  done
+  REGISTERED_CITY_PATHS=()
+
+  run_bounded 15 gc supervisor reload >/dev/null 2>&1 || true
+
+  local walk_scratch_alt="$WALK_SCRATCH"
+  case "$walk_scratch_alt" in
+    /private/tmp/*) walk_scratch_alt="/tmp/${walk_scratch_alt#/private/tmp/}" ;;
+    /tmp/*) walk_scratch_alt="/private/tmp/${walk_scratch_alt#/tmp/}" ;;
+  esac
+  ps -axo pid,command \
+    | awk -v root="$WALK_SCRATCH" -v alt="$walk_scratch_alt" '
+        (index($0, root) > 0 || index($0, alt) > 0) && $0 ~ /dolt sql-server|tmux -u -L sfi-walkthrough-|claude --dangerously-skip-permissions|gc events --follow|gc nudge poll --city/ {
+          print $1
+        }' \
+    | xargs -r kill 2>/dev/null || true
+}
+
+trap 'lesson_cleanup' EXIT
+trap 'lesson_cleanup; exit 130' INT
+trap 'lesson_cleanup; exit 143' TERM
 
 register_walkthrough_city() {
   local factory="$1" city_name="$2" lesson="$3"

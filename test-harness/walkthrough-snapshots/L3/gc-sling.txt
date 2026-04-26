@@ -1,0 +1,2 @@
+Created rig-8dw — "Add a percent operation: percent(whole, fraction) returns whole*fraction/100"
+Attached workflow rig-nkpx (formula "mol-feature-delivery") to rig-nkpx

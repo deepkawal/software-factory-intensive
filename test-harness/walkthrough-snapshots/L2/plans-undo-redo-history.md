@@ -2,107 +2,102 @@
 
 ## Goal
 
-Add an undo/redo history feature to the calculator so users can step backward
-and forward through a sequence of computed results. This gives the calculator
-a linear operation history, similar to Ctrl-Z / Ctrl-Shift-Z in desktop
-applications.
+Add an undo/redo history system to the calculator so users can step backward
+and forward through past calculation results. Each call to `add` or `subtract`
+(and any future operations) pushes a record onto the history stack. Undoing
+restores the previous result; redoing re-applies the last undone result. A new
+operation after an undo discards the redo branch.
 
 ## User Stories
 
-1. As a user, I can undo the last operation so that I return to the previous
-   result, correcting a mistake without starting over.
-2. As a user, I can redo a previously undone operation so that I can step
-   forward again if I undo too far.
-3. As a user, I can push a new result onto the history so that every
-   calculation is recorded for later undo.
-4. As a user, performing a new operation after an undo discards the
-   redo-forward history, so the timeline stays linear and predictable.
-5. As a user, I can query the current value from the history so that I
-   always know what the "active" result is.
-6. As a user, I can clear the entire history so that the calculator resets
-   to a clean state.
+1. **Undo last operation** — As a user, I can undo the most recent calculation
+   so I can return to the previous result without re-entering it.
+2. **Redo an undone operation** — As a user, I can redo a previously undone
+   calculation so I can step forward again without repeating the operation.
+3. **Chain undo/redo** — As a user, I can undo or redo multiple times in
+   sequence to navigate through my calculation history.
+4. **New operation clears redo** — As a user, when I perform a new calculation
+   after undoing, the redo stack is discarded so the history stays linear.
+5. **Inspect history** — As a user, I can retrieve the full history list so I
+   can see what operations were performed.
+6. **Clear history** — As a user, I can reset the history so I start fresh.
 
 ## Acceptance Criteria
 
-All tests must use `node:test` with `describe`/`it` blocks and
-`node:assert/strict` for assertions (e.g., `assert.strictEqual`,
-`assert.deepStrictEqual`). Use `beforeEach` inside `describe` blocks to
-reset history state before each test case, ensuring test isolation.
-
-- `push(value)` appends a result to the history and sets it as the current
-  value.
-- `undo()` moves the current position one step back and returns the previous
-  value. Returns `undefined` (or a sentinel) when there is nothing to undo.
-- `redo()` moves the current position one step forward and returns the
-  restored value. Returns `undefined` (or a sentinel) when there is nothing
-  to redo.
-- `current()` returns the value at the current history position, or
-  `undefined` when history is empty.
-- `clear()` resets the history to its initial empty state.
-- Calling `push()` after one or more `undo()` calls discards all entries
-  ahead of the current position (redo-forward history is lost).
-- Multiple consecutive `undo()` calls walk back through the full history
-  in order.
-- Multiple consecutive `redo()` calls walk forward through the full
-  previously-undone history in order.
-- `undo()` on an empty history returns `undefined` without error.
-- `redo()` when there is nothing to redo returns `undefined` without error.
-- All five functions are exported from a new `src/history.js` module.
-- A matching `test/history.test.js` covers every criterion above, organized
-  as `describe('history', () => { ... })` with individual `it(...)` cases
-  and a `beforeEach` that calls `clear()`.
+- `record(entry)` pushes an operation record `{ op, args, result }` onto the
+  history stack and resets the redo branch.
+- `undo()` moves the cursor back one step and returns the previous entry, or
+  `null` when at the beginning.
+- `redo()` moves the cursor forward one step and returns the re-applied entry,
+  or `null` when at the end.
+- `getHistory()` returns the full array of recorded entries (not a copy
+  requirement — architect decides).
+- `clearHistory()` empties the stack and resets the cursor.
+- Performing `undo()` then `record(entry)` discards all entries after the
+  cursor (no orphan redo branch).
+- Multiple consecutive `undo()` calls walk backward one step each.
+- Multiple consecutive `redo()` calls walk forward one step each.
+- `undo()` on an empty history returns `null`.
+- `redo()` with nothing undone returns `null`.
+- All functions are exported from a new `src/history.js` module via
+  `module.exports = { record, undo, redo, getHistory, clearHistory }`.
+- A matching `test/history.test.js` uses `node:test` with `describe`/`it`
+  blocks and `node:assert/strict` (`assert.strictEqual`, `assert.deepStrictEqual`)
+  covering at minimum:
+  - record-then-undo returns the previous entry
+  - redo after undo returns the re-applied entry
+  - undo on empty history returns `null`
+  - redo with nothing undone returns `null`
+  - new record after undo discards the redo branch
+  - clearHistory resets to empty
+  - chained undo/redo navigation across 3+ entries
 
 ## Scope Boundary
 
 **In scope:**
-- `push`, `undo`, `redo`, `current`, `clear` functions.
-- Pure in-process state (array + index); no persistence across runs.
-- One test file with at least one `it(...)` case per acceptance criterion,
-  grouped under `describe`.
+- A standalone `src/history.js` module with module-level state.
+- Linear undo/redo stack (single branch, no tree).
+- Plain object entries `{ op, args, result }`.
+- Tests using `node:test` (`describe`, `it`) and `node:assert/strict`.
 
 **Out of scope:**
-- Branching / tree-style history (only linear undo/redo).
-- Storing operation metadata (operator, operands) — only result values.
-- Configurable history depth / max length.
-- Persistent storage (file, database).
-- Integration with a REPL, CLI, or UI layer.
-- Integration with the memory module (`src/memory.js`) or calculator
-  module (`src/calculator.js`).
+- Automatic wrapping of `add`/`subtract` to record on every call (the caller
+  is responsible for calling `record`).
+- Persistent or serializable history across process restarts.
+- Branching / tree-structured undo.
+- Size limits or eviction policy on the history stack.
+- UI or CLI integration.
 
 ## Dependencies
 
-- None beyond what the project already uses (Node.js, `node:test`).
-- The new module is independent of `src/calculator.js` and `src/memory.js`;
-  no changes to existing files are required.
+- None. The module is self-contained with zero external dependencies.
+- The existing `src/calculator.js` is not modified; history is a parallel
+  module.
 
 ## Open Questions
 
-1. Should `push` accept only finite numbers, or also allow arbitrary values
-   (strings, objects) to support future expression-history use cases?
-   Recommend: accept any JS value for flexibility; document that the
-   typical use case is numbers.
-2. Should there be a `size()` or `canUndo()` / `canRedo()` helper?
-   Recommend: defer; callers can check the return value of `undo()`/`redo()`
-   for `undefined`.
-3. Should history have a maximum depth to bound memory usage?
-   Recommend: defer; unbounded for now, note as a future enhancement.
+1. **State isolation in tests** — Module-level state persists across `it`
+   blocks in the same file. The architect should decide whether tests call
+   `clearHistory()` in a `beforeEach` hook or whether the module exposes a
+   factory/closure for independent instances.
+2. **Return value semantics** — Should `undo`/`redo` return the full entry
+   object or only the `result` field? Returning the object is more informative;
+   returning just the result is simpler.
+3. **Integration with calculator** — Should `src/calculator.js` import history
+   and record automatically, or should that wiring live in a future integration
+   layer? The plan assumes the caller wires it, but the architect may prefer
+   built-in recording.
 
 ## Architect Handoff
 
 The architect should resolve:
 
-1. **State strategy** — module-level array + index (singleton) vs. a factory
-   function (`createHistory()`) that returns an independent history instance.
-   A factory makes test isolation trivial (`beforeEach` creates a fresh
-   instance) and supports multiple calculator sessions later; a singleton
-   is simpler but couples all callers to shared state.
-2. **Undo-past-beginning behavior** — return `undefined`, return a sentinel
-   like `null`, or throw. This affects the public API contract and how
-   callers detect "nothing to undo."
-3. **Module boundary** — confirm that history lives in its own
-   `src/history.js` rather than being added to `src/calculator.js`. A
-   separate module follows the existing pattern (`src/memory.js`) and keeps
-   concerns distinct.
-4. **Push-after-undo truncation** — confirm that discarding forward history
-   is the right behavior (standard in most undo systems) vs. keeping a
-   branching tree.
+- **Module-level state vs. factory** — A single module-scoped array is
+  simplest but makes test isolation harder. A `createHistory()` factory
+  returning an instance with its own stack is more testable. Choose one.
+- **Return type of undo/redo** — Full entry object `{ op, args, result }` vs.
+  just `result`. Affects downstream consumers.
+- **getHistory mutability** — Return the internal array directly (fast, caller
+  can mutate) or a shallow copy (safe, slight overhead).
+- **Integration strategy** — Whether `calculator.js` should auto-record via
+  history, or remain pure with history wired externally.
