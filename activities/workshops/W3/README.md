@@ -37,11 +37,3 @@ Gate docs should explain:
 - [`../../../packs/lessons/C1/formulas/mol-release-delivery.toml`](../../../packs/lessons/C1/formulas/mol-release-delivery.toml)
 - [`../../../reference-project/fired-up-pizza/docs/formula/loyalty-points-graph.yaml`](../../../reference-project/fired-up-pizza/docs/formula/loyalty-points-graph.yaml)
 
-## Exit Criteria
-
-- [ ] `formula-design.md` is present and readable top to bottom.
-- [ ] Every step has a target, dependency list, artifact, and close condition.
-- [ ] Human gates are justified in `gates/`.
-- [ ] The design can be translated directly into a formula `[[steps]]` graph.
-- [ ] Decision boundaries are documented in `formula-design.md`.
-- [ ] One external trigger is described as an order spec.

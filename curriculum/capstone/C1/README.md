@@ -158,12 +158,3 @@ Revisit your W4 feedback rules. For each rule you applied:
 If no W4 criteria or config changes applied during the run, record that
 explicitly instead of inventing one.
 
-## Exit Criteria
-
-- The run started with one `gc sling planner ... --on mol-release-delivery`.
-- No stage labels or manual downstream beads were used.
-- All seven agents received and completed their formula steps.
-- The release gate includes an explicit verdict backed by validation and review evidence.
-- Retrospective exists and evaluates any W4 criteria that applied.
-- Config changes are documented with file and reason, or the retrospective
-  explicitly says that no config changes were made.

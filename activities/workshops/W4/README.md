@@ -30,10 +30,3 @@ Rules discovered here should be applied to the self-contained factory pack that 
 
 Keep lesson framing out of the pack internals. The activity can explain why the rule was written; the pack should simply encode the durable factory behavior.
 
-## Exit Criteria
-
-- [ ] At least one reactive rule is written.
-- [ ] At least one aggregate rule is written.
-- [ ] At least one external-signal rule is written.
-- [ ] Each rule names the exact file it would change and how to verify it worked.
-- [ ] At least one rule includes before/after measurement evidence.

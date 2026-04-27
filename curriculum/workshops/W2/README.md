@@ -136,13 +136,6 @@ Compare your factory map to the actual graph steps. Look for:
 
 The lesson packs don't match your design exactly — they're generic calculator-project factories. Your design should reflect your real project's roles and artifacts. The point of comparison is structural: does your graph have the same shape of dependencies and handoffs?
 
-## Exit Criteria
-
-- [ ] `activities/workshops/W2/factory-map.md` exists.
-- [ ] Every role has reads, writes, and done criteria.
-- [ ] Every graph step has a target and artifact.
-- [ ] Every handoff has an explicit contract.
-
 ## Next
 
 L2 runs the first slice of this factory: Planner and Architect. The L2 lesson pack is a pre-built 2-agent factory, not your custom design — you'll use the lesson packs to learn the mechanics, then apply your W2 design to your own project afterward.

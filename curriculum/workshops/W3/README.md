@@ -165,15 +165,6 @@ For observing and debugging agent work:
 
 These are observability tools, not workflow dispatch.
 
-## Exit Criteria
-
-- [ ] `activities/workshops/W3/formula-design.md` exists.
-- [ ] It lists step IDs, targets, dependencies, artifacts, and close behavior.
-- [ ] It explains where success/failure judgment lives.
-- [ ] It avoids using metadata labels as the primary routing mechanism.
-- [ ] Decision boundaries are documented in `formula-design.md`.
-- [ ] One external trigger is described as an order spec.
-
 ## Next
 
 L4 uses a graph with review and release-gate steps. The review loop remains student-driven: read the review, update code or factory config, and re-run the formula when needed.

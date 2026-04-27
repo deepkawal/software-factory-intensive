@@ -1,4 +1,4 @@
-# Multiply Operation Architecture
+# Modulo Operation Architecture
 ## Context
 ## Options Considered
 ## Decision

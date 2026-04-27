@@ -114,10 +114,3 @@ Add a Measurement section to your feedback rule files after Verification:
 What metric did you check? What was the before/after?
 ```
 
-## Exit Criteria
-
-- [ ] At least three feedback rule files exist.
-- [ ] Each rule has signal, trigger, target, proposed change, verification, and rollback.
-- [ ] One rule has been applied to the active lesson pack or project instructions.
-- [ ] The runtime change is portable and does not mention the workshop.
-- [ ] At least one rule includes before/after measurement from a factory run.

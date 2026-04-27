@@ -1,4 +1,4 @@
-# Multiply Operation Work Package
+# Modulo Operation Work Package
 ## Goal
 ## User Stories
 ## Acceptance Criteria

@@ -59,15 +59,6 @@ ls <your-project>/docs/plans
 ls <your-project>/docs/architecture
 ```
 
-## Exit Criteria
-
-- The formula graph has `plan` and `architecture` steps.
-- `plan` routes to `factory.planner`.
-- `architecture` depends on `plan` and routes to `factory.architect`.
-- The plan includes user stories and acceptance criteria.
-- The architecture file includes at least two options and a decision.
-- Your notes record the root bead ID and generated artifact paths.
-
 ## Skipped This Session?
 
 L3 expects planning and architecture context in the same project rig. If you

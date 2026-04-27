@@ -40,10 +40,3 @@ Expected project outputs:
 - `docs/releases/<slug>.md`
 - `activities/capstone/C1/retrospective.md` — factory run retrospective with W4 criteria evaluation
 
-## Exit Criteria
-
-- [ ] The run started with one `gc sling` on `mol-release-delivery`.
-- [ ] The formula routed all seven roles.
-- [ ] The release gate includes an explicit verdict backed by validation and review evidence.
-- [ ] Retrospective exists with at least one W4 criterion evaluated.
-- [ ] At least one config change is documented with file and reason.

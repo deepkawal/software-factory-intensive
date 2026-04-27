@@ -159,10 +159,3 @@ Compare the second review artifact to the first one:
 
 If the manifest change produced no visible difference, the reviewer or release-gate prompt needs to reference the manifest more explicitly — which is itself a W4 feedback rule.
 
-## Exit Criteria
-
-- The run started with one `gc sling planner ... --on mol-delivery-review`.
-- No stage labels or manual downstream beads were used.
-- All six agents received and completed their formula steps.
-- The release gate includes an explicit verdict backed by evidence.
-- Manifest load-bearing test completed — reviewer cited Review Standards from PROJECT_MANIFEST.md.

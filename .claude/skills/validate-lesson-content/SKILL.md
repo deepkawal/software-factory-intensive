@@ -15,6 +15,22 @@ Walkthroughs are the source of truth. READMEs must match what walkthroughs produ
 
 The skill never runs walkthroughs itself. If snapshots are missing or stale, tell the user to run the walkthroughs first.
 
+## Hard Boundary: No Exit Criteria in Student Content
+
+Student-facing READMEs must not have "## Exit Criteria" sections with
+checkbox lists. Those are facilitator/test-harness concerns. Students should
+know what they're building and how to verify it worked from the instructions
+themselves — a formal grading rubric doesn't belong in a lab guide.
+
+Exit criteria may remain in PROMPT.md files (facilitator prompts) and in
+test-harness scripts where they drive walkthrough assertions.
+
+Scan after every edit:
+```
+grep -rn '## Exit Criteria' curriculum/ activities/
+```
+If any appear in README.md files, remove them.
+
 ## Hard Boundary: No Version-Branded Names
 
 Student-facing content must not use "FormulaV2", "PackV2", "PacksV2", or

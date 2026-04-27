@@ -1,1 +1,1 @@
-9e88fc1 Add clamp(x, lo, hi) to calculator module
+9a33bed Add clamp(x, lo, hi) operation to calculator module

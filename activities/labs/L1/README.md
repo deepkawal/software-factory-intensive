@@ -24,10 +24,3 @@ gc doctor --fix
 
 No feature workflow runs in L1. The first runnable formula flow starts in L2.
 
-## Exit Criteria
-
-- [ ] `CLAUDE.md` or `AGENTS.md` exists in the project rig with project-specific rules.
-- [ ] `my-factory/PROJECT_MANIFEST.md` has overview, tech stack, and project structure.
-- [ ] `my-factory/city.toml` enables formula v2.
-- [ ] `my-factory/pack.toml` selects `../packs/lessons/L2` as `factory`.
-- [ ] `gc status` from `../../../my-factory/` shows the city and rig.

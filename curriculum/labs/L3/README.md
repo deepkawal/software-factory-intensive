@@ -184,10 +184,3 @@ Packs have a `skills/` directory. Each skill is a subdirectory with a `SKILL.md`
 
 In L2 you added an MCP (external data). Here you added a skill (internal rules). Different mechanisms, same idea — tell the agent what you want in a file it reads every time, not in a chat message it forgets.
 
-## Exit Criteria
-
-- The run started with one `gc sling planner ... --on mol-feature-delivery`.
-- No stage labels or manual downstream beads were used.
-- The graph routed all four roles.
-- The builder committed the implementation and tests.
-- Testing-conventions skill added to builder with visible impact on test code (assert.strictEqual, describe blocks).

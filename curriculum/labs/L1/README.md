@@ -103,14 +103,6 @@ npm test
 
 If a command fails, fix `CLAUDE.md` before moving on. Later agents will rely on these instructions.
 
-## Exit Criteria
-
-- [ ] `CLAUDE.md` or `AGENTS.md` exists in the project rig with project-specific rules.
-- [ ] `my-factory/PROJECT_MANIFEST.md` has overview, tech stack, and project structure.
-- [ ] `my-factory/city.toml` enables formula v2.
-- [ ] `my-factory/pack.toml` selects `../packs/lessons/L2` as `factory`.
-- [ ] `gc status` shows your city and project rig.
-
 ## Next
 
 W2 comes next — you'll design the factory structure (roles, artifacts, handoff contracts) before running it. Then L2 runs the first slice of that design: Planner and Architect agents on a real feature request.

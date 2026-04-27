@@ -33,9 +33,3 @@ Use the self-contained lesson packs:
 
 Do not design around a separate reusable-role topology. The lesson factory pack is the unit of runtime definition.
 
-## Exit Criteria
-
-- [ ] Each role has a concrete responsibility.
-- [ ] Each role writes a concrete artifact path.
-- [ ] Each formula step names a target and dependency list.
-- [ ] Your map explains what the next lab should be able to assume.

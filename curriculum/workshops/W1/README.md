@@ -694,18 +694,6 @@ When you review your own output, check:
 
 ---
 
-## Exit Criteria
-
-- [ ] `workflow-card.md` committed to your project repo with all 4 sections filled in
-- [ ] Every section references something concrete (path / command / ticket)
-- [ ] You can re-read the card as a stranger to the codebase and not have to stop to ask a question
-- [ ] You can state in one sentence what your Context Reset Rule is
-- [ ] Your Decision Checkpoint has at least three entries under "I decide" and three under "Agent decides"
-- [ ] The card is on a feature branch (`workflow-card` or equivalent), pushed to origin
-- [ ] The Iteration Loop tells you explicitly what to do when a gate fails
-
----
-
 ## Common Issues & Solutions
 
 ### Issue: My card is basically "use AI well."

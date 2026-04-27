@@ -238,11 +238,3 @@ What I would change before L3:
 
 Commit the generated artifacts and your notes.
 
-## Exit Criteria
-
-- `gc graph <root-bead-id>` shows `plan -> architecture`.
-- The formula route targets are `factory.planner` and `factory.architect`.
-- The project rig contains a plan under `docs/plans/`.
-- The project rig contains an architecture artifact under `docs/architecture/`.
-- One prompt edit or MCP addition produced a visible artifact change.
-- `activities/labs/L2/notes.md` records the root bead, artifact paths, and config changes.

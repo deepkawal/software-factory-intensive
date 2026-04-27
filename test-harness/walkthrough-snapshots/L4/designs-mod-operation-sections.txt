@@ -1,4 +1,4 @@
-# Multiply Operation Design
+# Modulo Operation Design
 ## Interface
 ## Behavior
 ## Edge Cases
