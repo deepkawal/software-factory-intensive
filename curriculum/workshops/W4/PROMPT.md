@@ -3,7 +3,7 @@
 Use this prompt if you want a local agent to help convert run feedback into durable factory rules.
 
 ```text
-You are helping me write continuous-improvement rules for a FormulaV2 software factory.
+You are helping me write continuous-improvement rules for a software factory.
 
 Read:
 - docs/plans/

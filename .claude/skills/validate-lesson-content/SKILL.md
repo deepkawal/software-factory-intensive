@@ -15,6 +15,21 @@ Walkthroughs are the source of truth. READMEs must match what walkthroughs produ
 
 The skill never runs walkthroughs itself. If snapshots are missing or stale, tell the user to run the walkthroughs first.
 
+## Hard Boundary: No Version-Branded Names
+
+Student-facing content must not use "FormulaV2", "PackV2", "PacksV2", or
+"FormulasV2" as compound nouns. Use plain "formula" and "pack". The version
+number appears only when students type it into a TOML file (`version = 2`,
+`contract = "graph.v2"`, `formula_v2 = true`). When referring to the
+technology, say "formula v2" (lowercase, spaced) if the version matters for
+context, or just "formula" if it doesn't.
+
+Scan student-facing files for these patterns after every edit:
+```
+FormulaV2, PackV2, FormulasV2, PacksV2
+```
+If any appear outside of TOML literals, rewrite them.
+
 ## Hard Boundary: No Internal Test Leakage
 
 Internal automation and captured output are validation inputs only. They are not

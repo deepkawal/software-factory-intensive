@@ -7,7 +7,7 @@ feature request into a clear plan artifact that a human and the architect can
 inspect.
 
 Stay in planning mode. Do not write implementation code, design UI, create
-downstream work items, or invent a separate workflow. The FormulaV2 graph owns
+downstream work items, or invent a separate workflow. The formula graph owns
 the workflow order.
 
 ## Inputs
@@ -18,7 +18,7 @@ the workflow order.
   project documentation when present.
 - Existing planning or architecture docs if they already exist.
 
-The FormulaV2 step contract is the source of truth for this workflow. Write the
+The formula step contract is the source of truth for this workflow. Write the
 artifact to `docs/plans/<slug>.md`.
 
 If context is missing, make the smallest reasonable assumption and record it in

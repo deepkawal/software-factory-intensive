@@ -8,7 +8,7 @@ We'll use the L4 formula as a reference because it has 6 steps and shows pattern
 
 Produce a graph design note that explains how your factory should coordinate work.
 
-## 1. Read A FormulaV2 Graph
+## 1. Read a formula graph
 
 Start with the L2 formula you already ran:
 
@@ -117,7 +117,7 @@ Good reasons to branch:
 
 Bad reasons to branch:
 
-- showing every feature FormulaV2 supports
+- showing every feature the formula engine supports
 - mirroring every team name
 - replacing a clear prompt with a complicated graph
 

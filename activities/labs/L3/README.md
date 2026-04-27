@@ -3,7 +3,7 @@
 **Walkthrough:** [`../../../curriculum/labs/L3/README.md`](../../../curriculum/labs/L3/README.md)
 
 L3 switches the active factory pack to `packs/lessons/L3`, then runs one
-FormulaV2 graph through Planner, Architect, Designer, and Builder.
+formula graph through Planner, Architect, Designer, and Builder.
 
 Factory selection in `my-factory/pack.toml`:
 

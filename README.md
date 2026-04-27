@@ -1,6 +1,6 @@
 # Software Factory Intensive
 
-Hands-on curriculum for building small software factories with Gas City, PackV2, and FormulaV2.
+Hands-on curriculum for building small software factories with Gas City.
 
 The active curriculum is built around self-contained lesson packs. Each runnable lab has one complete factory under `packs/lessons/<lesson>/`: agents, prompts, formulas, doctors, and commands live together so students can inspect the whole system without chasing shared pack imports.
 

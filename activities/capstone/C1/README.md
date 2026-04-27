@@ -3,7 +3,7 @@
 **Walkthrough:** [`../../../curriculum/capstone/C1/README.md`](../../../curriculum/capstone/C1/README.md)
 
 C1 switches the active factory pack to `packs/lessons/C1`, then runs the full
-release-delivery FormulaV2 graph.
+release-delivery formula graph.
 
 Factory selection in `my-factory/pack.toml`:
 

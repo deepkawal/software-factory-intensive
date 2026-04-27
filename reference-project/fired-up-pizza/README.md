@@ -93,4 +93,4 @@ The C1 lesson pack routes the capstone run through:
 Planner -> Architect -> Designer -> Builder -> Validator -> Reviewer -> Release Gate
 ```
 
-The FormulaV2 graph lives at [`../../packs/lessons/C1/formulas/mol-release-delivery.toml`](../../packs/lessons/C1/formulas/mol-release-delivery.toml).
+The formula graph lives at [`../../packs/lessons/C1/formulas/mol-release-delivery.toml`](../../packs/lessons/C1/formulas/mol-release-delivery.toml).

@@ -5,7 +5,7 @@
 ## Goal
 
 Run the first real lesson factory: a self-contained L2 pack with a Planner and
-Architect connected by one FormulaV2 graph.
+Architect connected by one formula graph.
 
 ## Deliverables
 

@@ -14,7 +14,7 @@ By the end of L1:
 
 - Your W1 workflow card is converted to a `CLAUDE.md`
 - A minimal project manifest is in place
-- Gas City is registered with FormulaV2 enabled
+- Gas City is registered with formula v2 enabled
 - Your project rig is ready for L2
 
 ## 1. Convert Your Workflow Card to CLAUDE.md (~5 min)
@@ -64,7 +64,7 @@ cp my-factory/pack.toml.template my-factory/pack.toml
 cp my-factory/city.toml.template my-factory/city.toml
 ```
 
-Confirm `my-factory/city.toml` has FormulaV2 enabled:
+Confirm `my-factory/city.toml` has formula v2 enabled:
 
 ```toml
 [daemon]
@@ -107,7 +107,7 @@ If a command fails, fix `CLAUDE.md` before moving on. Later agents will rely on 
 
 - [ ] `CLAUDE.md` or `AGENTS.md` exists in the project rig with project-specific rules.
 - [ ] `my-factory/PROJECT_MANIFEST.md` has overview, tech stack, and project structure.
-- [ ] `my-factory/city.toml` permanently enables FormulaV2.
+- [ ] `my-factory/city.toml` enables formula v2.
 - [ ] `my-factory/pack.toml` selects `../packs/lessons/L2` as `factory`.
 - [ ] `gc status` shows your city and project rig.
 

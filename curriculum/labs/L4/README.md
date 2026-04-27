@@ -30,7 +30,7 @@ The imported agents are rig-scoped:
 <rig>/factory.release-gate
 ```
 
-## 1. Confirm FormulaV2
+## 1. Confirm formula v2
 
 Confirm `my-factory/city.toml` contains:
 
@@ -130,7 +130,7 @@ The reviewer and release-gate prompts in this lesson pack read `PROJECT_MANIFEST
 
 You're about to prove that by adding standards and watching the output change.
 
-Add project standards to your project rig's `docs/PROJECT_MANIFEST.md`:
+Open the manifest you created in L1 at `my-factory/PROJECT_MANIFEST.md` and add:
 
 - Add at least 4 Review Standards with checkable rules and severity mapping
 - Add at least 6 Release Criteria with binary PASS/FAIL gates and evidence sources
@@ -163,6 +163,6 @@ If the manifest change produced no visible difference, the reviewer or release-g
 
 - The run started with one `gc sling <rig>/factory.planner ... --on mol-delivery-review`.
 - No stage labels or manual downstream beads were used.
-- The formula routed all six roles.
+- All six agents received and completed their formula steps.
 - The release gate includes an explicit verdict backed by evidence.
 - Manifest load-bearing test completed — reviewer cited Review Standards from PROJECT_MANIFEST.md.

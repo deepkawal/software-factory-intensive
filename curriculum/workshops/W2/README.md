@@ -101,7 +101,7 @@ Add a second table:
 | review | `factory.reviewer` | validate | review report |
 | release | `factory.release-gate` | review | release gate |
 
-This table is the conceptual source for a FormulaV2 graph. The real lesson packs encode it in TOML under `formulas/`.
+This table is the conceptual source for a formula graph. The real lesson packs encode it in TOML under `formulas/`.
 
 ## 4. Write Handoff Contracts
 

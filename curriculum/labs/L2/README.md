@@ -1,8 +1,8 @@
 # L2 - Deploy Planner + Architect Agents
 
-> **What you will build:** a two-agent lesson factory. One `gc sling` starts a
-> FormulaV2 graph. The graph routes first to the Planner and then to the
-> Architect.
+> **What you will build:** a two-agent lesson factory. One `gc sling` creates
+> a formula graph with two steps. The planner step runs first; when it
+> closes, the architect step becomes ready and runs.
 
 | | |
 |---|---|
@@ -35,7 +35,7 @@ which lesson factory pack is active.
 
 - You have copied `my-factory/pack.toml.template` to `my-factory/pack.toml`.
 - You have copied `my-factory/city.toml.template` to `my-factory/city.toml`.
-- `my-factory/city.toml` has FormulaV2 enabled:
+- `my-factory/city.toml` has formula v2 enabled:
 
 ```toml
 [daemon]
@@ -184,7 +184,7 @@ The planner and architect currently work from project context alone. Ground one 
 
 ### Add an MCP server to the planner
 
-PackV2 packs have a `mcp/` directory for MCP server definitions. Each server is a TOML file.
+Packs have a `mcp/` directory for MCP server definitions. Each server is a TOML file.
 
 1. Create the MCP config:
 

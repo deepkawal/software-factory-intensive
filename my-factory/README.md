@@ -12,7 +12,7 @@ gc register .
 gc rig add ~/Projects/your-project
 ```
 
-FormulaV2 is enabled once in `city.toml`. Lesson selection happens in
+Formula v2 is enabled once in `city.toml`. Lesson selection happens in
 `pack.toml`:
 
 ```toml

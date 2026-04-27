@@ -43,11 +43,13 @@ The formula graph controls the order. Each `[[steps]]` entry in `mol-feature-del
 | design | architecture | `factory.designer` | `docs/designs/<slug>.md` |
 | build | design | `factory.builder` | code + tests on feature branch |
 
-When you `gc sling` to the planner, Gas City attaches the formula and starts the `plan` step. When the planner closes that step, the `architecture` step becomes ready because its `needs` is satisfied. The formula routes it to the architect. And so on through designer and builder.
+When you `gc sling` to the planner, Gas City compiles the formula, creates a bead for each step, and sets routing metadata on every bead up front. The `plan` step has no `needs`, so it's immediately ready — the planner's worker pool picks it up.
 
-The agents don't know about each other. Each one works its assigned step, reads whatever project files exist (including artifacts upstream agents wrote), and closes the step when done. The formula handles the sequencing.
+When the planner closes its step, the store checks which other steps depended on it. The `architecture` step had `needs = ["plan"]`, so it becomes ready. The architect's worker pool was already assigned to that bead (the routing was set at sling time), so it picks it up. Same for designer after architect, builder after designer.
 
-## 1. Enable FormulaV2
+The agents don't know about each other. Each one works its assigned bead, reads whatever project files exist (including artifacts upstream agents wrote), and closes the bead when done. The store evaluates dependencies and surfaces the next ready step.
+
+## 1. Enable formula v2
 
 This is a one-time city setting. Confirm `my-factory/city.toml` contains:
 
@@ -142,7 +144,7 @@ Expected outputs:
 
 L2 taught MCP integration (external tool access). L3 teaches skill integration — project-specific instructions that shape how an agent works.
 
-PackV2 packs have a `skills/` directory. Each skill is a subdirectory with a `SKILL.md` file.
+Packs have a `skills/` directory. Each skill is a subdirectory with a `SKILL.md` file.
 
 1. Create a testing-conventions skill for the builder:
 

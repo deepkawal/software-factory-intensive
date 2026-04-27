@@ -3,7 +3,7 @@
 Use this prompt if you want a local agent to draft the W3 formula design note.
 
 ```text
-You are helping me design a FormulaV2 graph for a small software factory.
+You are helping me design a formula graph for a small software factory.
 
 Read:
 - activities/workshops/W2/factory-map.md

@@ -13,7 +13,7 @@ Create or update these files:
 
 ## Factory State After L1
 
-`my-factory` should be registered, FormulaV2 should be enabled in `city.toml`, and your project should be added as a rig:
+`my-factory` should be registered, formula v2 should be enabled in `city.toml`, and your project should be added as a rig:
 
 ```bash
 cd ../../../my-factory
@@ -28,6 +28,6 @@ No feature workflow runs in L1. The first runnable formula flow starts in L2.
 
 - [ ] `CLAUDE.md` or `AGENTS.md` exists in the project rig with project-specific rules.
 - [ ] `my-factory/PROJECT_MANIFEST.md` has overview, tech stack, and project structure.
-- [ ] `my-factory/city.toml` permanently enables FormulaV2.
+- [ ] `my-factory/city.toml` enables formula v2.
 - [ ] `my-factory/pack.toml` selects `../packs/lessons/L2` as `factory`.
 - [ ] `gc status` from `../../../my-factory/` shows the city and rig.

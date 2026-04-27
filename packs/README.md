@@ -2,7 +2,7 @@
 
 The active runtime packs for this curriculum live under `packs/lessons/`.
 
-Each runnable lesson pack is a complete Gas City PackV2 factory:
+Each runnable lesson pack is a complete Gas City pack factory:
 
 ```text
 packs/lessons/<lesson>/
@@ -26,12 +26,12 @@ Lesson packs do not import other packs. If a later lesson needs the same planner
 
 ## Optional Support Pack
 
-`workshop/` contains optional service-integration helpers. It is not the workflow engine for the lessons. Runnable lesson flow belongs in the selected lesson pack and its FormulaV2 graph.
+`workshop/` contains optional service-integration helpers. It is not the workflow engine for the lessons. Runnable lesson flow belongs in the selected lesson pack and its formula graph.
 
 ## Authoring Rules
 
-- Use PackV2 conventions: `agents/`, `formulas/`, `commands/`, `doctor/`.
-- Use FormulaV2 for every workflow formula: `version = 2` and `contract = "graph.v2"`.
+- Use pack conventions: `agents/`, `formulas/`, `commands/`, `doctor/`.
+- Use formula v2 for every workflow formula: `version = 2` and `contract = "graph.v2"`.
 - Route graph steps with binding-qualified targets such as `factory.builder`.
 - Keep agent prompts portable and curriculum-blind.
 - Do not use stage labels as the workflow engine.

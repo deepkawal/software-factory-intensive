@@ -3,7 +3,7 @@
 Use this prompt with a local coding agent if you want help drafting the W2 factory map.
 
 ```text
-You are helping me design a small FormulaV2 software factory for my project.
+You are helping me design a small software factory for my project.
 
 Read:
 - my project overview
@@ -14,7 +14,7 @@ Read:
 Write activities/workshops/W2/factory-map.md with:
 - role responsibilities
 - artifacts each role reads and writes
-- FormulaV2 step IDs
+- formula step IDs
 - binding-qualified targets like factory.planner
 - dependencies between steps
 - done criteria

@@ -1,7 +1,7 @@
 # Feature Intake Factory
 
 This pack is a small feature-intake factory. It contains a planner, an
-architect, their prompts, and a FormulaV2 graph that turns a feature request
+architect, their prompts, and a formula graph that turns a feature request
 into planning and architecture artifacts.
 
 The workflow route is:

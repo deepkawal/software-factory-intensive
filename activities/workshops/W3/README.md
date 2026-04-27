@@ -2,7 +2,7 @@
 
 **Walkthrough:** [`../../../curriculum/workshops/W3/README.md`](../../../curriculum/workshops/W3/README.md)
 
-W3 produces a FormulaV2 graph design note.
+W3 produces a formula graph design note.
 
 ## Deliverables
 
@@ -42,6 +42,6 @@ Gate docs should explain:
 - [ ] `formula-design.md` is present and readable top to bottom.
 - [ ] Every step has a target, dependency list, artifact, and close condition.
 - [ ] Human gates are justified in `gates/`.
-- [ ] The design can be translated directly into a FormulaV2 `[[steps]]` graph.
+- [ ] The design can be translated directly into a formula `[[steps]]` graph.
 - [ ] Decision boundaries are documented in `formula-design.md`.
 - [ ] One external trigger is described as an order spec.

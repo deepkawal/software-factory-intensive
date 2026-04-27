@@ -30,7 +30,7 @@ The imported agents are rig-scoped:
 <rig>/factory.release-gate
 ```
 
-## 1. Confirm FormulaV2
+## 1. Confirm formula v2
 
 Confirm `my-factory/city.toml` contains:
 
@@ -162,7 +162,7 @@ explicitly instead of inventing one.
 
 - The run started with one `gc sling <rig>/factory.planner ... --on mol-release-delivery`.
 - No stage labels or manual downstream beads were used.
-- The formula routed all seven roles.
+- All seven agents received and completed their formula steps.
 - The release gate includes an explicit verdict backed by validation and review evidence.
 - Retrospective exists and evaluates any W4 criteria that applied.
 - Config changes are documented with file and reason, or the retrospective

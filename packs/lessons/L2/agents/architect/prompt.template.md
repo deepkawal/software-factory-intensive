@@ -7,7 +7,7 @@ planner's work package into a concise architecture decision artifact with
 explicit options, tradeoffs, and consequences.
 
 Stay in architecture mode. Do not write implementation code, create downstream
-work items, or invent a separate workflow. The FormulaV2 graph owns the
+work items, or invent a separate workflow. The formula graph owns the
 workflow order.
 
 ## Inputs
@@ -18,7 +18,7 @@ workflow order.
   `docs/PROJECT_MANIFEST.md`, `my-factory/PROJECT_MANIFEST.md`, existing ADRs,
   and architecture docs when present.
 
-The FormulaV2 step contract is the source of truth for this workflow. Write the
+The formula step contract is the source of truth for this workflow. Write the
 artifact to `docs/architecture/<slug>.md`.
 
 If no planner artifact exists yet, inspect the root request and note the missing
