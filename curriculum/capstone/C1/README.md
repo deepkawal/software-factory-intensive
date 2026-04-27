@@ -111,6 +111,15 @@ Expected outputs:
 - review report with severity-labelled findings
 - release gate with a clear `PASS` or `FAIL`
 
+A complete run should produce artifacts with sections like these:
+
+- Plan: `Goal`, `User Stories`, `Acceptance Criteria`, `Scope Boundary`, `Dependencies`, `Open Questions`, `Handoff`
+- Architecture: `Context`, `Options Considered`, `Decision`, `Consequences`, `Risks`, `References`
+- Design: `Interface`, `Behavior`, `Edge Cases`, `Test Plan`, `Build Notes`, `References`
+- Validation: `Verdict`, `Test Command`, `Results`, `Issues`, `References`
+- Review: `Verdict`, `Summary`, `Findings`, `Test Evidence`, `Recommendation`, `References`
+- Release: `Verdict`, `Required Checks`, `Evidence`, `Risks`, `Decision Notes`, `References`
+
 ## 7. Write the Retrospective
 
 Create `activities/capstone/C1/retrospective.md`:
@@ -144,11 +153,15 @@ Revisit your W4 feedback rules. For each rule you applied:
 ## What I Would Change Before the Next Run
 ```
 
+If no W4 criteria or config changes applied during the run, record that
+explicitly instead of inventing one.
+
 ## Exit Criteria
 
 - The run started with one `gc sling <rig>/factory.planner ... --on mol-release-delivery`.
 - No stage labels or manual downstream beads were used.
 - The formula routed all seven roles.
 - The release gate includes an explicit verdict backed by validation and review evidence.
-- Retrospective exists with at least one W4 criterion evaluated.
-- At least one config change is documented with file and reason.
+- Retrospective exists and evaluates any W4 criteria that applied.
+- Config changes are documented with file and reason, or the retrospective
+  explicitly says that no config changes were made.
