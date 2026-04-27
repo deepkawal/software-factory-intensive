@@ -120,11 +120,11 @@ must not assume the storage model until it has checked the project manifest.
 
 ## 5. Compare Against Lesson Packs
 
-Open:
+The lesson packs (L2, L3, L4, C1) are pre-built instances of the pattern you just designed. Open them to see how your factory map translates to real TOML:
 
 ```bash
-sed -n '1,220p' packs/lessons/L3/formulas/mol-feature-delivery.toml
-sed -n '1,220p' packs/lessons/C1/formulas/mol-release-delivery.toml
+cat packs/lessons/L3/formulas/mol-feature-delivery.toml
+cat packs/lessons/C1/formulas/mol-release-delivery.toml
 ```
 
 Compare your factory map to the actual graph steps. Look for:
@@ -133,6 +133,8 @@ Compare your factory map to the actual graph steps. Look for:
 - artifacts that should be renamed for your project
 - checks that belong in a prompt, validator, or release gate
 - roles that should be skipped for small changes
+
+The lesson packs don't match your design exactly — they're generic calculator-project factories. Your design should reflect your real project's roles and artifacts. The point of comparison is structural: does your graph have the same shape of dependencies and handoffs?
 
 ## Exit Criteria
 
@@ -143,4 +145,4 @@ Compare your factory map to the actual graph steps. Look for:
 
 ## Next
 
-L2 runs the first slice of this factory: Planner and Architect. You will use the same project rig created in L1 and the self-contained L2 lesson pack.
+L2 runs the first slice of this factory: Planner and Architect. The L2 lesson pack is a pre-built 2-agent factory, not your custom design — you'll use the lesson packs to learn the mechanics, then apply your W2 design to your own project afterward.

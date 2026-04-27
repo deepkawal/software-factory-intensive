@@ -113,4 +113,6 @@ If a command fails, fix `CLAUDE.md` before moving on. Later agents will rely on 
 
 ## Next
 
-L2 is next. You keep this same rig, sync it to the L2 factory pack, and sling your first feature request to `factory.planner` on `mol-feature-intake`.
+W2 comes next — you'll design the factory structure (roles, artifacts, handoff contracts) before running it. Then L2 runs the first slice of that design: Planner and Architect agents on a real feature request.
+
+You do not need to run agents before W2. The design comes first so you understand what each role does before watching it work. Your rig stays registered — L2 will use the same one.

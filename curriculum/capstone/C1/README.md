@@ -122,6 +122,8 @@ A complete run should produce artifacts with sections like these:
 
 ## 7. Write the Retrospective
 
+Before writing the retrospective, decide: are you measuring the W4 rule you already applied, or applying a new one now? If you want to test a new rule, edit the C1 pack prompt or manifest, re-sling with a different feature, and compare the two runs. If you're measuring the existing rule, use the run you just completed.
+
 Create `activities/capstone/C1/retrospective.md`:
 
 ```markdown

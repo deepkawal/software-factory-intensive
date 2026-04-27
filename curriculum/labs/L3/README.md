@@ -32,6 +32,21 @@ The formula is `mol-feature-delivery`:
 plan -> architecture -> design -> build
 ```
 
+## How four agents run from one sling
+
+The formula graph controls the order. Each `[[steps]]` entry in `mol-feature-delivery.toml` has a `needs` field that says which steps must close before this step becomes ready, and a `gc.run_target` that says which agent runs it:
+
+| Step | Needs | Agent | Writes |
+|------|-------|-------|--------|
+| plan | (none) | `factory.planner` | `docs/plans/<slug>.md` |
+| architecture | plan | `factory.architect` | `docs/architecture/<slug>.md` |
+| design | architecture | `factory.designer` | `docs/designs/<slug>.md` |
+| build | design | `factory.builder` | code + tests on feature branch |
+
+When you `gc sling` to the planner, Gas City attaches the formula and starts the `plan` step. When the planner closes that step, the `architecture` step becomes ready because its `needs` is satisfied. The formula routes it to the architect. And so on through designer and builder.
+
+The agents don't know about each other. Each one works its assigned step, reads whatever project files exist (including artifacts upstream agents wrote), and closes the step when done. The formula handles the sequencing.
+
 ## 1. Enable FormulaV2
 
 This is a one-time city setting. Confirm `my-factory/city.toml` contains:
@@ -165,7 +180,7 @@ PackV2 packs have a `skills/` directory. Each skill is a subdirectory with a `SK
 
 4. Compare the builder's test code from the two commits. The second commit should use `assert.strictEqual` (not `assert.equal`), `describe()` blocks, and explicit edge case tests — because the skill told it to.
 
-MCPs give agents access to external data. Skills give agents project-specific instructions. Both are config, not chat.
+In L2 you added an MCP (external data). Here you added a skill (internal rules). Different mechanisms, same idea — tell the agent what you want in a file it reads every time, not in a chat message it forgets.
 
 ## Exit Criteria
 

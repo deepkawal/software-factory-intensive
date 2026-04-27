@@ -126,8 +126,11 @@ should show 8 tests, 8 passing.
 
 ## 7. Prove the manifest is load-bearing
 
-Before this step, add project standards to your project rig's
-`docs/PROJECT_MANIFEST.md`:
+The reviewer and release-gate prompts in this lesson pack read `PROJECT_MANIFEST.md` and look for Review Standards and Release Criteria sections. If those sections exist, the reviewer uses them to structure findings and the release-gate evaluates each criterion individually. If they don't exist, the agents fall back to general judgment.
+
+You're about to prove that by adding standards and watching the output change.
+
+Add project standards to your project rig's `docs/PROJECT_MANIFEST.md`:
 
 - Add at least 4 Review Standards with checkable rules and severity mapping
 - Add at least 6 Release Criteria with binary PASS/FAIL gates and evidence sources

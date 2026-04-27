@@ -1,17 +1,25 @@
 # W3 · Architect Multi-Agent Coordination
 
-W3 is where you design coordination as a FormulaV2 graph. The lesson factories already contain runnable examples; your job is to learn when to add steps, dependencies, checks, retries, and human gates.
+In L2 you ran a 2-step formula and watched plan flow to architecture. That formula was a TOML file with two `[[steps]]` and one `needs` dependency. W3 teaches you to design your own formula graphs — deciding which steps your factory needs, what each step produces, and where human judgment belongs.
+
+We'll use the L4 formula as a reference because it has 6 steps and shows patterns (review, release-gate) that L2's simple graph doesn't. You're not running L4 yet — just reading its structure to learn the design vocabulary.
 
 ## Goal
 
-Produce a graph design note that explains how your factory should coordinate work without turning labels into the workflow engine.
+Produce a graph design note that explains how your factory should coordinate work.
 
 ## 1. Read A FormulaV2 Graph
 
-Open the L4 graph:
+Start with the L2 formula you already ran:
 
 ```bash
-sed -n '1,260p' packs/lessons/L4/formulas/mol-delivery-review.toml
+cat packs/lessons/L2/formulas/mol-feature-intake.toml
+```
+
+That's a simple graph: two steps, one dependency. Now open the L4 graph to see how a larger factory looks:
+
+```bash
+cat packs/lessons/L4/formulas/mol-delivery-review.toml
 ```
 
 Look for:
@@ -71,7 +79,7 @@ For each category, decide what stays with you and what goes to agents:
 | Review severity | Agent (Reviewer) | Follows Review Standards |
 | Release verdict | Agent (Release Gate) | Follows Release Criteria |
 
-Customize for your project and add to `formula-design.md`. Connect this to your W1 Decision Checkpoint — same concept, factory-level scope.
+Customize for your project and add to `formula-design.md`. This is the factory-level version of your W1 Decision Checkpoint.
 
 ## 4. Specify Step Contracts
 

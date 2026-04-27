@@ -105,7 +105,7 @@ Compare the planner prompt to your W1 workflow card:
 | Iteration Loop | `## Graph Work Process` — the work loop |
 | Decision Checkpoint | `## Role` — scope of authority, what to escalate |
 
-Your workflow card described how *you* work with one agent. The planner prompt describes how *the planner agent* works inside a factory. Same structure, different scope.
+Your workflow card described how you work with one agent. The planner prompt does the same thing for the planner inside a factory. The four sections map to each other — that's not a coincidence.
 
 ## Part 3: Run The Formula
 
@@ -216,7 +216,7 @@ PackV2 packs have a `mcp/` directory for MCP server definitions. Each server is 
 
 4. Compare the two plan artifacts. The second plan should reference specific node:test API details (assert.strictEqual, describe blocks) that came from Context7 — not generic knowledge.
 
-MCPs are the bridge between LLM knowledge and project-specific reality. Without them, agents invent reality. With them, agents check reality.
+Without the MCP, the planner guesses what the node:test API looks like. With it, the planner checks.
 
 ## Part 6: Record Notes
 
