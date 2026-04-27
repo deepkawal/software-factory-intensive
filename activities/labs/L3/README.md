@@ -24,7 +24,7 @@ gc restart
 Start the run:
 
 ```bash
-gc sling <rig>/factory.planner \
+gc sling planner \
   "Add a percent operation: percent(whole, fraction) returns whole*fraction/100" \
   --on mol-feature-delivery
 ```

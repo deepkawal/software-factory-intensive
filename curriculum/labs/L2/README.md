@@ -112,7 +112,7 @@ Your workflow card described how you work with one agent. The planner prompt doe
 From `my-factory`, sling one request to the lesson Planner:
 
 ```bash
-gc sling <rig>/factory.planner "Plan the loyalty points feature for Fired Up Pizza" --on mol-feature-intake
+gc sling planner "Plan the loyalty points feature for Fired Up Pizza" --on mol-feature-intake
 ```
 
 Watch progress:
@@ -211,7 +211,7 @@ Packs have a `mcp/` directory for MCP server definitions. Each server is a TOML 
 3. Restart and re-sling:
 
        gc restart
-       gc sling <rig>/factory.planner "Plan <another feature>" \
+       gc sling planner "Plan <another feature>" \
          --on mol-feature-intake
 
 4. Compare the two plan artifacts. The second plan should reference specific node:test API details (assert.strictEqual, describe blocks) that came from Context7 — not generic knowledge.

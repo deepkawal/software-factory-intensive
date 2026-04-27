@@ -65,7 +65,7 @@ gc doctor
 ## 4. Start the Formula
 
 ```bash
-gc sling <rig>/factory.planner \
+gc sling planner \
   "Add a multiply operation: multiply(a, b) returns a*b" \
   --on mol-release-delivery
 ```
@@ -160,7 +160,7 @@ explicitly instead of inventing one.
 
 ## Exit Criteria
 
-- The run started with one `gc sling <rig>/factory.planner ... --on mol-release-delivery`.
+- The run started with one `gc sling planner ... --on mol-release-delivery`.
 - No stage labels or manual downstream beads were used.
 - All seven agents received and completed their formula steps.
 - The release gate includes an explicit verdict backed by validation and review evidence.

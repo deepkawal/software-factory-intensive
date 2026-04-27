@@ -14,7 +14,7 @@ cd my-factory
 gc --rig <rig> import remove factory
 gc --rig <rig> import add ../packs/lessons/L4 --name factory
 gc restart
-gc sling <rig>/factory.planner \
+gc sling planner \
   "Add a clamp operation: clamp(x, lo, hi) returns x bounded to [lo, hi]" \
   --on mol-delivery-review
 ```

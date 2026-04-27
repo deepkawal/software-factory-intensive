@@ -47,7 +47,7 @@ gc --rig <rig> import add ../packs/lessons/L2 --name factory
 The lab starts from one command:
 
 ```bash
-gc sling <rig>/factory.planner "Plan the loyalty points feature for Fired Up Pizza" --on mol-feature-intake
+gc sling planner "Plan the loyalty points feature for Fired Up Pizza" --on mol-feature-intake
 ```
 
 Use `gc events --follow`, `gc graph <root-bead-id>`, and

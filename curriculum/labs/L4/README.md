@@ -65,7 +65,7 @@ gc doctor
 ## 4. Start the Formula
 
 ```bash
-gc sling <rig>/factory.planner \
+gc sling planner \
   "Add a clamp operation: clamp(x, lo, hi) returns x bounded to [lo, hi]" \
   --on mol-delivery-review
 ```
@@ -147,7 +147,7 @@ Use standards like these:
 Then re-sling with a different feature:
 
 ```bash
-gc sling <rig>/factory.planner \
+gc sling planner \
   "Add a modulo operation: mod(a, b) returns a%b" \
   --on mol-delivery-review
 ```
@@ -161,7 +161,7 @@ If the manifest change produced no visible difference, the reviewer or release-g
 
 ## Exit Criteria
 
-- The run started with one `gc sling <rig>/factory.planner ... --on mol-delivery-review`.
+- The run started with one `gc sling planner ... --on mol-delivery-review`.
 - No stage labels or manual downstream beads were used.
 - All six agents received and completed their formula steps.
 - The release gate includes an explicit verdict backed by evidence.

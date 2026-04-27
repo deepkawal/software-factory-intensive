@@ -134,10 +134,10 @@ lesson_run() {
   rig_tree_before="$(cd "$WALK_L4_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort)"
   echo "$rig_tree_before" > "$WALK_L4_SCRATCH/rig-tree-before.txt"
 
-  sling_out="$(cd "$WALK_L4_FACTORY" && gc sling rig/factory.planner \
+  sling_out="$(cd "$WALK_L4_FACTORY" && gc sling planner \
     "Add a clamp operation: clamp(x, lo, hi) returns x bounded to [lo, hi]" \
     --on mol-delivery-review 2>&1)"
-  log "gc sling rig/factory.planner --on mol-delivery-review:"
+  log "gc sling planner --on mol-delivery-review:"
   echo "$sling_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
   if ! echo "$sling_out" | grep -q 'Attached workflow'; then
     step_fail "gc sling did not report a routed formula run"
@@ -258,7 +258,7 @@ MANIFEST
   (cd "$WALK_L4_RIG" && git add -A && git commit -qm "add project manifest with review standards" >/dev/null 2>&1) || true
 
   local sling2_out
-  sling2_out="$(cd "$WALK_L4_FACTORY" && gc sling rig/factory.planner \
+  sling2_out="$(cd "$WALK_L4_FACTORY" && gc sling planner \
     "Add a modulo operation: mod(a, b) returns a%b" \
     --on mol-delivery-review 2>&1)"
   log "manifest proof re-sling:"

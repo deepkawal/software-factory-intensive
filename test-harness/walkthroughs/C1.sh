@@ -134,10 +134,10 @@ lesson_run() {
   rig_tree_before="$(cd "$WALK_C1_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort)"
   echo "$rig_tree_before" > "$WALK_C1_SCRATCH/rig-tree-before.txt"
 
-  sling_out="$(cd "$WALK_C1_FACTORY" && gc sling rig/factory.planner \
+  sling_out="$(cd "$WALK_C1_FACTORY" && gc sling planner \
     "Add a multiply operation: multiply(a, b) returns a*b" \
     --on mol-release-delivery 2>&1)"
-  log "gc sling rig/factory.planner --on mol-release-delivery:"
+  log "gc sling planner --on mol-release-delivery:"
   echo "$sling_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
   if ! echo "$sling_out" | grep -q 'Attached workflow'; then
     step_fail "gc sling did not report a routed formula run"

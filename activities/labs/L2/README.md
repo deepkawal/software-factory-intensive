@@ -46,7 +46,7 @@ gc --rig <rig> import add ../packs/lessons/L2 --name factory
 cd ../../../my-factory
 gc restart
 gc doctor
-gc sling <rig>/factory.planner "Plan the loyalty points feature for Fired Up Pizza" --on mol-feature-intake
+gc sling planner "Plan the loyalty points feature for Fired Up Pizza" --on mol-feature-intake
 gc events --follow
 ```
 

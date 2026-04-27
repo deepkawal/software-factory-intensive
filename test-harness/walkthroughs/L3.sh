@@ -134,10 +134,10 @@ lesson_run() {
   rig_tree_before="$(cd "$WALK_L3_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort)"
   echo "$rig_tree_before" > "$WALK_L3_SCRATCH/rig-tree-before.txt"
 
-  sling_out="$(cd "$WALK_L3_FACTORY" && gc sling rig/factory.planner \
+  sling_out="$(cd "$WALK_L3_FACTORY" && gc sling planner \
     "Add a percent operation: percent(whole, fraction) returns whole*fraction/100" \
     --on mol-feature-delivery 2>&1)"
-  log "gc sling rig/factory.planner --on mol-feature-delivery:"
+  log "gc sling planner --on mol-feature-delivery:"
   echo "$sling_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
   if ! echo "$sling_out" | grep -q 'Attached workflow'; then
     step_fail "gc sling did not report a routed formula run"
@@ -241,7 +241,7 @@ SKILL
   pre_resling_commit_count="$(cd "$WALK_L3_RIG" && git log --all --oneline | wc -l | tr -d ' ')"
 
   local sling2_out
-  sling2_out="$(cd "$WALK_L3_FACTORY" && gc sling rig/factory.planner \
+  sling2_out="$(cd "$WALK_L3_FACTORY" && gc sling planner \
     "Add a negate operation: negate(x) returns -x" \
     --on mol-feature-delivery 2>&1)"
   log "config-over-chat re-sling:"

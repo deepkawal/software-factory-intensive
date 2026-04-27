@@ -24,7 +24,7 @@ gc restart
 Start the run:
 
 ```bash
-gc sling <rig>/factory.planner \
+gc sling planner \
   "Add a multiply operation: multiply(a, b) returns a*b" \
   --on mol-release-delivery
 ```

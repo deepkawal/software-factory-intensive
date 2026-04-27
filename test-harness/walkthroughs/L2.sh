@@ -5,7 +5,7 @@
 # Commands exercised:
 #   - set the factory import through the city pack
 #   - sync the existing rig's `factory` import
-#   - gc sling <rig>/factory.planner ... --on mol-feature-intake
+#   - gc sling planner ... --on mol-feature-intake
 #   - observability: gc events, gc session list, gc graph, bd list, bd show
 #   - config-over-chat: edit planner prompt, re-sling, verify second artifact
 #
@@ -126,10 +126,10 @@ lesson_run() {
   rig_tree_before="$(cd "$WALK_L2_RIG" && find . -type f -not -path './.git/*' -not -path './.beads/*' | sort)"
   echo "$rig_tree_before" > "$WALK_L2_SCRATCH/rig-tree-before.txt"
 
-  sling_out="$(cd "$WALK_L2_FACTORY" && gc sling rig/factory.planner \
+  sling_out="$(cd "$WALK_L2_FACTORY" && gc sling planner \
     "Plan the memory feature: store, recall, and clear calculator memory" \
     --on mol-feature-intake 2>&1)"
-  log "gc sling rig/factory.planner --on mol-feature-intake:"
+  log "gc sling planner --on mol-feature-intake:"
   echo "$sling_out" | sed 's/^/    /' | tee -a "$WALK_LOG"
   if ! echo "$sling_out" | grep -q 'Attached workflow'; then
     step_fail "gc sling did not report a routed formula run"
@@ -211,7 +211,7 @@ MCP
     || { stop_event_stream; fail "supervisor unresponsive after config-over-chat restart"; }
 
   local sling2_out
-  sling2_out="$(cd "$WALK_L2_FACTORY" && gc sling rig/factory.planner \
+  sling2_out="$(cd "$WALK_L2_FACTORY" && gc sling planner \
     "Plan the undo/redo history feature" \
     --on mol-feature-intake 2>&1)"
   log "config-over-chat re-sling:"

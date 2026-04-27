@@ -14,7 +14,7 @@ cd my-factory
 gc --rig <rig> import remove factory
 gc --rig <rig> import add ../packs/lessons/L3 --name factory
 gc restart
-gc sling <rig>/factory.planner \
+gc sling planner \
   "Add a percent operation: percent(whole, fraction) returns whole*fraction/100" \
   --on mol-feature-delivery
 ```

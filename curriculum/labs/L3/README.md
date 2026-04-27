@@ -93,7 +93,7 @@ gc rig list
 ## 4. Start the Formula
 
 ```bash
-gc sling <rig>/factory.planner \
+gc sling planner \
   "Add a percent operation: percent(whole, fraction) returns whole*fraction/100" \
   --on mol-feature-delivery
 ```
@@ -177,7 +177,7 @@ Packs have a `skills/` directory. Each skill is a subdirectory with a `SKILL.md`
 3. Restart and re-sling with a different feature:
 
        gc restart
-       gc sling <rig>/factory.planner "Add a <different feature>" \
+       gc sling planner "Add a <different feature>" \
          --on mol-feature-delivery
 
 4. Compare the builder's test code from the two commits. The second commit should use `assert.strictEqual` (not `assert.equal`), `describe()` blocks, and explicit edge case tests — because the skill told it to.
@@ -186,7 +186,7 @@ In L2 you added an MCP (external data). Here you added a skill (internal rules).
 
 ## Exit Criteria
 
-- The run started with one `gc sling <rig>/factory.planner ... --on mol-feature-delivery`.
+- The run started with one `gc sling planner ... --on mol-feature-delivery`.
 - No stage labels or manual downstream beads were used.
 - The graph routed all four roles.
 - The builder committed the implementation and tests.
