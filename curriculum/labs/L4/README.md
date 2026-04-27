@@ -9,7 +9,7 @@
 L4 keeps the same process shape as L3 and adds two downstream evidence steps:
 
 ```text
-plan -> architecture -> design -> build -> review -> release-check
+plan -> architecture -> design -> build -> review -> release gate
 ```
 
 The factory pack is selected in `my-factory/pack.toml`:
@@ -111,24 +111,48 @@ Expected outputs:
 - review report with severity-labelled findings
 - release gate with a clear `PASS` or `FAIL`
 
-## 7. Prove the Manifest is Load-Bearing
+A complete L4 run should produce artifacts with these sections:
 
-Before this step, flesh out `my-factory/PROJECT_MANIFEST.md`:
+| Artifact | Required sections |
+|---|---|
+| Plan | Goal, User Stories, Acceptance Criteria, Scope Boundary, Dependencies, Open Questions, Handoff |
+| Architecture | Context, Options Considered, Decision, Consequences, Risks, References |
+| Design | Interface, Behavior, Edge Cases, Test Plan, Build Notes, References |
+| Review | Verdict, Summary, Findings, Test Evidence, Recommendation, References |
+| Release gate | Verdict, Required Checks, Evidence, Risks, Decision Notes, References |
+
+For the example above, the feature adds `clamp(x, lo, hi)` and `npm test`
+should show 8 tests, 8 passing.
+
+## 7. Prove the manifest is load-bearing
+
+Before this step, add project standards to your project rig's
+`docs/PROJECT_MANIFEST.md`:
 
 - Add at least 4 Review Standards with checkable rules and severity mapping
 - Add at least 6 Release Criteria with binary PASS/FAIL gates and evidence sources
 
-Then re-sling with a new feature:
+Use standards like these:
+
+| Review Standard | Severity |
+|---|---|
+| All exported functions must have JSDoc comments | Medium |
+| No hardcoded credentials or secrets | Critical |
+| All error paths must be handled explicitly | High |
+| New public functions must have corresponding test cases | High |
+
+Then re-sling with a different feature:
 
 ```bash
 gc sling <rig>/factory.planner \
-  "Add a <different feature>" --on mol-delivery-review
+  "Add a modulo operation: mod(a, b) returns a%b" \
+  --on mol-delivery-review
 ```
 
-Compare the review and release-gate artifacts from this run to the previous run:
+Compare the second review artifact to the first one:
 
 - The reviewer should cite your Review Standards by name
-- The release gate should evaluate each Release Criterion individually
+- The findings should tie back to concrete standards such as JSDoc, testing, error paths, or credential handling
 
 If the manifest change produced no visible difference, the reviewer or release-gate prompt needs to reference the manifest more explicitly — which is itself a W4 feedback rule.
 

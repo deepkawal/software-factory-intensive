@@ -136,19 +136,29 @@ rg -ln 'includes = \[|gc service restart' curriculum/ -g '*.md'
 
 ---
 
-## 10. Walkthrough harness: L1 intentionally skipped
+## 10. L1 intentionally skipped in automated coverage
 
-`test-harness/walkthroughs/` covers `my-factory.sh` and `L2.sh` live end-to-end. An `L1.sh` walkthrough is intentionally NOT planned. L1's deliverables are prose-only student artifacts:
+The automated lesson coverage starts after students have produced their first
+project-specific prose artifacts. L1's deliverables are prose-only student
+artifacts:
 
 - `activities/labs/L1/CLAUDE.md` — filled in by the student for their own project
 - `activities/labs/L1/DECISIONS.md` — log of rule edits the student makes
 - `my-factory/PROJECT_MANIFEST.md` — the student's project manifest
 
-A walkthrough for L1 would either (a) check file-existence — near-zero value since those files come from the student's keyboard, not the factory, or (b) spin up an agent to hallucinate these files for the bundled hello-world rig — cargo-cult work that doesn't resemble the real lesson.
+A runnable check for L1 would either (a) check file existence, which has little
+value because those files come from the student's keyboard, or (b) ask an agent
+to fabricate those files for a toy rig, which does not resemble the real lesson.
 
-L1's only downstream consumer is the presence of a `CLAUDE.md` that sets project rules for later labs. The walkthrough harness's bundled rig (`test-harness/tutorial-walkthrough-rig/`) ships its own `CLAUDE.md`, which is what the Architect/Planner read during `my-factory.sh` and `L2.sh`. So L2+ don't need an L1 walkthrough to establish their inputs.
+L1's only downstream consumer is the presence of a `CLAUDE.md` that sets
+project rules for later labs. The bundled fixture already has its own
+`CLAUDE.md`, so later automated checks do not need an L1 run to establish their
+inputs.
 
-If a future decision makes sense to add L1 coverage, the shape would likely be: assert the student's CLAUDE.md/DECISIONS.md/PROJECT_MANIFEST.md exist at the expected paths with non-trivial content, as a precondition check rather than a walkthrough. Not a priority for v1 handoff.
+If a future decision makes sense to add L1 coverage, the shape would likely be:
+assert the student's CLAUDE.md/DECISIONS.md/PROJECT_MANIFEST.md exist at the
+expected paths with non-trivial content as a precondition check. Not a priority
+for v1 handoff.
 
 ---
 
@@ -166,32 +176,38 @@ rg -n 'gc watch|gc orchestrate|gc session stop' -g '*.md' -g '!plans/**' -g '!WO
 rg -n 'gc service restart' -g '*.md' -g '!plans/**' -g '!WORKSHOP_AUTHOR_NOTES.md' -g '!curriculum/**'
 ```
 
-Plus the full harness:
+Plus the full automated check suite:
 
 ```bash
-bash test-harness/migration-check.sh
-bash test-harness/behavioral-smoke.sh
-bash test-harness/tutorial-check.sh
+run the repository migration check
+run the repository smoke check
+run the repository tutorial check
 ```
 
 ---
 
-## 12. Walkthrough harness: W1/W2/W3/W4 intentionally skipped
+## 12. W1/W2/W3/W4 intentionally skipped in automated coverage
 
-The walkthrough harness (`test-harness/walkthroughs/`) targets labs, not workshops. Workshops W1–W4 are author-led teaching sessions whose exit criteria are knowledge/comprehension, not runnable artifacts that a harness can check:
+The automated coverage targets labs, not workshops. Workshops W1-W4 are
+author-led teaching sessions whose exit criteria are knowledge and
+comprehension, not runnable artifacts that a check can inspect:
 
-- **W1 (Workflow Cards):** exit criterion is the student internalising the 8 card shapes. Artifact-wise it produces a filled-in workflow card per agent — prose authored by the student, not by the factory. A harness would only be able to file-existence-check those cards, which is near-zero value.
+- **W1 (Workflow Cards):** exit criterion is the student internalising the 8 card shapes. Artifact-wise it produces a filled-in workflow card per agent — prose authored by the student, not by the factory. Automated coverage would only be able to file-existence-check those cards, which is near-zero value.
 - **W2 (Factory Wiring):** exit criterion is reading + discussing `activities/workshops/W2/README.md`. No factory state changes; `gc status` would be unchanged pre/post.
 - **W3 (Conventions):** author-led doc walk-through of `packs/workshop/` conventions. No bead flow; nothing new to assert that `migration-check.sh` doesn't already cover.
 - **W4 (Improver + Release-Gate):** teaches the improver loop and release-gate wiring; the live dynamics belong to C1, where they actually run end-to-end against a feature.
 
-The labs (L1–L4 + C1 capstone) are where agent behavior can be observed empirically, so that's where walkthrough coverage lives. L1 is also skipped for the reasons in section 10 above. L2, L3, L4, and C1 are the live-LLM harness targets.
+The labs (L1-L4 + C1 capstone) are where agent behavior can be observed
+empirically. L1 is skipped for the reasons in section 10 above. L2, L3, L4,
+and C1 are the live agent coverage targets.
 
-If a workshop later grows a runnable exercise (e.g. "W3 asks students to add a pack and verify `gc status` reports it"), a workshop walkthrough becomes worthwhile. Until then the skip is the honest choice.
+If a workshop later grows a runnable exercise (for example, "W3 asks students
+to add a pack and verify `gc status` reports it"), automated coverage becomes
+worthwhile. Until then the skip is the honest choice.
 
 ---
 
-## 13. Walkthrough harness: gc 0.15.2 `gc rig add` path-canonicalization bug
+## 13. gc 0.15.2 `gc rig add` path-canonicalization bug
 
 On gc 0.15.2, running `gc rig add` right after `gc register` from a working directory under `/tmp/...` fails deterministically:
 
@@ -204,7 +220,10 @@ gc rig add: bead store: exec beads start: could not acquire dolt start lock
 
 Verified by running `gc dolt-state probe-managed --city /tmp/X --port <running-port>`: it correctly sees the dolt process but reports `port_holder_owned false` purely because of the `/tmp` vs `/private/tmp` prefix. Using the canonical `/private/tmp/...` cwd throughout makes `gc rig add` succeed with the existing dolt still running and serving beads (which is what we want — dolt *is* beads storage).
 
-**Fix applied in the harness:** `tutorial-walkthrough.sh` resolves `TUTORIAL_SCRATCH_ROOT` through `pwd -P` so every per-lesson scratch path is canonical before `gc register` or `gc rig add` ever see it. No dolt killing, no respawn dance. Dolt stays up across the whole run.
+**Fix applied in automated coverage:** scratch roots are resolved through
+`pwd -P` so every per-lesson scratch path is canonical before `gc register` or
+`gc rig add` ever see it. No dolt killing, no respawn dance. Dolt stays up
+across the whole run.
 
 **Student-facing impact:** Any student whose `my-factory/` lives under a symlinked path (`/tmp/...`, or a project checkout under a `~` that resolves through a symlink) will hit this during L2 onward. The lab READMEs should either tell students to `cd "$(pwd -P)"` before `gc register`, or the upstream gc fix should canonicalize in `verify_our_server` / the dolt-state probe. Track at `workshop:gc-rig-add-path-canonicalization`.
 
@@ -221,7 +240,8 @@ Remove this section once gc's rig-add canonicalizes paths before the ownership c
 
 Each pipeline stage gets its own fresh bead. Beads are not meant to be re-slung — each one represents a discrete unit of work for a specific agent, and handoff happens by creating a new bead for the next agent.
 
-Validated live end-to-end via `test-harness/walkthroughs/L3.sh` on gc 0.15.2, Planner→Architect→Designer→Builder with tests green:
+Validated live end-to-end on gc 0.15.2, Planner->Architect->Designer->Builder
+with tests green:
 
 ```bash
 # Root bead starts the pipeline.
@@ -257,9 +277,12 @@ The canonical `bd create` flag name is NOT what several curriculum READMEs used 
 
 Fix status: swept in this pass. Activity-side READMEs (`activities/labs/L{2,3,4}/`, `activities/capstone/C1/`) and curriculum-side READMEs (`curriculum/labs/L{2,3,4}/`, `curriculum/capstone/C1/`, `curriculum/workshops/W3/`) all corrected. If a new curriculum file lands with either wrong form, the greps in §9 will catch it.
 
-### Harness reuses student commands verbatim
+### Automated coverage reuses student commands verbatim
 
-The walkthrough harness calls `stage_bead_create` (in `test-harness/walkthroughs/_common.sh`) which wraps exactly `bd create --title "..." --labels <label>` — no `--deps`. The harness and the READMEs run the same command shape — when the harness passes, the student can copy the same command sequence into their factory and succeed.
+The automated coverage uses exactly `bd create --title "..." --labels <label>`
+with no `--deps`. The coverage and the READMEs use the same command shape, so
+when the check passes, the student can copy the same sequence into their
+factory and succeed.
 
 ---
 
@@ -275,6 +298,9 @@ The prompt text was in the session's input buffer, but never submitted. "LAST AC
 
 Root cause appears to be a race between the Enter keystroke `gc sling` injects via tmux and Claude Code's welcome-screen animation — if Enter arrives before the input area is ready to accept it, it gets dropped, and the session sits forever with a typed-but-not-submitted prompt.
 
-**Workaround in the harness:** `sling_and_nudge` in `test-harness/walkthroughs/_common.sh` passes `--nudge` to `gc sling`, which invokes the runtime provider's nudge path after routing. That path drives input submission independently of the broken tmux keystroke path, so the session starts processing regardless of whether the initial Enter was dropped.
+**Workaround in automated coverage:** pass `--nudge` to `gc sling`, which
+invokes the runtime provider's nudge path after routing. That path drives input
+submission independently of the broken tmux keystroke path, so the session
+starts processing regardless of whether the initial Enter was dropped.
 
 **Student-facing guidance:** the activity READMEs for L2/L3/L4/C1 each have a "When an agent seems stuck" section that walks through the symptoms (no active session, bead assignee set, no artifact) and the recovery command sequence. See those README sections directly — students don't need to read this file to unstick themselves. Track upstream fix at `workshop:gc-sling-enter-race`; once gc submits Enter reliably the `--nudge` flag is no longer load-bearing.

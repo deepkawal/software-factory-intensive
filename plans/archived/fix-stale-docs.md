@@ -2,7 +2,7 @@
 
 ## Context
 
-The Pack v1 → v2 migration on branch `csells/port-to-packs-v2` landed with correct TOML (`gc doctor` on a fresh clone + templates reports **33 passed, 12 warnings, 2 failed**). The two failures — `system-formulas` (cleared by `gc doctor --fix`) and `beads-store` (cleared by `chmod 700 .beads` + `gc start` running dolt) — are expected pre-fixup state. `scripts/migration-check.sh` and `scripts/behavioral-smoke.sh` both pass. Schema, agent/command/doctor/order/formula layouts, and import syntax check out against `~/temp/gascity` source and installed `gc 0.15.0`.
+The Pack v1 → v2 migration on branch `csells/port-to-packs-v2` landed with correct TOML (`gc doctor` on a fresh clone + templates reports **33 passed, 12 warnings, 2 failed**). The two failures — `system-formulas` (cleared by `gc doctor --fix`) and `beads-store` (cleared by `chmod 700 .beads` + `gc start` running dolt) — are expected pre-fixup state. The migration and smoke checks both pass. Schema, agent/command/doctor/order/formula layouts, and import syntax check out against `~/temp/gascity` source and installed `gc 0.15.0`.
 
 The **docs** carry three classes of bugs:
 
@@ -223,7 +223,7 @@ Run from repo root after all edits. All greps use `rg -n` (ripgrep) with `-g` ex
    ```
    Output must match the rewritten tree in `packs/workshop/README.md`.
 
-6. **Existing harness** — `bash test-harness/tutorial-check.sh` still passes all 3 lessons; `bash test-harness/migration-check.sh` and `bash test-harness/behavioral-smoke.sh` still pass.
+6. **Existing checks** — the tutorial, migration, and smoke checks still pass.
 
 7. **Workshop-author notes file** — `WORKSHOP_AUTHOR_NOTES.md` exists at repo root. Curriculum file list in it matches current grep output.
 

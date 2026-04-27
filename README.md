@@ -13,7 +13,7 @@ brew install gastownhall/gascity/gascity
 gc version
 ```
 
-You also need a CLI coding agent installed and authenticated. The walkthrough harness currently exercises Claude Code, but the lesson content is written around Gas City concepts rather than one provider.
+You also need a CLI coding agent installed and authenticated. The lesson content is written around Gas City concepts rather than one provider.
 
 Bring a real project or use the bundled fixture/reference material. Before the first lab, write a short project overview from [`curriculum/PROJECT_OVERVIEW_TEMPLATE.md`](curriculum/PROJECT_OVERVIEW_TEMPLATE.md).
 
@@ -41,8 +41,7 @@ software-factory-intensive/
 │   └── workshop/               # optional service-integration helpers
 ├── curriculum/                 # long-form walkthroughs
 ├── activities/                 # student deliverables and short instructions
-├── reference-project/          # example project artifacts
-└── test-harness/               # lint, dry-run, and live walkthrough tests
+└── reference-project/          # example project artifacts
 ```
 
 ## Lesson Packs

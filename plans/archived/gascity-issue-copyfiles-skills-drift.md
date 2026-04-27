@@ -8,7 +8,7 @@ Root cause: `stageHookFiles` in `cmd/gc/cmd_start.go` appends a `Probed: true` C
 
 This cannot self-resolve: every respawn stores a hash *before* the PreStart writes, and the PreStart always writes *after*. It's also redundant — skill drift is already covered by `FingerprintExtra["skills:*"]` entries populated by `mergeSkillFingerprintEntries` a few lines later (`template_resolve.go:383`).
 
-This is a regression vs v1.0-rc1; the walkthrough test harness in the Actual Software Factory Intensive repo passed end-to-end on -rc1 (commit `a4d0542`) and fails on 1.0.1 100% of the time.
+This is a regression vs v1.0-rc1; the Actual Software Factory Intensive live lesson check passed end-to-end on -rc1 (commit `a4d0542`) and fails on 1.0.1 100% of the time.
 
 Related prior fix: `c4bb343d` ("fix: cache last-good skill catalog to stop FPExtra drift oscillation") landed Apr 19 and solved the same class of bug in `FPExtra`; the drift has since migrated to `CopyFiles` via the new skills CopyEntry in `stageHookFiles`.
 
@@ -50,16 +50,16 @@ So the hash function is fine. It's the input (the directory content at reconcile
 
 ### 4. It's not walkthrough-specific
 
-The same log on this host shows drift for architect sessions in completely unrelated cities (`/private/tmp/probe/`, `/private/tmp/probe2/`, `/private/tmp/probe3/`, as well as our `sfi-tutorial-walkthrough/*`). Every architect session drifts — regardless of city shape.
+The same log on this host shows drift for architect sessions in completely unrelated scratch cities. Every architect session drifts — regardless of city shape.
 
 ## Repro
 
-Any tmux-backed session where `workDir != scopeRoot` and the agent has assigned skills is sufficient. The SFI walkthrough harness below is a deterministic repro:
+Any tmux-backed session where `workDir != scopeRoot` and the agent has assigned skills is sufficient. The SFI live lesson check below is a deterministic repro:
 
 ```bash
 git clone https://github.com/gastownhall/software-factory-intensive
 cd software-factory-intensive
-TUTORIAL_WALKTHROUGH_KEEP_SCRATCH=1 bash test-harness/tutorial-walkthrough.sh my-factory
+run the retained-scratch live lesson check for my-factory
 ```
 
 Observe in `~/.gc/supervisor.log`:
@@ -122,7 +122,7 @@ Compounding: skill drift is already tracked by `FingerprintExtra["skills:*"]` en
 
 ## Recommended fix
 
-**Remove the skills CopyEntry from `stageHookFiles`.** Skill drift detection belongs entirely to `FPExtra["skills:*"]`, which is populated at the same template-resolve callsite and is robust against the write-order race because its inputs are the catalog snapshot, not the on-disk materialised tree.
+**Remove the skills CopyEntry from `stageHookFiles`.** Skill drift detection belongs entirely to `FPExtra["skills:*"]`, which is populated at the same template-resolve callsite and is robust against the write-order race because its inputs are the catalog state, not the on-disk materialised tree.
 
 ### Patch
 
@@ -246,15 +246,15 @@ func TestReconcilerNoConfigDriftAfterStage2Materialize(t *testing.T) {
 }
 ```
 
-### End-to-end repro from SFI harness (post-fix gate)
+### End-to-end repro from SFI live lesson check (post-fix gate)
 
-After patching, verify against the SFI walkthrough harness (exercises the exact production shape: rig-scoped agent + per-agent workDir + assigned skills):
+After patching, verify against the SFI live lesson check (exercises the exact production shape: rig-scoped agent + per-agent workDir + assigned skills):
 
 ```bash
 # Before: my-factory loops forever on config-drift.
 # After: completes within ~10 minutes.
 cd software-factory-intensive
-bash test-harness/tutorial-walkthrough.sh my-factory
+run the live lesson check for my-factory
 ```
 
 Pass criterion: the `rig-<beadID>` bead produced by the walkthrough's `bd create` gets picked up by the architect session, handed off with a `needs-plan` / `needs-design` / `ready-to-build` child bead label, and `~/.gc/supervisor.log` contains zero `config-drift ... CopyFiles` lines for the run.
@@ -281,9 +281,9 @@ Zero of the 5 workshop lessons (`my-factory`, `L2`, `L3`, `L4`, `C1`) run end-to
 
 Evidence that the drift is not workshop-specific:
 
-- `~/.gc/supervisor.log` on this host shows `config-drift` on the architect session in multiple unrelated cities: `/private/tmp/probe/factory/`, `/private/tmp/probe2/factory/`, `/private/tmp/probe3/factory/`, plus every `/private/tmp/sfi-tutorial-walkthrough/<run_id>/` scratch. Any new session with the shape above drifts.
+- `~/.gc/supervisor.log` on this host shows `config-drift` on the architect session in multiple unrelated scratch cities. Any new session with the shape above drifts.
 - The prior FPExtra drift fix (`c4bb343d`, Apr 19) solved the same class of bug in a different field; every workshop run after `c4bb343d` but before a CopyFiles-side fix will fail the same way.
 
-The workshop dispatcher (`test-harness/tutorial-walkthrough.sh`) halts the chain on first failure, so `my-factory L2 L3 L4 C1` fails at `my-factory` and the later lessons never attempt their bodies. Running lessons in isolation doesn't help either — each lesson's `lesson_prerequisites_check` requires state from the prior lesson's chain (rig, factory, bead IDs produced by real agent handoffs), which the drift loop prevents from being produced.
+The workshop dispatcher halts the chain on first failure, so `my-factory L2 L3 L4 C1` fails at `my-factory` and the later lessons never attempt their bodies. Running lessons in isolation doesn't help either because each lesson requires state from the prior lesson's chain (rig, factory, bead IDs produced by real agent handoffs), which the drift loop prevents from being produced.
 
 The `a4d0542` commit ("Adapt walkthroughs to Gas City 1.0-rc1 launchd supervisor") in the SFI repo confirms all 5 lessons passed on v1.0-rc1. The regression window is `v1.0-rc1..v1.0.1`.

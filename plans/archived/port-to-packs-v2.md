@@ -20,8 +20,8 @@ for example `packs/lessons/L2` and `name = "sfi-l2"`. Runtime definitions
 inside the pack must not. Agent prompts, formulas, doctors, commands, overlays,
 and pack READMEs should read like a small real-world factory that can be reused
 outside the workshop. Lesson numbers, lab language, workshop framing, and
-student/facilitator instructions belong only in tutorial Markdown and the test
-harness.
+student/facilitator instructions belong only in tutorial Markdown and internal
+checks.
 
 ## Decision Summary
 
@@ -387,7 +387,7 @@ It is complete only when the repository's runnable materials behave that way.
 
 The migration must update all active file families. "Active" includes every
 workshop, lab, capstone, curriculum mirror, activity page, reference artifact,
-pack, factory config, and test harness that a student or instructor can reach
+pack, factory config, and internal check that a student or instructor can reach
 from the main repo path.
 
 - canonical packs under `packs/`
@@ -400,9 +400,9 @@ from the main repo path.
 - `my-factory/*.template`
 - all student-facing Markdown in `README.md`, `activities/`, `curriculum/`,
   `my-factory/`, `packs/`, and `reference-project/`
-- dry-run/static validation scripts in `test-harness/`
-- walkthrough scripts in `test-harness/walkthroughs/`
-- harness documentation in `test-harness/README.md`
+- dry-run/static validation scripts
+- live lesson check scripts
+- internal check documentation
 
 Anything left on the old label-dispatch model must be removed from active repo
 paths. Git history is the archive. A stale pack, script, manifest, template, or
@@ -435,13 +435,12 @@ The current inventory shows stale behavior in these concrete areas:
 - `curriculum/**/PROMPT.md`
 - `reference-project/**`
 - `activites/**/packs/**`
-- `test-harness/README.md`
-- `test-harness/migration-check.sh`
-- `test-harness/tutorial-check.sh`
-- `test-harness/tutorial-walkthrough.sh`
-- `test-harness/behavioral-smoke.sh`
-- `test-harness/walkthroughs/_common.sh`
-- `test-harness/walkthroughs/*.sh`
+- internal check documentation
+- migration check script
+- tutorial check script
+- live lesson check script
+- smoke check script
+- live lesson helper scripts
 
 The implementation task is to update these files or explicitly remove them from
 the active student path. The plan should not leave any active lesson depending
@@ -720,20 +719,20 @@ Required doc updates:
 - `reference-project/**`: update project examples, reports, and workflow
   artifacts so they reflect formula-native flow and the C1 formula output
   contract
-- `test-harness/README.md`: document the new validation model and walkthrough
+- internal check documentation: document the new validation model and walkthrough
   expectations
 
 The active content surface should not keep runnable examples of the old
 label/manual pack model. Use git history for that material.
 
-## Dry-Run And Walkthrough Harness Work
+## Dry-Run And Live Lesson Check Work
 
-The harness must test the content architecture, not preserve the old journey.
+The checks must test the content architecture, not preserve the old journey.
 
 ### Dry-run/static checks
 
-Add `test-harness/lesson-pack-lint.py` as the executable architecture check.
-It should read `test-harness/lesson-contracts/*.toml` and produce actionable
+Add the lesson pack linter as the executable architecture check.
+It should read the lesson contracts and produce actionable
 curriculum findings for:
 
 - missing or non-self-contained lesson packs
@@ -750,9 +749,9 @@ curriculum findings for:
 Use the linter as the red-green migration driver:
 
 ```bash
-test-harness/lesson-pack-lint.py --lesson L2 --no-repo-scan
-test-harness/lesson-pack-lint.py --lesson L2
-test-harness/lesson-pack-lint.py
+run the lesson pack linter for L2 without the repository scan
+run the lesson pack linter for L2
+run the full lesson pack linter
 ```
 
 Update the dry-run checks so they fail when active lesson paths contain:
@@ -793,11 +792,11 @@ The dry-run should also verify positive structure:
 - `my-factory/*.template`, `commands/*/command.toml`, and
   `doctor/*/doctor.toml` do not preserve stale label/manual wiring
 
-### Walkthrough scripts
+### Live Lesson Scripts
 
-Rewrite walkthrough helpers around formulas rather than labels.
+Rewrite live lesson helpers around formulas rather than labels.
 
-`test-harness/walkthroughs/_common.sh` should stop modeling stages as labels.
+The shared live lesson helper should stop modeling stages as labels.
 Replace helpers such as `stage_bead_create` and `run_stage <label> ...` with
 helpers that:
 
@@ -827,17 +826,17 @@ The helpers should edit only the root factory files needed by the lesson:
 for `[defaults.rig.imports.factory]`, plus the selected existing rig's
 `[rigs.imports.factory]` entry when switching lessons after rig creation.
 
-Update these walkthroughs:
+Update these live lesson scripts:
 
-- `test-harness/walkthroughs/L2.sh`
-- `test-harness/walkthroughs/L3.sh`
-- `test-harness/walkthroughs/L4.sh`
-- `test-harness/walkthroughs/C1.sh`
-- `test-harness/walkthroughs/my-factory.sh`
+- L2
+- L3
+- L4
+- C1
+- my-factory
 
-The walkthroughs should execute what the lesson docs tell students to execute.
-If a walkthrough needs a hidden setup step, the docs or harness comments must
-make clear that it is test scaffolding, not student workflow.
+The live lesson scripts should execute what the lesson docs tell students to
+execute. If a hidden setup step is required, comments must make clear that it
+is internal scaffolding, not student workflow.
 
 ### Behavioral smoke
 
@@ -1250,8 +1249,8 @@ Current verified state:
 - The student-facing docs for L2, L3, L4, and C1 show the city-wide
   `[defaults.rig.imports.factory]` selection, existing-rig factory import sync,
   and one formula entrypoint `gc sling` command.
-- The walkthrough harness now validates live progress through FormulaV2 graphs
-  with `gc session peek`, `gc graph`, and bead snapshots.
+- The live lesson checks now validate progress through FormulaV2 graphs
+  with `gc session peek`, `gc graph`, and bead state captures.
 - Live walkthroughs have passed individually:
   - L2: plan and architecture artifacts through `mol-feature-intake`
   - L3: plan, architecture, design, implementation commit, and passing tests
@@ -1333,7 +1332,7 @@ Update at the same time:
 - `curriculum/labs/L2/README.md`
 - `curriculum/labs/L2/PROMPT.md`
 - any L2 checkpoint under `activites/`
-- `test-harness/walkthroughs/L2.sh`
+- L2 live lesson script
 - shared walkthrough helpers touched by L2
 
 Remove instructions and tests that require copying shared packs, editing
@@ -1451,17 +1450,17 @@ After lesson packs exist, rewrite or remove student-facing references to:
 - `orchestrator.yaml` as the normal workflow engine
 
 This phase covers `README.md`, `activities/`, `curriculum/`, `my-factory/`,
-`packs/`, `reference-project/`, and `test-harness/README.md`.
+`packs/`, `reference-project/`, and internal check documentation.
 
-### Phase 9: Update Dry-Run And Walkthrough Harness
+### Phase 9: Update Dry-Run And Live Lesson Checks
 
-Rewrite harness expectations to enforce the new architecture:
+Rewrite check expectations to enforce the new architecture:
 
 - static checks fail on old dispatch patterns in active lesson paths
 - dry-run verifies lesson pack shape and formula graph routing
-- walkthrough scripts execute the same commands shown in Markdown
+- live lesson scripts execute the same commands shown in Markdown
 - behavioral smoke proves formula handoff, not label handoff
-- harness docs explain formula-native validation
+- internal check docs explain formula-native validation
 
 ### Phase 10: Clean Checkpoints And Old References
 
@@ -1589,7 +1588,7 @@ Static checks for old workflow patterns:
 
 ```bash
 rg 'gc all wake-downstream|bd ready --label|bd create .*--labels?|needs-plan|needs-architecture|ready-to-build|needs-review|ready-to-ship' \
-  README.md curriculum activities activites my-factory packs reference-project test-harness
+  README.md curriculum activities activites my-factory packs reference-project
 ```
 
 The result should be empty in active student paths.
@@ -1598,7 +1597,7 @@ Static checks for old pack composition:
 
 ```bash
 rg 'packs/all|default_rig_includes|wake-downstream' \
-  README.md curriculum activities activites my-factory packs reference-project test-harness
+  README.md curriculum activities activites my-factory packs reference-project
 ```
 
 Expected result: no active student-path matches.
@@ -1607,7 +1606,7 @@ Static checks for stale PackV2/CLI claims:
 
 ```bash
 rg 'workspace scope|scope = "workspace"|bd dep graph|append_fragments = \["graph-worker"\]' \
-  README.md curriculum activities activites my-factory packs reference-project test-harness
+  README.md curriculum activities activites my-factory packs reference-project
 ```
 
 Expected result: no active student-path matches.
@@ -1694,16 +1693,16 @@ Then verify:
 - no label-scanning handoff command is needed
 - lesson artifacts land where the README says they will
 
-Harness checks after the port:
+Internal checks after the port:
 
 ```bash
-test-harness/migration-check.sh
-test-harness/tutorial-check.sh
-test-harness/tutorial-walkthrough.sh --dry-run
-test-harness/behavioral-smoke.sh
+run the repository migration check
+run the repository tutorial check
+run the live lesson dry run
+run the repository smoke check
 ```
 
-The harness must fail if Markdown, packs, or scripts drift back toward the
+The checks must fail if Markdown, packs, or scripts drift back toward the
 label-dispatch workflow.
 
 ## Out of Scope

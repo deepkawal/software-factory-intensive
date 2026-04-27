@@ -15,7 +15,36 @@ Walkthroughs are the source of truth. READMEs must match what walkthroughs produ
 
 The skill never runs walkthroughs itself. If snapshots are missing or stale, tell the user to run the walkthroughs first.
 
-## Snapshot location
+## Hard Boundary: No Internal Test Leakage
+
+Internal automation and captured output are validation inputs only. They are not
+part of the curriculum narrative.
+
+This skill and `test-harness/**` are private QA tooling, not workshop material.
+They must contain the exact paths, commands, snapshot names, process names, and
+failure modes needed to manage the harness correctly.
+
+When editing student-facing workshop Markdown, including `README.md`,
+`activities/**`, `curriculum/**`, `packs/**`, `my-factory/**`, and
+`reference-project/**`, do not mention:
+
+- `test-harness`
+- walkthrough scripts or the walkthrough harness
+- snapshot files or snapshot directories
+- validation runs, test fixtures, run IDs, scratch paths, or harness-only feature choices
+
+Translate validation evidence into normal workshop language. For example:
+
+- Bad: "The walkthrough snapshots produce these artifact sections."
+- Good: "A complete L4 run should produce artifacts with these sections."
+- Bad: "The walkthrough uses this example."
+- Good: "Use an example like this."
+
+Before reporting validation complete, scan every student-facing Markdown file
+you edited for those banned terms. If any appear, rewrite the prose before
+finishing.
+
+## Snapshot Location
 
 ```
 test-harness/walkthrough-snapshots/
@@ -186,6 +215,7 @@ Snapshots missing for <lesson>. Run the walkthrough first:
   bash test-harness/tutorial-walkthrough.sh <lesson>
 
 Then invoke this skill again.
+
 ```
 
 The walkthroughs automatically save snapshots after each successful run.

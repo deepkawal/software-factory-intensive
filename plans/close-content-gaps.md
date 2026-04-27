@@ -686,12 +686,12 @@ Yes, this closes the gap. Every substantive teaching concept from the original i
 
 ### Runtime continuity (before and after)
 ```bash
-test-harness/lesson-pack-lint.py --lesson L2 --no-repo-scan
-test-harness/lesson-pack-lint.py --lesson L3 --no-repo-scan
-test-harness/lesson-pack-lint.py --lesson L4 --no-repo-scan
-test-harness/lesson-pack-lint.py --lesson C1 --no-repo-scan
-test-harness/migration-check.sh
-test-harness/behavioral-smoke.sh
+run the lesson pack linter for L2 without the repository scan
+run the lesson pack linter for L3 without the repository scan
+run the lesson pack linter for L4 without the repository scan
+run the lesson pack linter for C1 without the repository scan
+run the repository migration check
+run the repository smoke check
 ```
 
 ### No old patterns introduced

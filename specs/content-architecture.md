@@ -519,7 +519,7 @@ gc sling <rig>/factory.planner "Build user profile editing"
 
 Current Gas City copies root default rig imports into a rig when `gc rig add`
 creates that rig. Because students keep the same rig from lesson to lesson, the
-docs and harness must include an existing-rig sync step after changing the
+docs and checks must include an existing-rig sync step after changing the
 active lesson. The synced rig import should match the city-wide factory
 selection:
 
@@ -847,12 +847,12 @@ Add checks that enforce the teaching architecture. The primary static guard is
 the lesson-pack linter:
 
 ```bash
-test-harness/lesson-pack-lint.py --lesson L2 --no-repo-scan
-test-harness/lesson-pack-lint.py --lesson L2
-test-harness/lesson-pack-lint.py
+run the lesson pack linter for L2 without the repository scan
+run the lesson pack linter for L2
+run the full lesson pack linter
 ```
 
-The linter reads `test-harness/lesson-contracts/*.toml` and validates the
+The linter reads the lesson contracts and validates the
 lesson pack shape, FormulaV2 graph, binding-qualified routes, artifact
 contracts, graph-worker prompt sections, root lesson selection, existing-rig
 sync docs, and stale label/manual-pack patterns. Use it as the red-green driver
@@ -887,7 +887,7 @@ Search for stale lesson switching:
 
 ```bash
 rg 'default_rig_includes|workspace scope|scope = "workspace"|bd dep graph|append_fragments = \["graph-worker"\]' \
-  README.md curriculum activities activites my-factory packs reference-project test-harness
+  README.md curriculum activities activites my-factory packs reference-project
 ```
 
 Expected result: no active student-path matches. Historical comparison callouts
