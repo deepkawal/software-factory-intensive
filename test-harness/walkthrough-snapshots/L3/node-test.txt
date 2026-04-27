@@ -1,16 +1,17 @@
-✔ add returns the sum of two numbers (0.738875ms)
-✔ subtract returns the difference of two numbers (0.081167ms)
-✔ percent returns 15% of 200 (0.046708ms)
-✔ percent of zero whole returns 0 (0.047083ms)
-✔ percent with zero fraction returns 0 (0.04625ms)
-✔ percent handles fractional inputs (0.041084ms)
-✔ percent propagates negative values (0.040291ms)
-✔ percent returns NaN for non-numeric input (0.391417ms)
-ℹ tests 8
+✔ add returns the sum of two numbers (0.874875ms)
+✔ subtract returns the difference of two numbers (0.104625ms)
+✔ percent basic percentage (0.058042ms)
+✔ percent zero whole returns zero (0.056417ms)
+✔ percent zero fraction returns zero (0.052875ms)
+✔ percent 100% returns the whole (0.0395ms)
+✔ percent fractional percentage preserved (0.045666ms)
+✔ percent negative whole propagates sign (0.038625ms)
+✔ percent negative fraction propagates sign (0.155125ms)
+ℹ tests 9
 ℹ suites 0
-ℹ pass 8
+ℹ pass 9
 ℹ fail 0
 ℹ cancelled 0
 ℹ skipped 0
 ℹ todo 0
-ℹ duration_ms 95.669791
+ℹ duration_ms 114.236167

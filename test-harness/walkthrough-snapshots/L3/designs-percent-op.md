@@ -2,100 +2,96 @@
 
 ## Interface
 
-Add `percent` to `src/calculator.js` alongside `add` and `subtract`.
+Add one exported function to `src/calculator.js`:
 
 ```js
-function percent(whole, fraction) { ... }
+function percent(whole, fraction) {
+  return whole * fraction / 100;
+}
 
 module.exports = { add, subtract, percent };
 ```
 
-**Parameters:**
-
-| Name       | Type   | Description                          |
-|------------|--------|--------------------------------------|
-| `whole`    | number | The base value                       |
-| `fraction` | number | The percentage to apply (e.g. 15 for 15%) |
-
-**Returns:** `number` — the result of `whole * fraction / 100`.
-
-**Import:** Consumers destructure from the existing module:
-
-```js
-const { percent } = require('../src/calculator');
-```
+- **Name:** `percent`
+- **Parameters:** `whole` (number), `fraction` (number)
+- **Returns:** `number` — the result of `whole * fraction / 100`
+- **Validation:** None. Follows the existing convention — non-numeric inputs
+  produce `NaN` via standard JavaScript arithmetic coercion.
 
 ## Behavior
 
-- `percent(200, 15)` returns `30` (15% of 200).
-- `percent(0, 50)` returns `0` (any percentage of zero is zero).
-- `percent(100, 0)` returns `0` (0% of anything is zero).
-- `percent(99.99, 50)` returns `49.995` (fractional inputs work correctly).
-- `percent(-200, 25)` returns `-50` (negative values propagate naturally).
-- `percent(100, 100)` returns `100` (100% returns the whole).
-- `percent(100, 200)` returns `200` (fractions above 100 are valid).
+| Input                      | Output   | Notes                              |
+|----------------------------|----------|------------------------------------|
+| `percent(200, 15)`         | `30`     | Basic percentage                   |
+| `percent(0, 50)`           | `0`      | Zero whole                         |
+| `percent(200, 0)`          | `0`      | Zero fraction                      |
+| `percent(200, 100)`        | `200`    | 100% returns the whole             |
+| `percent(200, 33.33)`      | `66.66`  | Fractional percentage preserved    |
+| `percent(200, 50)`         | `100`    | Half                               |
+| `percent(1, 1)`            | `0.01`   | Small values                       |
 
-**No input validation.** Non-numeric arguments produce `NaN` via standard JS
-arithmetic, matching the existing behavior of `add` and `subtract`. The
-architect confirmed this approach — no type checks, no coercion, no throws.
+The function is a single arithmetic expression with no branching, rounding, or
+clamping. It delegates entirely to JavaScript's `*` and `/` operators.
 
 ## Edge Cases
 
-| Input                        | Expected | Reason                                   |
-|------------------------------|----------|------------------------------------------|
-| `percent(200, 15)`          | `30`     | Standard percentage calculation          |
-| `percent(0, 50)`            | `0`      | Zero whole                               |
-| `percent(100, 0)`           | `0`      | Zero fraction                            |
-| `percent(99.99, 50)`        | `49.995` | Fractional inputs (exactly representable)|
-| `percent(-200, 25)`         | `-50`    | Negative whole propagates                |
-| `percent(100, -10)`         | `-10`    | Negative fraction propagates             |
-| `percent(100, 200)`         | `200`    | Fraction > 100 is valid                  |
-| `percent('a', 10)`          | `NaN`    | Non-numeric whole, no validation         |
-| `percent(100, undefined)`   | `NaN`    | Missing argument, no validation          |
-| `percent()`                 | `NaN`    | Both args undefined, no validation       |
+Per the architecture decision (Option V1 — no validation), `percent` does not
+guard against unusual inputs. The behavior below follows naturally from the
+formula `whole * fraction / 100`:
 
-No IEEE 754 precision issue arises for the acceptance-criteria values. The
-architecture ADR notes this is acceptable and defers rounding to a future ADR if
-precision guarantees are ever needed.
+| Input                          | Output       | Reason                          |
+|--------------------------------|--------------|---------------------------------|
+| `percent(-200, 15)`           | `-30`        | Negative whole propagates sign  |
+| `percent(200, -15)`           | `-30`        | Negative fraction propagates sign |
+| `percent(-200, -15)`          | `30`         | Double negative yields positive |
+| `percent(Infinity, 50)`       | `Infinity`   | IEEE 754 arithmetic             |
+| `percent(200, Infinity)`      | `Infinity`   | IEEE 754 arithmetic             |
+| `percent(NaN, 50)`            | `NaN`        | NaN propagation                 |
+| `percent(200, NaN)`           | `NaN`        | NaN propagation                 |
+| `percent("200", "15")`        | `30`         | String-to-number coercion by `*` |
+| `percent(undefined, 15)`      | `NaN`        | `undefined * 15` → `NaN`       |
+| `percent()`                   | `NaN`        | Missing args are `undefined`    |
+
+None of these cases require special handling. The builder should not add
+guards, type checks, or early returns.
 
 ## Test Plan
 
-Add tests to `test/calculator.test.js`. Import `percent` in the existing
-destructuring line. Each test follows the project's one-assertion-per-test
-pattern using `node:test` and `node:assert/strict`.
+Add tests to `test/calculator.test.js`. Import `percent` alongside `add` and
+`subtract` from `../src/calculator`. Each test uses `assert.equal` or
+`assert.strictEqual` following the existing pattern.
 
 **Required tests (from acceptance criteria):**
 
-1. `percent(200, 15)` equals `30` — standard case.
-2. `percent(0, 50)` equals `0` — zero whole.
-3. `percent(100, 0)` equals `0` — zero fraction.
-4. `percent(99.99, 50)` equals `49.995` — fractional inputs.
+1. `percent(200, 15)` → `30`
+2. `percent(0, 50)` → `0`
+3. `percent(200, 0)` → `0`
+4. `percent(200, 100)` → `200`
+5. `percent(200, 33.33)` → `66.66`
 
-**Recommended additional tests:**
+**Additional edge-case tests:**
 
-5. `percent(-200, 25)` equals `-50` — negative input.
-6. `percent('a', 10)` is `NaN` — non-numeric input returns NaN.
+6. `percent(-200, 15)` → `-30` (negative whole)
+7. `percent(200, -15)` → `-30` (negative fraction)
 
-All tests must pass via `node --test`.
+Use one `test()` call per assertion, matching the existing style of one
+behavior per test. Test descriptions should follow the pattern
+`'percent <description>'`.
+
+Run with `node --test` and confirm zero failures.
 
 ## Build Notes
 
-**Files to modify:**
+Files to modify:
 
-- `src/calculator.js` — Add the `percent` function and include it in
-  `module.exports`. Place it after `subtract`, before the exports line.
-- `test/calculator.test.js` — Add `percent` to the destructured import on
-  line 3. Add test cases after the existing `subtract` test.
+- **`src/calculator.js`** — Add the `percent` function definition (one line)
+  and add `percent` to the `module.exports` object.
+- **`test/calculator.test.js`** — Add `percent` to the destructured import on
+  line 3. Add 7 new `test()` blocks after the existing `subtract` test.
 
-**Files to inspect (no changes expected):**
+No new files. No dependency changes. No `package.json` changes.
 
-- `package.json` — Verify `"test": "node --test"` is the test script (it is).
-- `CLAUDE.md` — Confirms conventions (CommonJS, `node:test`, one test file per
-  source file).
-
-**Branch:** Create a `feature/percent-op` branch per CLAUDE.md conventions.
-
-**No new files, no new dependencies.**
+The builder should create a `feature/percent-op` branch before committing.
 
 ## References
 
@@ -103,3 +99,4 @@ All tests must pass via `node --test`.
 - Architecture: `docs/architecture/percent-op.md`
 - Source: `src/calculator.js`
 - Tests: `test/calculator.test.js`
+- Project rules: `CLAUDE.md`

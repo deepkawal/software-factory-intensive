@@ -2,83 +2,92 @@
 
 ## Context
 
-The calculator project exposes `add` and `subtract` from a single module
-(`src/calculator.js`). A new `percent(whole, fraction)` function is requested
-that returns `whole * fraction / 100`. The planner asks the architect to decide
-whether `percent` belongs in the existing module or in a new file.
+The feature request asks for a `percent(whole, fraction)` function that returns
+`whole * fraction / 100`. The project is a minimal CommonJS calculator with two
+existing pure functions (`add`, `subtract`) in a single module
+(`src/calculator.js`) and a single test file (`test/calculator.test.js`). There
+are no external dependencies.
 
-The project has zero dependencies, CommonJS modules, and a one-file-per-module
-test convention. There are currently two exported functions.
+The planner raised two open questions for the architect:
+
+1. Should `percent` live in the existing `calculator.js` or in a new module?
+2. Should `percent` validate its inputs, given that the existing functions do not?
 
 ## Options Considered
 
-### Option A — Add `percent` to `src/calculator.js`
+### Option A: Add `percent` to existing `src/calculator.js`
 
-Add the function alongside `add` and `subtract` in the existing module and
-export it from the same `module.exports` object.
+Add the function alongside `add` and `subtract` in the same file and export it
+from the existing `module.exports` object. Tests go in the existing test file.
 
-**Pros:**
-- Follows the established single-module pattern.
-- No new files, no new import paths for consumers.
-- Keeps the project minimal — one source file, one test file.
-- All arithmetic lives in one place; easy to discover.
+| Dimension        | Assessment |
+|------------------|------------|
+| Consistency      | Matches the current one-module, one-test-file pattern exactly. |
+| Discoverability  | All operations are in one place; a single import gets everything. |
+| Change size      | Minimal — a few lines of source and test additions. |
+| Scalability      | If the project grows to dozens of operations the file becomes large, but that is a future concern outside current scope. |
 
-**Cons:**
-- The module grows with each new operation. At scale this could become unwieldy.
-- Unrelated operations share a single file (though all are pure arithmetic).
+### Option B: Create a new `src/percent.js` module
 
-### Option B — Create a new `src/percent.js` module
+Place the function in its own file with a dedicated `test/percent.test.js`.
 
-Place `percent` in its own file with a matching `test/percent.test.js`.
+| Dimension        | Assessment |
+|------------------|------------|
+| Isolation        | Each operation lives in its own module — clean separation. |
+| Consistency      | Breaks the established pattern; `add` and `subtract` would still share one file while `percent` lives alone. |
+| Change size      | Larger — new files, new test file, potential re-export or barrel file to keep imports ergonomic. |
+| Scalability      | Better long-term if operations multiply, but premature for a three-function project. |
 
-**Pros:**
-- Each operation is independently importable.
-- File-level isolation makes diffs and blame cleaner per feature.
+### Input Validation: Option V1 — No validation (follow convention)
 
-**Cons:**
-- Breaks the existing convention without a clear forcing function — three
-  functions across two files is premature splitting.
-- Consumers must know which file to import from.
-- Adds a second source file and a second test file for a single-expression
-  function, increasing surface area for no structural benefit.
+Existing functions pass inputs straight through with no type checks. `percent`
+does the same. Non-numeric inputs produce `NaN` via normal JavaScript
+arithmetic, which is predictable and consistent.
+
+### Input Validation: Option V2 — Add validation to `percent`
+
+Throw or return a sentinel for non-numeric inputs. This is safer in isolation
+but inconsistent with `add` and `subtract`, creating a split contract across the
+module.
 
 ## Decision
 
-**Option A — add `percent` to `src/calculator.js`.**
+**Option A + V1.** Add `percent` directly to `src/calculator.js` with no input
+validation.
 
-Rationale: the project convention is a single arithmetic module. Three small
-pure functions in one file is well within reasonable size. Splitting creates
-import-path fragmentation and file overhead that isn't justified until the
-module grows meaningfully (e.g., 8+ functions or mixed concerns). When that
-threshold is reached, a future ADR can revisit module decomposition.
+Rationale:
 
-The function signature is `percent(whole, fraction)` returning
-`whole * fraction / 100`. No input validation beyond what JavaScript provides
-natively — non-numeric arguments will naturally produce `NaN`, which is the
-standard JS arithmetic behavior and matches how `add` and `subtract` behave
-today. The designer should confirm this in the design spec.
+- The project's explicit convention is "small pure functions" in a shared
+  module. One function does not justify a new file.
+- `CLAUDE.md` states "every new src file needs a matching test file"; avoiding a
+  new source file avoids unnecessary scaffolding.
+- The scope boundary in the plan excludes validation beyond what the formula
+  implies, and the existing functions set the precedent of no validation.
+- Keeping the validation contract uniform avoids surprising callers who expect
+  all calculator operations to behave the same way.
 
 ## Consequences
 
-- `src/calculator.js` exports `{ add, subtract, percent }`.
-- `test/calculator.test.js` gains test cases for `percent` covering the four
-  acceptance-criteria inputs.
-- No new files, no new dependencies, no changes to `add` or `subtract`.
-- Future operations should follow the same pattern until the module warrants
-  decomposition.
+- `src/calculator.js` gains one export (`percent`); `module.exports` grows from
+  two entries to three.
+- `test/calculator.test.js` gains test cases covering the acceptance criteria
+  from the plan.
+- No new files are created. No dependency changes.
+- If the project later adopts input validation, it should be applied uniformly
+  across all operations in a dedicated effort — not introduced piecemeal.
 
 ## Risks
 
-- **Low — module growth:** If many operations are added later, the single file
-  could become large. Mitigated by revisiting when the module exceeds ~8
-  exports.
-- **Low — floating-point precision:** `whole * fraction / 100` can produce
-  IEEE 754 artifacts for some inputs. The plan's acceptance criteria
-  (`percent(99.99, 50) === 49.995`) is representable exactly, so no rounding
-  logic is needed now. If precision guarantees are required later, a dedicated
-  ADR should evaluate fixed-point or rounding strategies.
+- **Module growth:** If many more operations are added, `calculator.js` may
+  become unwieldy. Mitigation: revisit file-per-operation structure when the
+  module exceeds roughly ten functions.
+- **Silent NaN propagation:** Non-numeric inputs produce `NaN` silently.
+  Mitigation: this matches existing behavior; callers already accept this
+  contract. A future validation layer can be added uniformly.
 
 ## References
 
-- Planning artifact: `docs/plans/percent-op.md`
-- Project conventions: `CLAUDE.md`
+- Plan artifact: `docs/plans/percent-op.md`
+- Source: `src/calculator.js`
+- Tests: `test/calculator.test.js`
+- Project rules: `CLAUDE.md`

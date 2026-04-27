@@ -14,7 +14,7 @@ Import the pack into a project rig with the `factory` binding, then run the
 planner through that binding:
 
 ```bash
-gc sling <rig>/factory.planner "Plan loyalty points for Fired Up Pizza"
+gc sling planner "Plan loyalty points for Fired Up Pizza"
 ```
 
 The formula routes work to `factory.planner` and then `factory.architect`.

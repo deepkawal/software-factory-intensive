@@ -32,7 +32,7 @@ gc restart
 Then start the lesson through its documented formula entrypoint, for example:
 
 ```bash
-gc sling <rig>/factory.planner "Add a small feature" --on mol-feature-delivery
+gc sling planner "Add a small feature" --on mol-feature-delivery
 ```
 
 Use `gc events --follow`, `gc session list`, `gc session peek <session-id>`,

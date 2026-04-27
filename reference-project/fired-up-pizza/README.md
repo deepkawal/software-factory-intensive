@@ -34,7 +34,7 @@ gc doctor --fix
 Start an end-to-end run:
 
 ```bash
-gc sling fired-up-pizza/factory.planner \
+gc sling planner \
   "Add customer order history: customers can view prior orders by phone number" \
   --on mol-release-delivery
 ```

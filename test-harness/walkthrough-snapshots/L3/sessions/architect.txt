@@ -1,72 +1,72 @@
-⏺ Bash(bd show rig-g929 2>&1)
-  ⎿  ✓ rig-g929 · Write the feature plan   [● P2 · CLOSED]
+⎿  ◐ rig-afh8 · mol-feature-delivery   [● P2 · IN_PROGRESS]
      Type: task
-     Created: 2026-04-26 · Updated: 2026-04-26
-     … +20 lines (ctrl+o to expand)
+     Created: 2026-04-27 · Started: 2026-04-27 · Updated: 2026-04-27
+     … +25 lines (ctrl+o to expand)
 
-⏺ Bash(gc graph rig-ssl8 2>&1)
-  ⎿  BEAD      TITLE                 STATUS       BLOCKED BY  READY
-     rig-ssl8  mol-feature-delivery  in_progress  -           yes
+  Searched for 2 patterns (ctrl+o to expand)
 
-     1 bead(s): 0 closed, 1 ready, 0 blocked
+⏺ Let me check the source request and the plan artifacts.
 
-⏺ Good. The planner completed and wrote docs/plans/negate.md. Let me read that
-  plan and the project context.
-
-⏺ Bash(bd show rig-8zs 2>&1)
-  ⎿  ○ rig-8zs · Add a negate operation: negate(x) returns -x   [● P2 · OPE
+⏺ Bash(gc bd show rig-5vx 2>&1)
+  ⎿  ○ rig-5vx · Add a negate operation: negate(x) returns -x   [● P2 · OPE
      N]
      Owner: Factory Harness · Type: task
      … +4 lines (ctrl+o to expand)
 
-  Searched for 3 patterns, listed 2 directories (ctrl+o to expand)
+⏺ Bash(gc bd show rig-qldd 2>&1)
+  ⎿  ✓ rig-qldd · Write the feature plan   [● P2 · CLOSED]
+     Type: task
+     Created: 2026-04-27 · Updated: 2026-04-27
+     … +19 lines (ctrl+o to expand)
 
-⏺ Found the project rig at
-  /private/tmp/sfi-tutorial-walkthrough/1777185209-23781/L3/rig/. Let me read
-  the plan and project context.
+  Read 1 file (ctrl+o to expand)
 
-  Searched for 1 pattern, read 4 files, listed 1 directory (ctrl+o to expand)
+⏺ The feature request is "Add a negate operation: negate(x) returns -x" and the
+  plan artifact is docs/plans/negate-op.md. Let me read it along with project
+  context.
 
-⏺ I have all the context. The prior ADR for percent-op established the pattern
-  of co-locating in calculator.js. The module currently has 3 exports. Let me
-  write the architecture artifact.
+  Read 1 file, listed 1 directory (ctrl+o to expand)
 
-⏺ Write(/private/tmp/sfi-tutorial-walkthrough/1777185209-23781/L3/rig/docs/archi
-       tecture/negate.md)
-  ⎿  Wrote 93 lines to ../../../../../rig/docs/architecture/negate.md
+⏺ Let me look at the existing architecture pattern and the source code for full
+  context.
+
+  Read 1 file (ctrl+o to expand)
+
+⏺ I have all the context. Now I'll write the architecture decision for the
+  negate operation and then close the step.
+
+⏺ Write(/private/tmp/sfi-tutorial-walkthrough/1777265943-13479/L3/rig/docs/archi
+       tecture/negate-op.md)
+  ⎿  Wrote 115 lines to ../../../../../rig/docs/architecture/negate-op.md
       2 # Negate Operation Architecture
       3 ## Context
-      5 The calculator project exports `add`, `subtract`, and `percent` f
-        rom a single
-      6 module (`src/calculator.js`). A new `negate(x)` function is reque
-      7 returns `-x`, giving users a unary sign-flip operation. The plann
-        er asks the
-        le or warrantsecide whether `negate` belongs in the existing modu
-      9 a separate file, given the project's "small pure functions" conve
-        ntion.
-     … +121 lines (ctrl+o to expand)
+      4
+        `-x`. There request asks for a `negate(x)` function that returns
+      6 project is a minimal CommonJS calculator with three existing pure
+         functions
+        r.js`) and atract`, `percent`) in a single module (`src/calculato
+      8 single test file (`test/calculator.test.js`). There are no extern
+        al
+      9 dependencies.
+     … +149 lines (ctrl+o to expand)
 
-⏺ Architecture artifact written. Now let me close the current formula step.
+⏺ Architecture artifact written. Now closing the current formula step.
 
-⏺ Bash(bd close rig-ezkq --reason "Architecture artifact written at
-      docs/architecture/negate.md. Decision: add negate(x) to src/calculator.js,
-       co-located with existing…)
-  ⎿  ✓ Closed rig-ezkq — Write the architecture decision: Architecture arti
-     fact written at docs/architecture/negate.md. Decision: add negate(x) t
-     o src/calculator.js, co-located with existing operations per percent-o
-     p ADR precedent.
+⏺ Bash(gc bd close rig-n17z --reason "Architecture artifact written to
+      docs/architecture/negate-op.md" 2>&1)
+  ⎿  ✓ Closed rig-n17z — Write the architecture decision: Architecture arti
+     fact written to docs/architecture/negate-op.md
 
-⏺ Step closed. Architecture artifact written at docs/architecture/negate.md.
+⏺ Architecture step complete. Wrote docs/architecture/negate-op.md with the
+  decision to add negate directly to src/calculator.js using plain unary minus,
+  no input validation, and allowing JavaScript's natural -0 behavior —
+  consistent with all existing calculator functions. Step rig-n17z is now
+  closed.
 
-  Decision: Add negate(x) to the existing src/calculator.js module, co-located
-  with add, subtract, and percent — consistent with the percent-op ADR
-  precedent. Four exports remains well within the ~8 threshold before
-  decomposition is warranted.
-
-✻ Worked for 1m 30s
+✻ Baked for 1m 18s
 
 ────────────────────────────────────────────────────────────────────────────────
 ❯ 
 ────────────────────────────────────────────────────────────────────────────────
-  /private/tmp/sfi-tutorial-walkthrough/1777185209-23781/L3/my-factory/.gc/ag…
+  /private/tmp/sfi-tutorial-walkthrough/1777265943-13479/L3/my-factory/.gc/ag…
   ⏵⏵ bypass permissions on (shift+tab to cycle)

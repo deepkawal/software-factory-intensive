@@ -3,55 +3,49 @@
 ## Goal
 
 Add a `percent(whole, fraction)` function to the calculator that returns
-`whole * fraction / 100`. This extends the existing arithmetic module with a
-commonly needed percentage calculation.
+`whole * fraction / 100`. This gives users a single call to compute a
+percentage of a value (e.g., `percent(200, 15)` → `30`).
 
 ## User Stories
 
-- As a user, I can call `percent(200, 15)` and receive `30`, so I can compute
-  15% of 200 without manual arithmetic.
-- As a user, I receive correct results for edge cases such as zero values and
-  fractional inputs, so I can trust the function for real-world use.
+1. As a caller, I can compute a percentage of a number with
+   `percent(whole, fraction)` so I don't have to inline the arithmetic.
+2. As a caller, I receive a numeric result (not rounded/truncated) so
+   fractional percentages are preserved (e.g., `percent(200, 33)` → `66`).
 
 ## Acceptance Criteria
 
-1. `percent(whole, fraction)` is exported from `src/calculator.js`.
-2. The function returns `whole * fraction / 100`.
-3. `percent(200, 15)` returns `30`.
-4. `percent(0, 50)` returns `0`.
-5. `percent(100, 0)` returns `0`.
-6. `percent(99.99, 50)` returns `49.995`.
-7. A matching test file (or additions to `test/calculator.test.js`) covers at
-   least the four cases above.
-8. `node --test` passes with zero failures.
-9. No new dependencies are introduced.
+- `percent(whole, fraction)` is exported from `src/calculator.js`.
+- `percent(200, 15)` returns `30`.
+- `percent(0, 50)` returns `0`.
+- `percent(200, 0)` returns `0`.
+- `percent(200, 100)` returns `200`.
+- `percent(200, 33.33)` returns `66.66`.
+- A matching test file covers at least the cases above.
+- `node --test` passes with zero failures.
 
 ## Scope Boundary
 
-**In scope:**
-- Adding the `percent` function to `src/calculator.js`.
-- Adding tests for `percent` to the existing test file.
-- Exporting `percent` alongside `add` and `subtract`.
-
-**Out of scope:**
-- Rounding or formatting helpers.
-- Percentage-change or percentage-difference functions.
-- Any changes to `add` or `subtract`.
+- **In scope:** one pure function, its export, and its tests.
+- **Out of scope:** CLI/REPL integration, input validation beyond what the
+  formula implies, rounding modes, new modules or files beyond the existing
+  `src/calculator.js` + `test/calculator.test.js` pair.
 
 ## Dependencies
 
-- None beyond what already exists. The project has zero dependencies and the
-  new function is a pure arithmetic operation.
+- None. The function is self-contained and has no external dependencies.
+- Follows the existing CommonJS export pattern in `src/calculator.js`.
 
 ## Open Questions
 
-- None. The request is fully specified.
+- Should `percent` coerce or reject non-numeric inputs? The existing `add` and
+  `subtract` do no validation, so the assumption is to follow suit. Architect
+  should confirm.
 
 ## Handoff
 
-- **Architect:** Decide whether `percent` belongs in `src/calculator.js` or in
-  a new module (e.g., `src/percent.js`). The existing pattern is a single
-  module; evaluate whether that should continue or split.
-- **Designer:** Specify input-validation behavior — should the function throw
-  on non-numeric inputs, return `NaN`, or silently coerce? Document the edge
-  cases the test suite must cover.
+- **Architect:** Confirm that adding `percent` directly to `calculator.js` (vs.
+  a new module) is the right call given the project's "small pure functions"
+  convention. Decide on input-validation stance.
+- **Designer:** Specify exact edge-case behavior (negative inputs, NaN, Infinity)
+  and finalize the test plan.

@@ -90,7 +90,7 @@ gc --rig your-project import add ../packs/lessons/L3 --name factory
 Then sling work to the lesson formula:
 
 ```bash
-gc sling your-project/factory.planner \
+gc sling planner \
   "Add a percent operation: percent(whole, fraction) returns whole*fraction/100" \
   --on mol-feature-delivery
 ```
