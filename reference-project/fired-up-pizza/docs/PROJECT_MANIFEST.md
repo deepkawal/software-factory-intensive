@@ -54,6 +54,7 @@ Core entities and relationships:
 - **Topping**: `id`, `name`, `price` (cents), `available` (boolean)
 - **Order**: `id`, `phone_number`, `status` (`placed | preparing | ready | delivered | cancelled`), `created_at`
 - **OrderItem**: `id`, `order_id` (→ Order), `menu_item_id` (→ MenuItem), `size`, `crust`, `topping_ids[]` (→ Topping)
+- **Review**: `id`, `pizza_id` (→ MenuItem), `phone_number` (→ Customer identity), `rating` (1–5), `review_text` (≤200 chars, nullable), `created_at`, `updated_at`. Identified by surrogate `id`; uniqueness enforced by `UNIQUE(pizza_id, phone_number)`. One review per (pizza, phone) pair; re-submission upserts in place.
 - **Customer**: identified by `phone_number` only — no separate Customer entity
 - **Staff**: role-only — no separate Staff entity for MVP
 

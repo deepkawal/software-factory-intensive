@@ -1,32 +1,40 @@
-# Fired Up Pizza — Agent Instructions
+# Agent Instructions
 
-This is a pizza restaurant web application built by a 6-agent software factory.
+This project uses **bd** (beads) for issue tracking. Run `bd prime` for full workflow context.
 
-## Project Context
+## Quick Reference
 
-- **Manifest**: `docs/PROJECT_MANIFEST.md` — tech stack, conventions, domain model, review standards, release criteria, success metrics
+```bash
+bd ready              # Find available work
+bd show <id>          # View issue details
+bd update <id> --claim  # Claim work atomically
+bd close <id>         # Complete work
+bd dolt push          # Push beads data to remote
+```
 
-Read the manifest before starting any work. It is the single source of truth for all project decisions.
+## Non-Interactive Shell Commands
 
-## Pipeline
+**ALWAYS use non-interactive flags** with file operations to avoid hanging on confirmation prompts.
 
-Features flow through six stages. Each agent reads its inputs from the repo and writes its outputs as committed files:
+Shell commands like `cp`, `mv`, and `rm` may be aliased to include `-i` (interactive) mode on some systems, causing the agent to hang indefinitely waiting for y/n input.
 
-1. **Planner** → `docs/plans/<slug>.md`
-2. **Architect** → `docs/architecture/NNNN-<slug>.md`
-3. **Designer** → `docs/designs/<slug>-spec.md`
-4. **Coder** → `src/` implementation
-5. **Reviewer** → `docs/reviews/<slug>-review.md`
-6. **Deployer** → `docs/releases/<slug>-gate.md`
+**Use these forms instead:**
+```bash
+# Force overwrite without prompting
+cp -f source dest           # NOT: cp source dest
+mv -f source dest           # NOT: mv source dest
+rm -f file                  # NOT: rm file
 
-## Rules
+# For recursive operations
+rm -rf directory            # NOT: rm -r directory
+cp -rf source dest          # NOT: cp -r source dest
+```
 
-- Change agent behavior via config files (this file, prompts, manifest) — never via ad-hoc re-prompting
-- All work on feature branches, never directly on main
-- Follow conventional commits: `feat:`, `fix:`, `docs:`, `refactor:`
-- Prices in cents internally, formatted as dollars for display
-- TypeScript strict mode, Tailwind CSS, no inline styles
-
+**Other commands that may prompt:**
+- `scp` - use `-o BatchMode=yes` for non-interactive
+- `ssh` - use `-o BatchMode=yes` to fail instead of prompting
+- `apt-get` - use `-y` flag
+- `brew` - use `HOMEBREW_NO_AUTO_UPDATE=1` env var
 
 <!-- BEGIN BEADS INTEGRATION v:1 profile:minimal hash:ca08a54f -->
 ## Beads Issue Tracker
