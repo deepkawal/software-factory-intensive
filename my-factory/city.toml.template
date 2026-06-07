@@ -2,6 +2,15 @@
 name = "my-factory"
 provider = "claude"
 
+# Active lesson selection. gc imports this lesson pack into the rig named
+# "rig" as the rig's "factory" pack. Point `source` at the lesson you are
+# working (../packs/lessons/L2, L3, L4, C1) to switch the active lesson.
+[[rigs]]
+name = "rig"
+[rigs.imports]
+[rigs.imports.factory]
+source = "../packs/lessons/L2"
+
 [session]
 startup_timeout = "3m"
 
