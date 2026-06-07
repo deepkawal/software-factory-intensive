@@ -85,7 +85,7 @@ Open `my-factory/city.toml` and set the city-wide active factory import:
 
 ```toml
 [[rigs]]
-name = "rig"
+name = "<rig>"  # your rig: the basename gc rig add derives (see: gc rig list)
 [rigs.imports.factory]
 source = "../packs/lessons/L2"
 ```
@@ -97,7 +97,7 @@ are still rig-scoped, so the Planner target is:
 <rig>/factory.planner
 ```
 
-If you used the default `city.toml` in L1, the rig named `rig` already imports
+If you kept the default `city.toml` source from L1, your rig `<rig>` already imports
 L2 as its `factory` pack — you can skip ahead. To switch the active lesson,
 point `[rigs.imports.factory].source` at the lesson you want
 (`../packs/lessons/L2`, `L3`, `L4`, or `C1`).

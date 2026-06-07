@@ -17,7 +17,7 @@ Formula v2 is enabled once in `city.toml`. Lesson selection also happens in
 
 ```toml
 [[rigs]]
-name = "rig"
+name = "<rig>"  # your rig: the basename gc rig add derives (see: gc rig list)
 [rigs.imports.factory]
 source = "../packs/lessons/L2"
 ```

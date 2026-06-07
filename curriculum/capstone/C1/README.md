@@ -50,7 +50,7 @@ The factory pack is selected in `my-factory/city.toml`:
 
 ```toml
 [[rigs]]
-name = "rig"
+name = "<rig>"  # your rig: the basename gc rig add derives (see: gc rig list)
 [rigs.imports.factory]
 source = "../packs/lessons/C1"
 ```
@@ -84,7 +84,7 @@ Edit `my-factory/city.toml` so the rig imports C1 as its factory pack:
 
 ```toml
 [[rigs]]
-name = "rig"
+name = "<rig>"  # your rig: the basename gc rig add derives (see: gc rig list)
 [rigs.imports.factory]
 source = "../packs/lessons/C1"
 ```

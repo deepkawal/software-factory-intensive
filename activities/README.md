@@ -10,7 +10,7 @@ For runnable labs, the active factory is selected from `my-factory/city.toml`:
 
 ```toml
 [[rigs]]
-name = "rig"
+name = "<rig>"  # your rig: the basename gc rig add derives (see: gc rig list)
 [rigs.imports.factory]
 source = "../packs/lessons/L3"
 ```

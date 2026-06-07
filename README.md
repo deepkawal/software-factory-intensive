@@ -164,7 +164,7 @@ The default template selects the L2 factory:
 
 ```toml
 [[rigs]]
-name = "rig"
+name = "<rig>"  # your rig: the basename gc rig add derives (see: gc rig list)
 [rigs.imports.factory]
 source = "../packs/lessons/L2"
 ```

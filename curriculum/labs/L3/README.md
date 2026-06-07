@@ -43,7 +43,7 @@ L3 uses:
 
 ```toml
 [[rigs]]
-name = "rig"
+name = "<rig>"  # your rig: the basename gc rig add derives (see: gc rig list)
 [rigs.imports.factory]
 source = "../packs/lessons/L3"
 ```
@@ -105,7 +105,7 @@ Edit `my-factory/city.toml` so the rig imports L3 as its factory pack:
 
 ```toml
 [[rigs]]
-name = "rig"
+name = "<rig>"  # your rig: the basename gc rig add derives (see: gc rig list)
 [rigs.imports.factory]
 source = "../packs/lessons/L3"
 ```
