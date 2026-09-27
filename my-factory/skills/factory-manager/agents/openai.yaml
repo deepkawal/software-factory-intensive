@@ -1,0 +1,3 @@
+interface:
+  display_name: "Factory Manager"
+  short_description: "Monitor, triage, and keep a Gas City factory moving"

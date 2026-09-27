@@ -1,0 +1,6 @@
+[order]
+description = "Commit, pull, and push Beads state for all configured Dolt remotes"
+trigger = "cooldown"
+interval = "2m"
+exec = "scripts/beads-converge.sh"
+timeout = "4m"
